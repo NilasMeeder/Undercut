@@ -1,4 +1,5 @@
 import { bestsWidget } from './bests/widget';
+import { cornersWidget } from './corners/widget';
 import { deltaWidget } from './delta/widget';
 import { lapsWidget } from './laps/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
@@ -19,6 +20,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   bestsWidget,
   speedTrapsWidget,
   timelineWidget,
+  cornersWidget,
 ];
 
 export const WIDGETS_BY_ID = new Map(WIDGETS.map((w) => [w.id, w]));

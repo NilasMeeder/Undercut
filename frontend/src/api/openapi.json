@@ -644,10 +644,17 @@
           },
           "mini_sectors": {
             "$ref": "#/components/schemas/MiniSectors"
+          },
+          "corners": {
+            "items": {
+              "$ref": "#/components/schemas/CornerSegment"
+            },
+            "type": "array",
+            "title": "Corners"
           }
         },
         "type": "object",
-        "required": ["distance", "laps", "mini_sectors"],
+        "required": ["distance", "laps", "mini_sectors", "corners"],
         "title": "Comparison"
       },
       "Corner": {
@@ -676,6 +683,79 @@
         "type": "object",
         "required": ["label", "distance", "x", "y", "angle"],
         "title": "Corner"
+      },
+      "CornerLap": {
+        "properties": {
+          "time": {
+            "type": "number",
+            "title": "Time"
+          },
+          "brake_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brake At"
+          },
+          "min_speed": {
+            "type": "number",
+            "title": "Min Speed"
+          },
+          "min_speed_at": {
+            "type": "number",
+            "title": "Min Speed At"
+          },
+          "throttle_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Throttle At"
+          },
+          "top_speed": {
+            "type": "number",
+            "title": "Top Speed"
+          }
+        },
+        "type": "object",
+        "required": ["time", "brake_at", "min_speed", "min_speed_at", "throttle_at", "top_speed"],
+        "title": "CornerLap",
+        "description": "One lap through one corner segment."
+      },
+      "CornerSegment": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "laps": {
+            "items": {
+              "$ref": "#/components/schemas/CornerLap"
+            },
+            "type": "array",
+            "title": "Laps"
+          }
+        },
+        "type": "object",
+        "required": ["label", "start", "end", "laps"],
+        "title": "CornerSegment",
+        "description": "A corner (or chicane) with its braking zone and the straight after it."
       },
       "DriverInfo": {
         "properties": {

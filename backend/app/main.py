@@ -12,6 +12,8 @@ from app.schemas import (
     Circuit,
     ComparedLap,
     Comparison,
+    CornerLap,
+    CornerSegment,
     Lap,
     MiniSectors,
     SeasonEvents,
@@ -49,6 +51,15 @@ def _guard[T](load: Callable[[], T]) -> T:
 
 def _rounded(values: np.ndarray, decimals: int) -> list[float]:
     return np.round(values, decimals).tolist()
+
+
+# Route handlers take a `round` parameter (the race round), which shadows the builtin there.
+def _one_decimal(value: float) -> float:
+    return round(value, 1)
+
+
+def _maybe_one_decimal(value: float | None) -> float | None:
+    return None if value is None else round(value, 1)
 
 
 def _ints(values: np.ndarray) -> list[int]:
@@ -135,6 +146,13 @@ def compare_laps(
         traces = [sessions.get_trace(year, round, session, c, n) for c, n in resolved]
         result = analysis.compare(traces, step)
         sectors = analysis.mini_sectors(result, mini_sectors)
+        try:
+            circuit = sessions.get_circuit(year, round, session)
+            corners = analysis.corner_segments(
+                result, [(c.label, c.distance) for c in circuit.corners]
+            )
+        except SourceNotAvailable:
+            corners = []
 
         compared = []
         for (code, number), lap, delta in zip(resolved, result.laps, result.deltas, strict=True):
@@ -164,6 +182,25 @@ def compare_laps(
                 times=[_rounded(t, 3) for t in sectors.times],
                 fastest=sectors.fastest.tolist(),
             ),
+            corners=[
+                CornerSegment(
+                    label=segment.label,
+                    start=_one_decimal(segment.start),
+                    end=_one_decimal(segment.end),
+                    laps=[
+                        CornerLap(
+                            time=float(np.round(s.time, 3)),
+                            brake_at=_maybe_one_decimal(s.brake_at),
+                            min_speed=_one_decimal(s.min_speed),
+                            min_speed_at=_one_decimal(s.min_speed_at),
+                            throttle_at=_maybe_one_decimal(s.throttle_at),
+                            top_speed=_one_decimal(s.top_speed),
+                        )
+                        for s in segment.laps
+                    ],
+                )
+                for segment in corners
+            ],
         )
 
     return _guard(load)

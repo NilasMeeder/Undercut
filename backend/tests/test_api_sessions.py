@@ -118,6 +118,7 @@ def test_compare_resolves_fastest_and_computes_delta(client: TestClient) -> None
     assert nor["delta"][-1] == pytest.approx(0.5)
     assert body["distance"][-1] == pytest.approx(1000.0)
     assert body["mini_sectors"]["fastest"] == [0, 0, 0, 0]
+    assert body["corners"] == []  # the fake archive has no corners.json
 
 
 def test_drs_is_null_from_2026(client: TestClient) -> None:

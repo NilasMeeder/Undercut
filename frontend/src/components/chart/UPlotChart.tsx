@@ -77,7 +77,8 @@ export function UPlotChart({
           stroke: COLORS.textFaint,
           grid: { stroke: COLORS.line, width: 1 },
           ticks: { stroke: COLORS.line, width: 1, size: 3 },
-          values: (_u, values) => values.map(formatDistance),
+          values: (_u, values) =>
+            values.map((v) => formatDistance(v, Math.abs((values[1] ?? Infinity) - values[0]))),
         },
         {
           size: Y_AXIS_WIDTH,

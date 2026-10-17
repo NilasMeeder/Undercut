@@ -128,11 +128,39 @@ class MiniSectors(BaseModel):
     """Per mini-sector: index into laps of the quickest lap."""
 
 
+class CornerLap(BaseModel):
+    """One lap through one corner segment."""
+
+    time: float
+    """Seconds spent in the segment."""
+    brake_at: float | None
+    """Distance (m) where braking starts; null if the lap does not brake here."""
+    min_speed: float
+    min_speed_at: float
+    throttle_at: float | None
+    """Distance (m) where throttle is back above 95% after the slowest point."""
+    top_speed: float
+    """Highest speed after the slowest point (km/h)."""
+
+
+class CornerSegment(BaseModel):
+    """A corner (or chicane) with its braking zone and the straight after it."""
+
+    label: str
+    """'T4', or 'T8–10' for corners taken as one."""
+    start: float
+    end: float
+    laps: list[CornerLap]
+    """One per compared lap, same order as Comparison.laps."""
+
+
 class Comparison(BaseModel):
     distance: list[float]
     """Shared grid (m), stretched to the reference lap's length."""
     laps: list[ComparedLap]
     mini_sectors: MiniSectors
+    corners: list[CornerSegment]
+    """Empty when the circuit has no corner data."""
 
 
 class Corner(BaseModel):

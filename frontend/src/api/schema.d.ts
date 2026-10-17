@@ -185,6 +185,8 @@ export interface components {
       /** Laps */
       laps: components['schemas']['ComparedLap'][];
       mini_sectors: components['schemas']['MiniSectors'];
+      /** Corners */
+      corners: components['schemas']['CornerSegment'][];
     };
     /** Corner */
     Corner: {
@@ -198,6 +200,38 @@ export interface components {
       y: number;
       /** Angle */
       angle: number;
+    };
+    /**
+     * CornerLap
+     * @description One lap through one corner segment.
+     */
+    CornerLap: {
+      /** Time */
+      time: number;
+      /** Brake At */
+      brake_at: number | null;
+      /** Min Speed */
+      min_speed: number;
+      /** Min Speed At */
+      min_speed_at: number;
+      /** Throttle At */
+      throttle_at: number | null;
+      /** Top Speed */
+      top_speed: number;
+    };
+    /**
+     * CornerSegment
+     * @description A corner (or chicane) with its braking zone and the straight after it.
+     */
+    CornerSegment: {
+      /** Label */
+      label: string;
+      /** Start */
+      start: number;
+      /** End */
+      end: number;
+      /** Laps */
+      laps: components['schemas']['CornerLap'][];
     };
     /** DriverInfo */
     DriverInfo: {

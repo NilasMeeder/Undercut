@@ -15,6 +15,8 @@ export function formatGap(seconds: number | null | undefined): string {
   return `${sign}${Math.abs(seconds).toFixed(3)}`;
 }
 
-export function formatDistance(metres: number): string {
-  return metres >= 1000 ? `${(metres / 1000).toFixed(1)}k` : `${Math.round(metres)}`;
+/** Axis label for a distance; `step` (the tick spacing) switches to whole metres when zoomed in. */
+export function formatDistance(metres: number, step = Infinity): string {
+  if (metres < 1000 || step < 100) return `${Math.round(metres)}`;
+  return `${(metres / 1000).toFixed(1)}k`;
 }

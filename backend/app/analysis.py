@@ -87,3 +87,113 @@ def mini_sectors(comparison: Comparison, count: int) -> MiniSectors:
     boundaries = np.linspace(0.0, grid[-1], count + 1)
     times = np.array([np.diff(np.interp(boundaries, grid, lap.time)) for lap in comparison.laps])
     return MiniSectors(boundaries=boundaries, times=times, fastest=np.argmin(times, axis=0))
+
+
+THROTTLE_FULL = 95.0
+"""Throttle (%) from which a driver counts as back on full throttle."""
+
+CHICANE_GAP = 150.0
+"""Corners closer than this (m) always form one segment: a chicane, even with a dab of brake."""
+
+MERGE_GAP = 400.0
+"""Corners closer than this (m) without braking in between form one segment (esses)."""
+
+
+@dataclass(frozen=True)
+class CornerStats:
+    time: float
+    """Seconds spent in the segment."""
+    brake_at: float | None
+    """Distance (m) where braking first starts before the slowest point; None without braking."""
+    min_speed: float
+    min_speed_at: float
+    throttle_at: float | None
+    """Distance (m) where throttle is back above THROTTLE_FULL after the slowest point."""
+    top_speed: float
+    """Highest speed after the slowest point: the straight that follows the corner."""
+
+
+@dataclass(frozen=True)
+class CornerSegment:
+    label: str
+    start: float
+    end: float
+    laps: list[CornerStats]
+
+
+def _corner_groups(
+    reference: Resampled, grid: np.ndarray, corners: list[tuple[str, float]]
+) -> list[list[tuple[str, float]]]:
+    """Merge chicanes, and corners the reference lap takes without braking in between."""
+    brake = reference.channels["brake"]
+    groups: list[list[tuple[str, float]]] = []
+    for label, apex in sorted(corners, key=lambda c: c[1]):
+        if groups:
+            prev = groups[-1][-1][1]
+            between = (grid > prev) & (grid < apex)
+            onsets = np.diff(brake[between].astype(int)) > 0
+            no_braking = not onsets.any() and not brake[between][:1].any()
+            if apex - prev < CHICANE_GAP or (apex - prev < MERGE_GAP and no_braking):
+                groups[-1].append((label, apex))
+                continue
+        groups.append([(label, apex)])
+    return groups
+
+
+def _stats(lap: Resampled, grid: np.ndarray, start: float, end: float) -> CornerStats:
+    inside = np.flatnonzero((grid >= start) & (grid <= end))
+    speed = lap.channels["speed"][inside]
+    slowest = int(np.argmin(speed))
+
+    # In a chicane the first braking phase is the one that matters, not the dab for part two.
+    braking = np.flatnonzero(lap.channels["brake"][inside[: slowest + 1]] > 0)
+    brake_at = float(grid[inside[braking[0]]]) if braking.size else None
+
+    throttle = lap.channels["throttle"][inside[slowest:]]
+    full = np.flatnonzero(throttle >= THROTTLE_FULL)
+    throttle_at = float(grid[inside[slowest + full[0]]]) if full.size else None
+
+    times = np.interp([start, end], grid, lap.time)
+    return CornerStats(
+        time=float(times[1] - times[0]),
+        brake_at=brake_at,
+        min_speed=float(speed[slowest]),
+        min_speed_at=float(grid[inside[slowest]]),
+        throttle_at=throttle_at,
+        top_speed=float(speed[slowest:].max()),
+    )
+
+
+def corner_segments(
+    comparison: Comparison, corners: list[tuple[str, float]]
+) -> list[CornerSegment]:
+    """
+    Split the lap into one segment per corner (label, distance): braking zone, corner and the
+    straight after it. Boundaries sit at the reference lap's top speed between two corners, so
+    time lost on a straight counts for the corner before it, where the exit decided it.
+    """
+    grid = comparison.distance
+    reference = comparison.laps[0]
+    length = float(grid[-1])
+    corners = [(label, d) for label, d in corners if 0 < d < length]
+    if not corners:
+        return []
+    groups = _corner_groups(reference, grid, corners)
+
+    speed = reference.channels["speed"]
+    bounds = [0.0]
+    for left, right in zip(groups, groups[1:], strict=False):
+        between = np.flatnonzero((grid > left[-1][1]) & (grid < right[0][1]))
+        if between.size == 0:
+            bounds.append((left[-1][1] + right[0][1]) / 2)
+        else:
+            bounds.append(float(grid[between[np.argmax(speed[between])]]))
+    bounds.append(length)
+
+    segments = []
+    for group, start, end in zip(groups, bounds[:-1], bounds[1:], strict=True):
+        first, last = group[0][0], group[-1][0]
+        label = f"T{first}" if first == last else f"T{first}–{last}"
+        laps = [_stats(lap, grid, start, end) for lap in comparison.laps]
+        segments.append(CornerSegment(label=label, start=start, end=end, laps=laps))
+    return segments

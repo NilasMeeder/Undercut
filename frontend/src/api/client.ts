@@ -11,6 +11,8 @@ export type Lap = Schemas['Lap'];
 export type Comparison = Schemas['Comparison'];
 export type ComparedLap = Schemas['ComparedLap'];
 export type Circuit = Schemas['Circuit'];
+export type CornerSegment = Schemas['CornerSegment'];
+export type CornerLap = Schemas['CornerLap'];
 
 export class ApiError extends Error {
   readonly status: number;
