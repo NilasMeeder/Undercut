@@ -114,6 +114,8 @@ def test_track_status_periods() -> None:
         message(350.0, "Flag", "TRACK CLEAR", "CLEAR", "Track"),
         message(400.0, "Flag", "YELLOW IN TRACK SECTOR 3", "YELLOW", "Sector"),
         message(500.0, "Flag", "RED FLAG", "RED", "Track"),
+        message(600.0, "Flag", "TRACK CLEAR", "CLEAR", "Track"),  # still red
+        message(700.0, "Flag", "GREEN LIGHT - PIT EXIT OPEN", "GREEN", "Track"),
         message(900.0, "Flag", "CHEQUERED FLAG", "CHEQUERED", "Track"),
     ]
     periods = replay.track_status_periods(messages, 100.0, 1000.0)
@@ -121,7 +123,8 @@ def test_track_status_periods() -> None:
         (100.0, 200.0, "green"),
         (200.0, 350.0, "sc"),
         (350.0, 500.0, "green"),
-        (500.0, 900.0, "red"),
+        (500.0, 700.0, "red"),
+        (700.0, 900.0, "green"),
         (900.0, 1000.0, "chequered"),
     ]
     assert replay.status_at(periods, 250.0) == "sc"
@@ -190,6 +193,20 @@ def test_race_valid_window_brackets_t(race: replay.TimingIndex) -> None:
     assert state.valid_until == 110.0  # NOR leaves the pit
     # Nothing changes in between, so the client need not ask again.
     assert replay.timing_state(race, 109.9).rows == state.rows
+
+
+def test_no_negative_interval_after_a_pit_stop() -> None:
+    """HAM was ahead at the line (90 vs 91) but is slow in the pit lane: RUS passes S1 first."""
+    laps = [
+        race_lap("RUS", 1, 0.0, 30.0, 30.0, 31.0),
+        race_lap("RUS", 2, 91.0, 30.0, 30.0, 30.0),
+        race_lap("HAM", 1, 0.0, 30.0, 30.0, 30.0, pit_in=True, pit_in_time=88.0),
+        race_lap("HAM", 2, 90.0, 55.0, 30.0, 30.0, pit_out=True, pit_out_time=112.0),
+    ]
+    state = replay.timing_state(replay.build_index(laps, "race", []), 130.0)
+    assert [r.driver for r in state.rows] == ["RUS", "HAM"]
+    assert state.rows[1].interval is None
+    assert state.rows[1].gap is None
 
 
 def test_sector_colours_are_as_they_were_when_set(race: replay.TimingIndex) -> None:

@@ -1,10 +1,11 @@
+import gzip
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import date
 from typing import Annotated
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 
 from app import analysis, replays, schedule, sessions
@@ -140,11 +141,15 @@ def positions_prepare(year: int, round: int, session: SessionCode) -> ReplayStat
     response_model=ReplayPositions,
     responses={409: {"description": "Not prepared yet: POST .../positions/prepare first"}},
 )
-def positions(year: int, round: int, session: SessionCode) -> Response:
+def positions(year: int, round: int, session: SessionCode, request: Request) -> Response:
     if _guard(lambda: replays.status(year, round, session)).state != "ready":
         raise HTTPException(409, "The position track is not prepared yet")
-    body = _guard(lambda: replays.positions_json(year, round, session))
-    return Response(body, media_type="application/json")
+    body = _guard(lambda: replays.positions_gzip(year, round, session))
+    # Compressed once and cached; the GZip middleware leaves an encoded response alone.
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        headers = {"Content-Encoding": "gzip", "Vary": "Accept-Encoding"}
+        return Response(body, media_type="application/json", headers=headers)
+    return Response(gzip.decompress(body), media_type="application/json")
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/telemetry")

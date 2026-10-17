@@ -5,6 +5,7 @@ a background thread and reports progress; the result is stored as an .npz in .ca
 session is downloaded and built only once.
 """
 
+import gzip
 import json
 import logging
 import math
@@ -199,8 +200,8 @@ def _laps(values: np.ndarray) -> list[float | None]:
 
 
 @lru_cache(maxsize=4)
-def positions_json(year: int, round_number: int, code: str) -> bytes:
-    """The ReplayPositions response, serialised once: it is a few MB of JSON."""
+def positions_gzip(year: int, round_number: int, code: str) -> bytes:
+    """The ReplayPositions response as gzipped JSON, made once: it is ~6 MB raw, ~2 MB gzipped."""
     path = _track_path(year, round_number, code)
     if not path.exists():
         raise LookupError("The position track is not prepared yet")
@@ -217,4 +218,5 @@ def positions_json(year: int, round_number: int, code: str) -> bytes:
         ]
         count = data["x"].shape[1]
     body = {"start": start, "step": step, "count": count, "lap_length": round(length, 1)}
-    return json.dumps({**body, "cars": cars}, separators=(",", ":")).encode()
+    raw = json.dumps({**body, "cars": cars}, separators=(",", ":")).encode()
+    return gzip.compress(raw, compresslevel=6)

@@ -188,14 +188,18 @@ def track_status_periods(
 ) -> list[StatusPeriod]:
     """Track-wide status from start to end, as consecutive periods."""
     changes = sorted(
-        (m.session_time, status)
+        (m.session_time, status, m.flag)
         for m in messages
         if m.session_time is not None and (status := _status_change(m)) is not None
     )
     status: TrackStatus = "green"
     since = start
     periods: list[StatusPeriod] = []
-    for at, new in changes:
+    for at, new, flag in changes:
+        # During a red flag (or after the chequered flag) "TRACK CLEAR" only means the marshals
+        # are done; the session resumes with the green light.
+        if status in ("red", "chequered") and flag == "CLEAR":
+            continue
         if at <= start:
             status = new
             continue
@@ -494,6 +498,12 @@ def _race_rows(index: TimingIndex, t: float, overall: dict[str, float]) -> list[
             continue
         row.gap, row.laps_down = _behind(index, leader, point, at)
         row.interval, row.interval_laps = _behind(index, rows[i - 1].driver, point, at)
+        # A car that lost places in the pit lane is behind on points but was still ahead at its
+        # last timing line: that gap is stale (negative) until it reaches the next line.
+        if row.gap is not None and row.gap < 0:
+            row.gap = None
+        if row.interval is not None and row.interval < 0:
+            row.interval = None
     return rows
 
 

@@ -120,7 +120,7 @@ CACHES = (
     sessions.get_weather,
     replays.get_timeline,
     replays.get_timing_index,
-    replays.positions_json,
+    replays.positions_gzip,
 )
 
 
