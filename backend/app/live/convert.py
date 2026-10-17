@@ -41,13 +41,18 @@ def live_timing_data(
     messages: list[Message], origin: datetime, skip: tuple[str, ...] = ()
 ) -> LiveTimingData:
     """FastF1's container for recorded data, filled from parsed messages; session time 0 =
-    `origin`. Initial-state messages get the time of the first streamed message."""
+    `origin`. State messages (no time) get the time of the message before them, or of the first
+    streamed one."""
     first = next((m.utc for m in messages if m.utc is not None), origin)
+    last: datetime | None = None
     data: dict[str, list[list[Any]]] = {}
     for message in messages:
+        if message.utc is not None:
+            last = message.utc
         if message.topic in skip:
             continue
-        at = (message.utc or first) - origin
+        # The state is resent after a reconnect: it holds from where the recording was then.
+        at = (message.utc or last or first) - origin
         data.setdefault(message.topic, []).append([at, message.data])
     livedata = LiveTimingData()
     livedata.data = data

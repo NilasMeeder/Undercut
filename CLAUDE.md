@@ -20,8 +20,8 @@ instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, 
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
 (zie "Markeringen en views"), en strategie: stints, degradatie, gaps, posities, undercut en
-pitverlies-ghosts, allemaal op de sessieklok (zie "Strategie"). Volgende stap: fase 7 (live) of de
-open punten, zie ROADMAP.md.
+pitverlies-ghosts, allemaal op de sessieklok (zie "Strategie"). Fase 7 (live) is gebouwd en getest met
+de simulator; de echte test is de eerste sessie met Nilas' F1 TV-login (zie "Live" en ROADMAP.md).
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -51,6 +51,14 @@ Valkuilen bij het headless testen:
   stop), PIA L45 (23,2 s); VER medium +0,038 s/lap, NOR medium +0,029. Op lap 36 zegt het pit window
   voor NOR: pit nu = P4, undercut op VER +0,56 / +1,46 / +2,39 op een gap van 5,46 s; de ghost
   "NOR PIT P4" op de kaart zegt hetzelfde. Q en FP: gaps/positions/pit window tonen "for races".
+- Live: draai de backend met ook `F1DASH_LIVE=<scratchpad>/live` (opnames los van Nilas' echte
+  `backend/data/live/`) en speel een sessie af met de simulator:
+  `F1DASH_LIVE=<scratchpad>/live uv run python -m app.live.simulate 2025 16 R --speed 1 --start 6400`
+  (`--start` in archief-sessietijd: alles daarvoor gaat er meteen in, 6400 = rond lap 36; `--speed 0`
+  = alles in één keer, dan is de sessie na 2 minuten "opgenomen"). Opnieuw starten overschrijft de
+  opname; de backend ziet dat zelf. Zelfde preset `replay`; wacht op `LAP`, de LIVE-knop in de
+  klokbalk heeft dan de title `Following the live feed`. Live-sessietijd loopt vanaf het geplande
+  begin (Monza R: 13:00 UTC), niet vanaf het archief-t0: dezelfde lap heeft live een ander t.
 - Markeringen: `keyboard.down('Shift')` en dan slepen of klikken in een `.u-over` (de grootste is de
   speed-chart); de editor heeft het placeholder `What happens here` en Enter slaat op. Een view openen
   via een link: `page.goto` naar alleen een andere hash herlaadt de pagina niet (dat vangt de
@@ -94,6 +102,7 @@ make install         # uv sync + npm install
 make dev             # API op :8000 en web op :5173 (Vite proxyt /api)
 make check           # ruff, pytest, oxlint, tsc, build: draai dit voor je iets "af" noemt
 make gen-api         # na elke wijziging in backend-schemas: regenereert frontend/src/api/schema.d.ts
+make live            # neemt de live-feed op van de sessie die nu bezig is (F1 TV-login, zie "Live")
 
 # los
 cd backend && uv run pytest
@@ -116,14 +125,19 @@ backend/app/replay.py      pure replay-logica: positiespoor (build_track), timin
 backend/app/replays.py     replay per sessie: tijdlijn, timing-index, de bouwjob van het positiespoor (.npz)
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
                            pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
+backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
+                           feed), convert.py (FastF1 → archiefvorm), service.py (opnames volgen en omzetten),
+                           track.py (positiespoor dat groeit), telemetry.py (telemetrie per lap), recordings.py
+backend/app/generations.py versie per sessie; session_cache = lru_cache die op die versie sleutelt (live verloopt)
 backend/app/store.py       gebruikersdata in SQLite: markeringen en views (migraties via PRAGMA user_version)
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
 frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), markers.ts en views.ts
-                           (gebruikersdata: queries + mutaties), schema.d.ts (gegenereerd)
+                           (gebruikersdata: queries + mutaties), live.ts (SSE: klokrand, verversen, posities
+                           aanplakken), schema.d.ts (gegenereerd)
 frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus,
                            bevriezen), dashboards.ts (tabs met elk een layout), clock.ts (sessieklok),
-                           markerEditor.ts (de open markering-editor: markNew, editMarker)
+                           markerEditor.ts (de open markering-editor: markNew, editMarker), live.ts (live-status)
 frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen),
                            HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
 frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
@@ -139,7 +153,8 @@ frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, tim
 frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
                            sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import),
                            clock/ (ClockBar onderin, useSessionClock), markers/ (MarkerEditor, actions:
-                           springen en markeren), views/ (ViewsMenu, openen/opslaan, #view=-links)
+                           springen en markeren), views/ (ViewsMenu, openen/opslaan, #view=-links),
+                           live/ (LiveBadge: een live sessie die niet open staat)
 ```
 
 Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt
@@ -154,9 +169,10 @@ zonder cache geen laps of telemetrie meer laden. Het schema werkt nog wel, dat k
 
 | Bron | Wat | Status |
 |---|---|---|
+| **Live-opnames** (`backend/data/live/`) | Sessies opgenomen met `make live`, omgezet naar de vorm hieronder | Gaat vóór TracingInsights (zie "Live"). Vanaf Austin 2026 de enige bron. |
 | **TracingInsights** (`github.com/TracingInsights/<jaar>`) | 2018–2026, per sessie: `session_laptimes.json`, `drivers.json`, `corners.json`, `rcm.json`, `weather.json`, `team_radio.json`, en per driver `<DRV>/<lap>_tel.json` | **Primaire bron.** Gratis (Apache 2.0) via `raw.githubusercontent.com`. Gemaakt met FastF1, al kolom-georiënteerd met distance, x/y/z, acc_x/y/z en DriverAhead. Nieuwe sessies na 15 okt 2026 komen er mogelijk niet meer bij. Zie hun `DATA_REFERENCE.md`. |
 | **OpenF1** (`api.openf1.org/v1`) | Laps, sectoren, car_data, location, stints, pit, weer, race control, team radio | **Fallback** voor sessies die nog niet in TracingInsights staan. Historisch (2023+) gratis zonder key, max 3 req/s en 30 req/min. Live alleen betaald. |
-| FastF1 | Schema (`get_event_schedule`), en alles als er een F1 TV-token of een fix komt | Nu alleen voor het schema. De bron-laag zo bouwen dat FastF1 later weer kan aansluiten. |
+| FastF1 | Schema (`get_event_schedule`); de live-feed (signalrcore, F1 TV-login) en het omzetten ervan | Schema, en live (zie "Live"). Het archief alleen met een F1 TV-token. |
 | Jolpica (Ergast-opvolger, `api.jolpi.ca/ergast/f1`) | Uitslagen, standen, startgrid | Gratis. Nu gebruikt voor de startgrid in replay. |
 
 Gevolg: de backend krijgt een **data-source laag** (`app/sources/`) waarin elke bron dezelfde interne vorm
@@ -205,6 +221,78 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   elk tot de volgende; de laatste loopt over de finish). `replay.sector_flag_periods` maakt uit race
   control (scope `Sector`) perioden per sector tot CLEAR, of tot een baanbrede GREEN/CLEAR/RED/CHEQUERED
   (`SessionTimeline.sector_flags`). De kaart (met alle auto's) en de Track line kleuren die stukken geel.
+
+## Live (fase 7)
+
+**Live = een archief dat groeit.** Een opname van de live-feed wordt elke paar seconden omgezet naar
+dezelfde bestanden als TracingInsights; alle bestaande endpoints en widgets werken daardoor zonder
+wijziging op een sessie die nog loopt, en na afloop is de opname gewoon een replay. Dat telt, want
+TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de laatste).
+
+- **Opnemen** (`app/live/record.py`, `make live`): FastF1's `SignalRClient` (signalrcore), met FastF1's
+  eigen F1 TV-login (`uv run python -m fastf1 auth f1tv --authenticate`, één keer; het token gaat alleen
+  naar livetiming.formula1.com en f1dash leest het nooit). Zonder argumenten de sessie die nu bezig is
+  of binnen het uur begint; neemt op tot start + 2 uur (race 4 uur), verbindt opnieuw na 5 minuten
+  stilte en voegt toe (`a`), dus herstarten gaat door in dezelfde opname. **Start vóór de sessie**: de
+  feed stuurt alleen wat verandert, een opname die halverwege begint mist de laps ervoor.
+- **Opslag**: `backend/data/live/<jaar>/<event>/<sessie>/` met `live.txt` (de feed zoals FastF1 hem
+  schrijft), `meta.json` (jaar, ronde, code) en `converted/` (de archiefbestanden, plus `live.json` met
+  het geplande aantal laps, `<DRV>/<lap>_tel.json.gz` en `track-v1.npz`). Niet in `.cache`: na afloop
+  is de opname de enige kopie. `converted/` is weggooibaar (wordt opnieuw gemaakt). `F1DASH_LIVE` wijst
+  een andere map aan. `sources/tracinginsights.fetch_json` kijkt eerst in `converted/` (wint van het
+  archief; de simulator zet dat uit met `ti.READ_LIVE = False`).
+- **Formaat** (`feed.py`): per regel de Python-repr van `[topic, data, utc]`; de toestand die F1 na
+  het abonneren stuurt is `[topic, json_string, '']` (geen tijd). FastF1's eigen lezer gooit die weg
+  en breekt op apostrofs (`'` → `"`); wij lezen met `ast.literal_eval`. `.z`-topics zijn base64 +
+  raw deflate. Toestand zonder tijd krijgt de tijd van het bericht ervoor (na een reconnect stuurt F1
+  hem opnieuw).
+- **Omzetten** (`convert.py`, `service.py`): elke 3 s (als er iets nieuws is) gaan de timing-berichten
+  (alles behalve CarData.z/Position.z) in een `LiveTimingData` zonder bestanden naar
+  `Session.load(livedata=…, telemetry=False)`: ~1 s voor een hele race. Dus dezelfde lap-logica als
+  het archief (TracingInsights is met FastF1 gemaakt). Round-trip getest: Monza R en Q via de
+  simulator geven dezelfde laptijden, sectoren, banden, stints, posities en pit-tijden.
+  Valkuilen: **FastF1 cachet ook livedata-parses op `api_path`** (dan blijft live hangen op de
+  eerste stand): altijd binnen `fastf1.Cache.disabled()`. Zonder uitslag maakt FastF1 een extra lap
+  voor elke gelapte auto (`FastF1Generated`): die gaan eruit. `LapStartDate` is zonder telemetrie leeg:
+  `lSD` = origin + `lST`. `session.total_laps` gooit `DataNotLoadedError` als LapCount ontbreekt.
+- **Tijdas live**: sessietijd 0 = het **geplande begin** uit het schema (stabiel, ook als de recorder
+  later start of herstart); t0 = `lSD − lST` klopt daarmee vanzelf. Elke omzetting verhoogt de
+  generatie van de sessie (`generations.py`); `@session_cache` sleutelt daarop, zodat laps, tijdlijn,
+  strategie en tower opnieuw rekenen en archiefsessies gewoon gecachet blijven. De tijdlijn neemt het
+  aantal laps uit `live.json` (anders zou de tower bij de laatste binnengekomen lap "finished" zeggen);
+  `TimingIndex.live`: een auto zonder passage in de laatste 180 s is pas dan uitgevallen.
+- **Posities** (`track.py`): Position.z op hetzelfde 4 Hz-raster als de replay, 1 s achter het nieuwste
+  sample. Lap-voortgang = NumberOfLaps (TimingData, op het moment dat hij kwam) + projectie op de
+  outline van de baan (`Circuit.track_distance`); vlak voor de lijn met een verse telling telt hij
+  nog als de vorige lap. Op Monza gemiddeld 12 m van het archiefspoor. `Status` OffTrack = niet tonen.
+  Na afloop wordt het spoor `converted/track-v1.npz`; een opname gebruikt **nooit** het archiefspoor
+  (andere tijdas). Ontbreekt de npz, dan maakt `positions/prepare` hem opnieuw uit de opname.
+- **Telemetrie per lap** (`telemetry.py`): CarData.z + Position.z van een afgeronde lap op één tijdas
+  (getallen geïnterpoleerd, gear/brake/DRS vastgehouden), afstand geïntegreerd uit de snelheid, als
+  `<DRV>/<lap>_tel.json.gz`. Op Monza 0,2–0,4% van de archieflengte. Opslag compact (`array('d')`).
+- **Circuit**: TracingInsights' `corners.json` van deze sessie, een andere van het weekend, of vorig
+  jaar (`_borrow_corners`); de feed heeft geen outline.
+- **Live of klaar**: een opname is live als hij de laatste 2 minuten is geschreven en F1 hem niet
+  heeft afgesloten (`Finalised`/`Ends`; de heartbeats gaan door). Daarna één laatste omzetting,
+  telemetrie, npz, en het geheugen gaat vrij.
+- **API**: `GET /api/live` (opnames, live eerst) en `GET /api/live/{y}/{r}/{s}/events` (SSE): `status`
+  (`LiveSessionInfo`: horizon, versie, F1-status) bij elke verandering en `positions` met de nieuwe
+  punten (`first`, `count`, `cars`). SSE en geen websocket: één richting, herverbindt zelf, gaat
+  zonder iets door de Vite-proxy; de GZip-middleware slaat `text/event-stream` over.
+- **Frontend**: `useLiveSession` (App) opent de SSE voor de geselecteerde live sessie. Nieuwe versie
+  → alle sessie-queries ongeldig behalve markers, positions en circuit; de tower (`useTimingState`)
+  vraagt opnieuw. Posities: `appendPositions` plakt ze in de gedeelde query-data (typed arrays met
+  ruimte om te groeien; `structuralSharing: false`). Klok: `setLiveEdge` (horizon − 2 s: posities lopen
+  achter), `goLive` (volgen op 1× met instelbare vertraging, localStorage `f1dash-live-delay`); elke
+  seek/pauze/snelheid stopt het volgen; End = terug naar live. `useSessionClock` laadt alleen bij een
+  andere sessie (anders `setRange`, de klok blijft staan). LIVE-knop en vertraging in de klokbalk,
+  `LiveBadge` in de topbalk.
+- **Testen zonder live sessie** (`simulate.py`): zet een archiefsessie om naar feed-berichten zoals
+  FastF1's parsers ze lezen (TimingData per timingpunt, TimingAppData-stints, Position.z en CarData.z
+  op 4 Hz, race control, weer, LapCount, sessiestatus; Q2/Q3 via `BestLapTimes`) en schrijft ze in
+  tempo. Wat de simulator niet nabootst (posities vóór de start, garage, gele track status) kan in
+  een echte feed anders zijn: de opname blijft ruw bewaard, dus fouten zijn achteraf te herstellen
+  (`converted/` weggooien).
 
 ## Markeringen en views (fase 5)
 

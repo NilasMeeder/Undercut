@@ -25,7 +25,8 @@ import numpy as np
 
 from app import generations, replays, schedule, sessions
 from app.config import LIVE_DIR
-from app.live import convert, feed, recordings
+from app.live import convert, feed, recordings, telemetry
+from app.live.telemetry import Samples
 from app.live.track import LiveTrack, Outline
 from app.sources import tracinginsights as ti
 
@@ -33,6 +34,8 @@ log = logging.getLogger(__name__)
 
 ACTIVE_FOR = 120.0
 """A recording written to in the last two minutes is live."""
+ENDED = ("Finalised", "Ends")
+"""Session statuses after which nothing changes any more."""
 POLL_EVERY = 0.5
 BUILD_EVERY = 3.0
 """Seconds between two conversions while data comes in (one takes ~0.2-1 s for a race)."""
@@ -79,6 +82,12 @@ class LiveSession:
     outline_tried: bool = False
     finished: bool = False
     """Converted for good (the recording stopped growing); timing and track are freed."""
+    car_data: dict[str, Samples] = field(default_factory=dict)
+    """Car number -> CarData.z samples."""
+    laps: list[tuple[str, int, float, float]] = field(default_factory=list)
+    """Completed laps of the last conversion: (driver, lap, start, end)."""
+    written: set[tuple[str, int]] = field(default_factory=set)
+    """Laps whose telemetry file is written."""
 
     def __post_init__(self) -> None:
         self.event, self.session = sessions.folders(self.year, self.round, self.code)
@@ -101,6 +110,9 @@ class LiveSession:
             return 0.0
 
     def is_active(self) -> bool:
+        """Still being written, and F1 has not closed the session (the feed's heartbeats go on)."""
+        if self.status in ENDED:
+            return False
         return time.time() - self.written_at() < ACTIVE_FOR
 
     def poll(self) -> None:
@@ -108,7 +120,7 @@ class LiveSession:
         messages = self.tail.read()
         if self.tail.restarted:
             self.timing, self.horizon, self.status = [], None, None
-            self.track = LiveTrack()
+            self.track, self.car_data, self.laps, self.written = LiveTrack(), {}, [], set()
         for message in messages:
             if self.origin is None and message.utc is not None:
                 self.origin = message.utc
@@ -119,7 +131,8 @@ class LiveSession:
             if message.topic == "Position.z":
                 self._positions(message.data)
                 continue
-            if message.topic in convert.TELEMETRY_TOPICS:
+            if message.topic == "CarData.z":
+                self._car_data(message.data)
                 continue
             data = message.data if isinstance(message.data, dict) else {}
             if message.topic == "SessionStatus":
@@ -155,7 +168,47 @@ class LiveSession:
                     continue
                 status = str(entry.get("Status", "OnTrack"))
                 on_track = status == "OnTrack" or status == "0"
-                self.track.add_position(at, number, x, y, on_track)
+                z = float(entry.get("Z") or 0)
+                self.track.add_position(at, number, x, y, z, on_track)
+
+    def _car_data(self, raw: Any) -> None:
+        if self.origin is None or not isinstance(raw, str):
+            return
+        try:
+            data = feed.inflate(raw)
+        except (ValueError, OSError):
+            return
+        for entry in data.get("Entries", []):
+            stamp = feed.parse_utc(entry.get("Utc", ""))
+            if stamp is None:
+                continue
+            at = convert.session_time(stamp, self.origin)
+            for number, car in (entry.get("Cars") or {}).items():
+                channels = car.get("Channels") if isinstance(car, dict) else None
+                if isinstance(channels, dict):
+                    samples = self.car_data.setdefault(number, Samples())
+                    samples.add(at, telemetry.car_sample(channels))
+
+    def write_telemetry(self, final: bool = False) -> None:
+        """A telemetry file per completed lap, once its samples are in (all of them: `final`)."""
+        if self.horizon is None:
+            return
+        numbers = {code: number for number, code in self.codes.items()}
+        for driver, lap, start, end in self.laps:
+            if (driver, lap) in self.written or (not final and end > self.horizon - 2):
+                continue
+            number = numbers.get(driver)
+            car, own = self.car_data.get(number or ""), self.track.cars.get(number or "")
+            tel = (
+                telemetry.lap_telemetry(car, own.raw, start, end)
+                if car is not None and own is not None
+                else None
+            )
+            if tel is not None:
+                raw = json.dumps({"tel": tel}, separators=(",", ":")).encode()
+                ti.write_gzip(self.out / driver / f"{lap}_tel.json.gz", raw)
+            if tel is not None or final or end < self.horizon - 60:
+                self.written.add((driver, lap))
 
     def _lap_counts(self, data: dict[str, Any], at: float) -> None:
         for number, line in (data.get("Lines") or {}).items():
@@ -181,9 +234,11 @@ class LiveSession:
 
     def finish(self) -> None:
         """The recording stopped: keep the position track as a replay track, free memory."""
+        self.write_telemetry(final=True)
         if self.track.count > 0 and self.outline is not None:
             replays.save_track(self.track_path(), self.track.to_track(self.codes, self.outline))
         self.timing, self.track, self.finished = [], LiveTrack(), True
+        self.car_data, self.laps = {}, []
         generations.bump(self.key)  # no longer live: the tower's last laps are final now
 
     def build(self) -> None:
@@ -201,7 +256,14 @@ class LiveSession:
             "live.json": {"total_laps": _total_laps(session)},
         }
         with contextlib.suppress(fastf1.exceptions.DataNotLoadedError):  # no laps yet
-            files["session_laptimes.json"] = convert.lap_columns(session, self.origin)
+            laps = files["session_laptimes.json"] = convert.lap_columns(session, self.origin)
+            self.laps = [
+                (driver, lap, start, end)
+                for driver, lap, start, end in zip(
+                    laps["drv"], laps["lap"], laps["lST"], laps["sesT"], strict=True
+                )
+                if driver and lap is not None and start is not None and end is not None
+            ]
         for name, make in (
             ("rcm.json", convert.race_control_columns),
             ("weather.json", convert.weather_columns),
@@ -213,6 +275,7 @@ class LiveSession:
         for name, value in files.items():
             raw = json.dumps(value, separators=(",", ":"), default=str).encode()
             ti.write_gzip(self.out / f"{name}.gz", raw)
+        self.write_telemetry()
         self.version = generations.bump(self.key)
         self.error = None
         if not self.outline_tried:

@@ -1,4 +1,4 @@
-.PHONY: install dev api web test lint check gen-api
+.PHONY: install dev api web test lint check gen-api live
 
 install:
 	cd backend && uv sync
@@ -23,6 +23,10 @@ lint:
 
 check: lint test
 	cd frontend && npm run typecheck && npm run build
+
+# Records the live timing feed of the session that is on (F1 TV sign-in, see app/live/record.py).
+live:
+	cd backend && uv run python -m app.live.record
 
 gen-api:
 	cd frontend && npm run gen:api

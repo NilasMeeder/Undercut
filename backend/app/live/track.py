@@ -7,11 +7,13 @@ NumberOfLaps, by the time it was sent) + where the car is along the circuit outl
 """
 
 import math
+from array import array
 from bisect import bisect_right
 from dataclasses import dataclass, field
 
 import numpy as np
 
+from app.live.telemetry import Samples
 from app.replay import MAX_SAMPLE_GAP, TRACK_STEP, Track
 
 LAG = 1.0
@@ -49,17 +51,20 @@ class Outline:
         return np.mod(d, self.length) / self.length
 
 
+def _singles() -> array:
+    return array("f")
+
+
 @dataclass
 class _Car:
-    t: list[float] = field(default_factory=list)
-    x: list[float] = field(default_factory=list)
-    y: list[float] = field(default_factory=list)
-    on: list[bool] = field(default_factory=list)
+    raw: Samples = field(default_factory=Samples)
+    """Positions as sent: x, y, z (also the telemetry's, see telemetry.py)."""
+    on: array = field(default_factory=lambda: array("b"))
     laps_t: list[float] = field(default_factory=list)
     laps_n: list[int] = field(default_factory=list)
-    grid_x: list[float] = field(default_factory=list)
-    grid_y: list[float] = field(default_factory=list)
-    grid_p: list[float] = field(default_factory=list)
+    grid_x: array = field(default_factory=_singles)
+    grid_y: array = field(default_factory=_singles)
+    grid_p: array = field(default_factory=_singles)
 
 
 class LiveTrack:
@@ -70,13 +75,13 @@ class LiveTrack:
         self.newest = -math.inf
         self.cars: dict[str, _Car] = {}
 
-    def add_position(self, t: float, car: str, x: float, y: float, on_track: bool) -> None:
+    def add_position(
+        self, t: float, car: str, x: float, y: float, z: float, on_track: bool
+    ) -> None:
         own = self.cars.setdefault(car, _Car())
-        if own.t and t <= own.t[-1]:
+        if own.raw.t and t <= own.raw.t[-1]:
             return  # duplicate or out of order
-        own.t.append(t)
-        own.x.append(x)
-        own.y.append(y)
+        own.raw.add(t, {"x": x, "y": y, "z": z})
         own.on.append(on_track)
         self.newest = max(self.newest, t)
         if self.start is None:
@@ -103,13 +108,10 @@ class LiveTrack:
             x, y, progress = self._resample(own, grid, outline)
             # Cars that showed up later are padded so every car has `count` points.
             missing = first - len(own.grid_x)
-            if missing > 0:
-                own.grid_x += [math.nan] * missing
-                own.grid_y += [math.nan] * missing
-                own.grid_p += [math.nan] * missing
-            own.grid_x += x.tolist()
-            own.grid_y += y.tolist()
-            own.grid_p += progress.tolist()
+            for column, values in ((own.grid_x, x), (own.grid_y, y), (own.grid_p, progress)):
+                if missing > 0:
+                    column.extend([math.nan] * missing)
+                column.extend(values.astype(np.float32))
         self.count = until
         return first
 
@@ -117,12 +119,13 @@ class LiveTrack:
         self, own: _Car, grid: np.ndarray, outline: Outline | None
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         empty = np.full(len(grid), np.nan)
-        if len(own.t) < 2:
+        if len(own.raw.t) < 2:
             return empty, empty.copy(), empty.copy()
         # Only the samples around the new stretch of grid.
-        lo = max(bisect_right(own.t, grid[0] - MAX_SAMPLE_GAP) - 1, 0)
-        t = np.asarray(own.t[lo:])
-        on = np.asarray(own.on[lo:])
+        all_t = np.frombuffer(own.raw.t, dtype=float)
+        lo = max(int(np.searchsorted(all_t, grid[0] - MAX_SAMPLE_GAP, side="right")) - 1, 0)
+        t = all_t[lo:]
+        on = np.frombuffer(own.on, dtype=np.int8)[lo:].astype(bool)
         j = np.searchsorted(t, grid, side="right") - 1
         inside = (j >= 0) & (j < len(t) - 1)
         j = np.clip(j, 0, max(len(t) - 2, 0))
@@ -131,8 +134,8 @@ class LiveTrack:
         f = np.divide(grid - t0, span, out=np.zeros_like(grid), where=span > 0)
         valid = inside & (span <= MAX_SAMPLE_GAP) & on[j]
         out = []
-        for values in (own.x, own.y):
-            v = np.asarray(values[lo:])
+        for name in ("x", "y"):
+            v = np.frombuffer(own.raw.values[name], dtype=float)[lo:]
             nxt = v[np.minimum(j + 1, len(v) - 1)]
             res = v[j] + f * (nxt - v[j])
             res[~valid] = np.nan
@@ -164,10 +167,13 @@ class LiveTrack:
             code = codes.get(number)
             if code is None:
                 continue
-            pad = max(self.count - len(own.grid_x), 0)
-            xs = (own.grid_x + [math.nan] * pad)[first : self.count]
-            ys = (own.grid_y + [math.nan] * pad)[first : self.count]
-            ps = (own.grid_p + [math.nan] * pad)[first : self.count]
+            size = self.count - first
+
+            def part(column: array, size: int = size) -> list[float]:
+                values = column[first : self.count].tolist()
+                return values + [math.nan] * (size - len(values))
+
+            xs, ys, ps = part(own.grid_x), part(own.grid_y), part(own.grid_p)
             cars.append(
                 {
                     "driver": code,

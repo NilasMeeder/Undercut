@@ -26,6 +26,10 @@ volgende fase voordat de vorige echt werkt.
   degradatie-fits, per lap of bandleeftijd), Pit window (pit nu → rejoin, undercut/overcut met zinnen),
   pitverlies-ghosts (PIT en SC) op de kaart en de Track line, preset "Strategy". Getest in headless
   Chrome op Monza 2025 R, Q en (API) FP2.
+- Fase 7 gebouwd (2026-10-18): live via een opname van de F1-feed (recorder met F1 TV-login), elke
+  3 s omgezet met FastF1's parsers naar de archiefvorm, posities en telemetrie per lap, SSE naar de
+  frontend, klok volgt live met vertraging, LIVE-knop. Getest met de simulator (Monza 2025 R en Q als
+  feed); de echte test is de eerste sessie met de F1 TV-login (Austin FP1, vr 23 okt 17:30 UTC).
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
@@ -187,9 +191,24 @@ de klok; fits en pit window per leiderslap.
 
 ## Fase 7 — Live
 
-- [ ] F1 TV-token koppelen (zie backlog voor de voorwaarden)
-- [ ] FastF1 live client → backend → websocket → dezelfde sessieklok als replay
-- [ ] Opnemen tijdens live, zodat de sessie daarna als replay beschikbaar is
+Ontwerp: zie CLAUDE.md "Live". Live is een archief dat groeit: de opname wordt telkens omgezet naar de
+bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
+
+- [x] F1 TV-token: via FastF1's eigen login (`fastf1 auth f1tv`), alleen naar livetiming.formula1.com
+- [x] Recorder (`make live`): de sessie van nu, opnieuw verbinden, toevoegen aan dezelfde opname
+- [x] Omzetten met FastF1's parsers (~1 s per race) naar laps, drivers, race control, weer; generaties
+      per sessie zodat caches verlopen
+- [x] Posities live (4 Hz, lap-voortgang via projectie op de baan) en telemetrie per afgeronde lap
+- [x] SSE (in plaats van websocket) → dezelfde sessieklok: live-rand, volgen met vertraging, LIVE-knop,
+      queries verversen per versie, posities aanplakken
+- [x] Opnemen = replay: na afloop een laatste omzetting, telemetrie en positiespoor op disk
+- [x] Simulator: archiefsessie → feed in tempo, voor testen zonder live sessie
+- [ ] Echte test met de F1 TV-login (Austin FP1): opnemen, live volgen, en kijken wat de echte feed
+      anders doet dan de simulator (garage/OffTrack, gele vlaggen, Q-delen, rode vlag)
+- [ ] Recorder starten vanuit de topbalk (nu `make live` in een terminal)
+- [ ] Late start: een opname die halverwege begint mist laps (FastF1 telt NumberOfLaps per stap);
+      eventueel de eerste toestand als startpunt van de lap-telling gebruiken
+- [ ] Tower live direct uit TimingData (gaps/intervallen van F1 zelf), nu uit de laps (tot 3 s later)
 
 ## Later / backlog
 
@@ -202,6 +221,10 @@ de klok; fits en pit window per leiderslap.
       - het is alleen nodig voor sessies die nog niet in TracingInsights staan
 
 ## Ideeën (later, misschien)
+
+- **Automatische analyses** (Nilas, 2026-10-18): na (of tijdens) een sessie zelf analyses laten
+  draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten
+  (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag
 
 - Remwegen en corner-fases automatisch detecteren uit speed/throttle/brake (braking point, apex, exit)
 - Energie-inzet in 2026 inschatten uit speed-traces op straights (er is geen officieel kanaal)
