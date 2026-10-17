@@ -22,6 +22,13 @@ dashboard-tabs met presets. Volgende stap: fase 4 (replay), zie ROADMAP.md.
 `playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
 `localStorage['f1dash-selection'] = {"state":{"year":2025,"round":16,"session":"Q"},"version":0}`.
 Monza 2025 Q is de vaste testsessie: VER 1:18.792, NOR +0.077, LEC +0.215.
+Valkuilen bij het headless testen:
+- `useDefaultSelection` zet bij een lege selectie al VER + NOR in de blauwe groep; klik ze dus niet aan
+  (dan zet je ze weer uit). Wacht op een `canvas`.
+- Widgets toevoegen via het +-menu: match de titel exact (`getByText(title, { exact: true })`).
+  `hasText` matcht ook beschrijvingen ("Corners" zit in de beschrijving van Track map).
+- `getByRole('tab')` vindt ook de dockview-tabs; de dashboard-tabs zitten in `[aria-label=Dashboards]`.
+- Popout: `ctx.waitForEvent('page')` rond de klik op "Open in a separate window".
 
 ## Architectuur
 
@@ -139,6 +146,10 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
 - **Gebruik `pick_drivers()`**, niet het deprecated `pick_driver()`. `pick_fastest()` voor snelste lap.
 - **Ongeldige laps**: let op `Deleted`, `IsAccurate`, pit in/out laps (`PitInTime`/`PitOutTime`) en
   `TrackStatus` (SC/VSC/rood). Filter die standaard uit bij pace-analyse, maar laat ze wel zien in tabellen.
+- **Tijdassen**: laps (`Lap.start_time` = `lST`), weer (`wT`) en telemetrie gebruiken sessietijd in
+  seconden; race control heeft UTC. Elke lap in `session_laptimes.json` heeft ook `lSD` (UTC-datum van de
+  lapstart), en `lSD − lST` is per sessie exact constant (getest op Monza Q en R): dat is t0 (UTC).
+  Sessietijd van een telemetrie-sample = `lST` van de lap + `tel.time`.
 - **Timedelta/NaT**: FastF1 gebruikt pandas `Timedelta`. Converteer in de backend naar seconden
   (`float`, ms-precisie) en NaT naar `null`. Nooit timedelta-strings naar de frontend sturen.
 - **Corner-segmenten** (`analysis.corner_segments`): grens op de topsnelheid van de referentie tussen

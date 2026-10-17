@@ -124,8 +124,9 @@ alle panelen meeloopt.
 
 ## Fase 4 — Replay
 
-- [ ] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets. Let op: race
-      control heeft UTC-tijden, laps en weer sessietijd (s); die moeten eerst op één as
+- [ ] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets, op sessietijd (s).
+      Race control (UTC) omrekenen met t0 = `lSD − lST` uit `session_laptimes.json` (zie CLAUDE.md
+      "Tijdassen")
 - [ ] Backend: toestand op tijd t (posities, gaps, laatste laps, tyres, track status)
 - [ ] **Timing tower** op tijd t (gap, interval, sectoren, laatste lap, banden)
 - [ ] Track map met alle auto's; **Track Line** (de baan als rechte lijn met auto's erop)
