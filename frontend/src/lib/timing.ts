@@ -69,6 +69,21 @@ export function bestLaps(laps: Lap[]): Lap[] {
   return [...best.values()].sort((a, b) => a.lap_time! - b.lap_time!);
 }
 
+/** A timed lap this much slower than the driver's best is a cool-down lap, not an attempt. */
+export const COOL_DOWN = 1.07;
+
+/** Laps that were a real attempt: timed, not a pit lap, within COOL_DOWN of the driver's best. */
+export function attempts(laps: Lap[]): Lap[] {
+  const best = new Map(bestLaps(laps).map((l) => [l.driver, l.lap_time!]));
+  return laps.filter(
+    (l) =>
+      l.lap_time != null &&
+      !l.pit_in &&
+      !l.pit_out &&
+      l.lap_time <= (best.get(l.driver) ?? Infinity) * COOL_DOWN
+  );
+}
+
 export type LapStyle = { color: string; dash: number[] | undefined; label: string };
 
 /**

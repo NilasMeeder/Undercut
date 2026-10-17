@@ -103,6 +103,13 @@ export function UPlotChart({
       hooks: {
         setCursor: [
           (u) => {
+            if (cursorBus.isFrozen(group)) {
+              // Keep this chart's crosshair on the frozen position while the mouse moves.
+              const frozenAt = cursorBus.getCursor(group);
+              if (frozenAt != null)
+                u.setCursor({ left: u.valToPos(frozenAt, 'x'), top: 10 }, false);
+              return;
+            }
             const left = u.cursor.left;
             const distance = left == null || left < 0 ? null : u.posToVal(left, 'x');
             cursorBus.setCursor(group, distance, id);
@@ -127,7 +134,7 @@ export function UPlotChart({
     chart.over.addEventListener('dblclick', onDoubleClick);
 
     const unsubscribeCursor = cursorBus.subscribeCursor(group, (source) => {
-      if (source === id) return;
+      if (source === id && !cursorBus.isFrozen(group)) return;
       const distance = cursorBus.getCursor(group);
       const left = distance == null ? -10 : chart.valToPos(distance, 'x');
       chart.setCursor({ left, top: 10 }, false);

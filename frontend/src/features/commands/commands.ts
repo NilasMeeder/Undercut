@@ -1,0 +1,135 @@
+import type { DockviewApi } from 'dockview-react';
+import type { Lap } from '@/api/client';
+import { addWidget, applyQualiDuel } from '@/dashboard/layout';
+import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
+import { bestLaps } from '@/lib/timing';
+import { cursorBus } from '@/store/cursor';
+import { useGroups, type GroupId, type LapRef } from '@/store/groups';
+import { WIDGETS } from '@/widgets/registry';
+
+export type Command = {
+  id: string;
+  section: string;
+  title: string;
+  /** Single-key shortcut, as typed (shown in the palette). */
+  key?: string;
+  run: () => void;
+};
+
+export type CommandContext = {
+  api: DockviewApi | null;
+  group: GroupId;
+  laps: Lap[];
+};
+
+/** Every command, for the palette and the shortcuts. Lap commands act on the last selected lap. */
+export function buildCommands({ api, group, laps }: CommandContext): Command[] {
+  const groups = useGroups.getState;
+  const selected = () => groups().laps[group];
+  const last = () => selected().at(-1);
+  const swap = (to: LapRef | null) => {
+    const from = last();
+    if (from && to) groups().replaceLap(group, from, to);
+  };
+
+  const commands: Command[] = [
+    {
+      id: 'lap-prev',
+      section: 'Laps',
+      title: 'Previous attempt of this driver',
+      key: '[',
+      run: () => {
+        const from = last();
+        if (from) swap(stepLap(laps, from, -1));
+      },
+    },
+    {
+      id: 'lap-next',
+      section: 'Laps',
+      title: 'Next attempt of this driver',
+      key: ']',
+      run: () => {
+        const from = last();
+        if (from) swap(stepLap(laps, from, 1));
+      },
+    },
+    {
+      id: 'driver-prev',
+      section: 'Laps',
+      title: 'Driver above in the classification (best lap)',
+      key: ',',
+      run: () => {
+        const from = last();
+        if (from) swap(stepDriver(laps, from, -1));
+      },
+    },
+    {
+      id: 'driver-next',
+      section: 'Laps',
+      title: 'Driver below in the classification (best lap)',
+      key: '.',
+      run: () => {
+        const from = last();
+        if (from) swap(stepDriver(laps, from, 1));
+      },
+    },
+    {
+      id: 'overlay-earlier',
+      section: 'Laps',
+      title: 'Overlay an earlier attempt of this driver',
+      key: 'o',
+      run: () => {
+        const from = last();
+        const lap = from && earlierLap(laps, selected(), from.driver);
+        if (lap) groups().toggleLap(group, lap);
+      },
+    },
+    {
+      id: 'clear',
+      section: 'Laps',
+      title: 'Clear the laps of this group',
+      run: () => groups().setLaps(group, []),
+    },
+    {
+      id: 'freeze',
+      section: 'View',
+      title: 'Freeze or release the cursor',
+      key: 'f',
+      run: () => cursorBus.toggleFrozen(group),
+    },
+    {
+      id: 'reset-zoom',
+      section: 'View',
+      title: 'Reset zoom',
+      key: 'z',
+      run: () => cursorBus.setZoom(group, null),
+    },
+    ...bestLaps(laps).map((lap) => ({
+      id: `compare-${lap.driver}`,
+      section: 'Compare',
+      title: `Compare ${lap.driver} best lap (L${lap.lap})`,
+      run: () => groups().toggleLap(group, { driver: lap.driver, lap: lap.lap }),
+    })),
+  ];
+
+  if (api) {
+    commands.push(
+      ...WIDGETS.map((w) => ({
+        id: `add-${w.id}`,
+        section: 'Panels',
+        title: `Add ${w.title}`,
+        run: () => {
+          const active = api.activePanel?.group;
+          addWidget(api, w.id, group, active ? { referenceGroup: active } : undefined);
+        },
+      })),
+      {
+        id: 'preset-quali-duel',
+        section: 'Layout',
+        title: 'Quali duel layout',
+        run: () => applyQualiDuel(api),
+      }
+    );
+  }
+  return commands;
+}

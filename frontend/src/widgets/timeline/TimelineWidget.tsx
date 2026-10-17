@@ -3,7 +3,7 @@ import type { DriverInfo, Lap } from '@/api/client';
 import { useLaps, useSessionDetail } from '@/api/queries';
 import { PanelMessage } from '@/components/data/bits';
 import { formatLapTime } from '@/lib/format';
-import { bestLaps, classify, computeBests, countsForBests } from '@/lib/timing';
+import { bestLaps, classify, computeBests, COOL_DOWN, countsForBests } from '@/lib/timing';
 import { cn } from '@/lib/utils';
 import { GROUP_COLORS, useLapSelection } from '@/store/groups';
 import type { WidgetProps } from '../types';
@@ -21,9 +21,6 @@ const BOX: Record<Kind, string> = {
   deleted: 'text-faint line-through',
   none: 'text-faint',
 };
-
-/** A timed lap this much slower than the driver's best is a cool-down lap, not an attempt. */
-const COOL_DOWN = 1.07;
 
 function driverBests(laps: Lap[]): Map<string, number> {
   return new Map(bestLaps(laps).map((l) => [l.driver, l.lap_time!]));

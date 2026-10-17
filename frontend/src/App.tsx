@@ -2,6 +2,7 @@ import { LayoutGrid } from 'lucide-react';
 import { applyQualiDuel } from '@/dashboard/layout';
 import { useDashboardApi } from '@/dashboard/api';
 import { Dashboard } from '@/dashboard/Dashboard';
+import { CommandPalette } from '@/features/commands/CommandPalette';
 import { GroupBar } from '@/features/session/GroupBar';
 import { SessionPicker } from '@/features/session/SessionPicker';
 import { useDefaultSelection } from '@/features/session/useDefaultSelection';
@@ -18,12 +19,14 @@ export default function App() {
         <span className="text-[11px] font-semibold tracking-[0.15em] text-dim">PITWALL</span>
         <SessionPicker />
         <GroupBar />
+        <div className="ml-auto" />
+        {session ? <CommandPalette /> : null}
         <button
           type="button"
           title="Reset to the Quali duel layout"
           disabled={!api}
           onClick={() => api && applyQualiDuel(api)}
-          className="ml-auto flex h-6 items-center gap-1 px-1.5 text-[11px] text-faint hover:bg-raised hover:text-text"
+          className="flex h-6 items-center gap-1 px-1.5 text-[11px] text-faint hover:bg-raised hover:text-text"
         >
           <LayoutGrid className="h-3.5 w-3.5" />
           Quali duel

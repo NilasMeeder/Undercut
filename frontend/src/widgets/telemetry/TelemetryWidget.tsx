@@ -5,7 +5,7 @@ import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
 import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
 import type { LapStyle } from '@/lib/timing';
-import { useCursor } from '@/store/cursor';
+import { useCursor, useFrozen } from '@/store/cursor';
 import type { GroupId } from '@/store/groups';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
@@ -163,6 +163,7 @@ function Readout({
   channels: Channel[];
 }) {
   const cursor = useCursor(group);
+  const frozen = useFrozen(group);
   const i = cursor == null ? null : indexAt(distance, cursor);
   const cell = 'w-16 px-1.5 text-right';
   return (
@@ -171,6 +172,11 @@ function Readout({
         <tr>
           <th className="w-32 px-1.5 text-left font-medium">
             {i == null ? 'Hover a chart' : `${Math.round(distance[i])} m`}
+            {i != null && frozen ? (
+              <span className="ml-1.5 text-text" title="Press f to release">
+                FROZEN
+              </span>
+            ) : null}
           </th>
           <th className={`${cell} font-medium`}>Δ</th>
           {channels.map((c) => (

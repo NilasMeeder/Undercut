@@ -32,6 +32,8 @@ type GroupsState = {
   laps: Record<GroupId, LapRef[]>;
   toggleLap: (group: GroupId, lap: LapRef) => void;
   setLaps: (group: GroupId, laps: LapRef[]) => void;
+  /** Swap one lap for another in place (keeps the reference first). */
+  replaceLap: (group: GroupId, from: LapRef, to: LapRef) => void;
   reset: () => void;
 };
 
@@ -51,6 +53,15 @@ export const useGroups = create<GroupsState>()(
         }),
       setLaps: (group, laps) =>
         set((state) => ({ laps: { ...state.laps, [group]: laps.slice(0, MAX_LAPS_PER_GROUP) } })),
+      replaceLap: (group, from, to) =>
+        set((state) => {
+          const current = state.laps[group];
+          // Replacing with a lap that is already selected would duplicate it: drop the old one.
+          const next = current.some((l) => sameLap(l, to))
+            ? current.filter((l) => !sameLap(l, from))
+            : current.map((l) => (sameLap(l, from) ? to : l));
+          return { laps: { ...state.laps, [group]: next } };
+        }),
       reset: () => set({ laps: empty() }),
     }),
     { name: 'f1dash-groups' }
