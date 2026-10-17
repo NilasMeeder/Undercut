@@ -244,6 +244,126 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/race-control": {
+      "get": {
+        "summary": "Session Race Control",
+        "operationId": "session_race_control_api_sessions__year___round___session__race_control_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RaceControlMessage"
+                  },
+                  "title": "Response Session Race Control Api Sessions  Year   Round   Session  Race Control Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/weather": {
+      "get": {
+        "summary": "Session Weather",
+        "operationId": "session_weather_api_sessions__year___round___session__weather_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Weather"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/telemetry": {
       "get": {
         "summary": "Lap Telemetry",
@@ -1129,6 +1249,81 @@
         "required": ["boundaries", "times", "fastest"],
         "title": "MiniSectors"
       },
+      "RaceControlMessage": {
+        "properties": {
+          "utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Utc"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          },
+          "sector": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          },
+          "lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap"
+          }
+        },
+        "type": "object",
+        "required": ["utc", "category", "message", "flag", "scope", "sector", "driver", "lap"],
+        "title": "RaceControlMessage"
+      },
       "SeasonEvents": {
         "properties": {
           "year": {
@@ -1355,6 +1550,79 @@
         "type": "object",
         "required": ["loc", "msg", "type"],
         "title": "ValidationError"
+      },
+      "Weather": {
+        "properties": {
+          "time": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Time"
+          },
+          "air_temp": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Air Temp"
+          },
+          "track_temp": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Track Temp"
+          },
+          "humidity": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Humidity"
+          },
+          "pressure": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Pressure"
+          },
+          "rainfall": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Rainfall"
+          },
+          "wind_speed": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Wind Speed"
+          },
+          "wind_direction": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Wind Direction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "air_temp",
+          "track_temp",
+          "humidity",
+          "pressure",
+          "rainfall",
+          "wind_speed",
+          "wind_direction"
+        ],
+        "title": "Weather",
+        "description": "Columnar, about one sample per minute."
       }
     }
   }

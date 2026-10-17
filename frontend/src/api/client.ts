@@ -13,6 +13,8 @@ export type ComparedLap = Schemas['ComparedLap'];
 export type Circuit = Schemas['Circuit'];
 export type CornerSegment = Schemas['CornerSegment'];
 export type CornerLap = Schemas['CornerLap'];
+export type RaceControlMessage = Schemas['RaceControlMessage'];
+export type Weather = Schemas['Weather'];
 
 export class ApiError extends Error {
   readonly status: number;

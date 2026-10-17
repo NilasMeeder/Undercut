@@ -3,13 +3,23 @@
 Everything is memoised in-process; the source layer caches raw files on disk.
 """
 
+import re
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 
 import numpy as np
 
 from app import analysis, schedule
-from app.schemas import Circuit, Corner, DriverInfo, Lap, SessionDetail
+from app.schemas import (
+    Circuit,
+    Corner,
+    DriverInfo,
+    Lap,
+    RaceControlMessage,
+    SessionDetail,
+    Weather,
+)
 from app.sources import tracinginsights as ti
 
 FASTEST = "fastest"
@@ -198,4 +208,62 @@ def get_circuit(year: int, round_number: int, code: str) -> Circuit:
         pit_loss=data.get("PitLossNormal"),
         pit_loss_sc=data.get("PitLossSC"),
         pit_loss_vsc=data.get("PitLossVSC"),
+    )
+
+
+def _optional_int(value: Any) -> int | None:
+    try:
+        return None if value is None else int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+_CAR_IN_MESSAGE = re.compile(r"\bCAR \d+ \(([A-Z]{3})\)")
+"""'CAR 55 (SAI) TIME 1:20.470 DELETED …': the archive leaves dNum empty for these."""
+
+
+def _utc(value: str) -> datetime:
+    """'2025-09-06T14:04:17.000000000' (nanoseconds, no zone) -> aware UTC datetime."""
+    return datetime.fromisoformat(value[:26]).replace(tzinfo=UTC)
+
+
+@lru_cache(maxsize=16)
+def get_race_control(year: int, round_number: int, code: str) -> list[RaceControlMessage]:
+    event, session = _folders(year, round_number, code)
+    cols = ti.race_control(year, event, session)
+    by_number = {d.number: d.code for d in get_detail(year, round_number, code).drivers}
+    messages = []
+    for i in range(len(cols.get("msg", []))):
+        number = _optional_int(cols["dNum"][i])
+        driver = by_number.get(str(number)) if number is not None else None
+        if driver is None and (match := _CAR_IN_MESSAGE.search(cols["msg"][i] or "")):
+            driver = match.group(1)
+        messages.append(
+            RaceControlMessage(
+                utc=_utc(cols["time"][i]),
+                category=cols["cat"][i] or "Other",
+                message=cols["msg"][i] or "",
+                flag=cols["flag"][i],
+                scope=cols["scope"][i],
+                sector=_optional_int(cols["sector"][i]),
+                driver=driver,
+                lap=_optional_int(cols["lap"][i]),
+            )
+        )
+    return messages
+
+
+@lru_cache(maxsize=16)
+def get_weather(year: int, round_number: int, code: str) -> Weather:
+    event, session = _folders(year, round_number, code)
+    cols = ti.weather(year, event, session)
+    return Weather(
+        time=cols["wT"],
+        air_temp=cols["wAT"],
+        track_temp=cols["wTT"],
+        humidity=cols["wH"],
+        pressure=cols["wP"],
+        rainfall=[_as_bool(v) for v in cols["wR"]],
+        wind_speed=cols["wWS"],
+        wind_direction=[int(v) for v in cols["wWD"]],
     )

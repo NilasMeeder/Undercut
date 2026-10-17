@@ -12,6 +12,17 @@ export const COLORS = {
   pit: '#ff5252',
 } as const;
 
+/** Track flags keep their real-world colours; anything else (chequered, clear) stays neutral. */
+export const FLAG_COLORS: Record<string, string> = {
+  GREEN: COLORS.pb,
+  CLEAR: COLORS.pb,
+  YELLOW: COLORS.slow,
+  'DOUBLE YELLOW': COLORS.slow,
+  RED: COLORS.pit,
+  BLUE: '#3f8cff',
+  CHEQUERED: COLORS.text,
+};
+
 export const TYRE_COLORS: Record<string, string> = {
   SOFT: '#ff4040',
   MEDIUM: '#ffd23a',

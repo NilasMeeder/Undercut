@@ -83,6 +83,40 @@ class Lap(BaseModel):
     """Session time (s) at the start of the lap."""
 
 
+class RaceControlMessage(BaseModel):
+    utc: datetime
+    category: str
+    """Flag, Other, CarEvent, Drs, SafetyCar, …"""
+    message: str
+    flag: str | None
+    """GREEN, YELLOW, DOUBLE YELLOW, RED, BLUE, CHEQUERED, CLEAR, …"""
+    scope: str | None
+    """Track, Sector or Driver."""
+    sector: int | None
+    driver: str | None
+    """Driver code when the message is about one car."""
+    lap: int | None
+
+
+class Weather(BaseModel):
+    """Columnar, about one sample per minute."""
+
+    time: list[float]
+    """Session time (s), the same clock as Lap.start_time."""
+    air_temp: list[float]
+    track_temp: list[float]
+    """°C."""
+    humidity: list[float]
+    """%."""
+    pressure: list[float]
+    """hPa (mbar)."""
+    rainfall: list[bool]
+    wind_speed: list[float]
+    """m/s."""
+    wind_direction: list[int]
+    """Degrees, 0 = north."""
+
+
 class Telemetry(BaseModel):
     """One lap, columnar, at the source sample rate (~4 Hz car data merged with position)."""
 

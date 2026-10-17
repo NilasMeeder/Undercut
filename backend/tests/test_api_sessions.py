@@ -75,9 +75,40 @@ ARCHIVE = {
             },
         ]
     },
+    "rcm.json": {
+        "time": ["2025-03-16T05:00:00.000000000", "2025-03-16T05:04:17.123456789"],
+        "cat": ["Flag", "Other"],
+        "msg": ["GREEN LIGHT - PIT EXIT OPEN", "CAR 4 (NOR) TIME 1:00.900 DELETED - TRACK LIMITS"],
+        "status": ["None", "None"],
+        "flag": ["GREEN", "None"],
+        "scope": ["Track", "None"],
+        "sector": ["None", "None"],
+        "dNum": ["None", "None"],
+        "lap": ["None", 3.0],
+    },
+    "weather.json": {
+        "wT": [30.0, 90.0],
+        "wAT": [20.1, 20.3],
+        "wTT": [35.0, 36.5],
+        "wH": [50.0, 51.0],
+        "wP": [1010.0, 1010.1],
+        "wR": [False, "True"],
+        "wWD": [180, 190.0],
+        "wWS": [1.2, 2.0],
+    },
     "VER/2_tel.json": tel(60.0),
     "NOR/1_tel.json": tel(60.5, length=1004.0),
 }
+
+
+CACHES = (
+    sessions._folders,
+    sessions.get_detail,
+    sessions.get_laps,
+    sessions.get_trace,
+    sessions.get_race_control,
+    sessions.get_weather,
+)
 
 
 @pytest.fixture
@@ -89,10 +120,10 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
 
     monkeypatch.setattr(ti, "fetch_json", fake_fetch)
     monkeypatch.setattr(schedule, "resolve_session", lambda y, r, c: (EVENT, EVENT.sessions[0]))
-    for cached in (sessions._folders, sessions.get_detail, sessions.get_laps, sessions.get_trace):
+    for cached in CACHES:
         cached.cache_clear()
     yield TestClient(app)
-    for cached in (sessions._folders, sessions.get_detail, sessions.get_laps, sessions.get_trace):
+    for cached in CACHES:
         cached.cache_clear()
 
 
@@ -134,3 +165,20 @@ def test_missing_lap_is_404(client: TestClient) -> None:
 
 def test_bad_lap_spec_is_422(client: TestClient) -> None:
     assert client.get("/api/sessions/2025/1/Q/compare?laps=XX:1").status_code == 422
+
+
+def test_race_control_parses_time_and_driver(client: TestClient) -> None:
+    green, deleted = client.get("/api/sessions/2025/1/Q/race-control").json()
+    assert green["utc"] == "2025-03-16T05:00:00Z"
+    assert green["flag"] == "GREEN" and green["driver"] is None
+    assert deleted["driver"] == "NOR"  # from the message text, dNum is empty
+    assert deleted["flag"] is None
+    assert deleted["lap"] == 3
+
+
+def test_weather_is_columnar(client: TestClient) -> None:
+    body = client.get("/api/sessions/2025/1/Q/weather").json()
+    assert body["time"] == [30.0, 90.0]
+    assert body["track_temp"] == [35.0, 36.5]
+    assert body["rainfall"] == [False, True]
+    assert body["wind_direction"] == [180, 190]

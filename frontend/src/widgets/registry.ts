@@ -2,10 +2,12 @@ import { bestsWidget } from './bests/widget';
 import { cornersWidget } from './corners/widget';
 import { deltaWidget } from './delta/widget';
 import { lapsWidget } from './laps/widget';
+import { raceControlWidget } from './racecontrol/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
 import { telemetryWidget } from './telemetry/widget';
 import { timelineWidget } from './timeline/widget';
 import { trackMapWidget } from './trackmap/widget';
+import { weatherWidget } from './weather/widget';
 import type { AnyWidgetDef } from './types';
 
 /**
@@ -21,6 +23,8 @@ export const WIDGETS: AnyWidgetDef[] = [
   speedTrapsWidget,
   timelineWidget,
   cornersWidget,
+  raceControlWidget,
+  weatherWidget,
 ];
 
 export const WIDGETS_BY_ID = new Map(WIDGETS.map((w) => [w.id, w]));

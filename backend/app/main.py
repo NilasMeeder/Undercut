@@ -16,10 +16,12 @@ from app.schemas import (
     CornerSegment,
     Lap,
     MiniSectors,
+    RaceControlMessage,
     SeasonEvents,
     SessionCode,
     SessionDetail,
     Telemetry,
+    Weather,
 )
 from app.sources.tracinginsights import SourceNotAvailable
 
@@ -91,6 +93,16 @@ def session_laps(year: int, round: int, session: SessionCode) -> list[Lap]:
 @app.get("/api/sessions/{year}/{round}/{session}/circuit")
 def session_circuit(year: int, round: int, session: SessionCode) -> Circuit:
     return _guard(lambda: sessions.get_circuit(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/race-control")
+def session_race_control(year: int, round: int, session: SessionCode) -> list[RaceControlMessage]:
+    return _guard(lambda: sessions.get_race_control(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/weather")
+def session_weather(year: int, round: int, session: SessionCode) -> Weather:
+    return _guard(lambda: sessions.get_weather(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/telemetry")

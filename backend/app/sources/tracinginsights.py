@@ -92,3 +92,18 @@ def corners(year: int, event: str, session: str) -> dict[str, Any]:
 def lap_telemetry(year: int, event: str, session: str, driver: str, lap: int) -> dict[str, list]:
     data = fetch_json(year, event, session, f"{driver}/{lap}_tel.json")
     return data["tel"]
+
+
+def _columns(year: int, event: str, session: str, file: str) -> dict[str, list[Any]]:
+    data = fetch_json(year, event, session, file)
+    return {key: [clean(v) for v in values] for key, values in data.items()}
+
+
+def race_control(year: int, event: str, session: str) -> dict[str, list[Any]]:
+    """Columns time (UTC, ISO), cat, msg, status, flag, scope, sector, dNum, lap."""
+    return _columns(year, event, session, "rcm.json")
+
+
+def weather(year: int, event: str, session: str) -> dict[str, list[Any]]:
+    """Columns wT (session time, s), wAT/wTT (air/track °C), wH, wP, wR, wWD, wWS."""
+    return _columns(year, event, session, "weather.json")

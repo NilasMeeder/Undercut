@@ -89,6 +89,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/sessions/{year}/{round}/{session}/race-control': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Session Race Control */
+    get: operations['session_race_control_api_sessions__year___round___session__race_control_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/sessions/{year}/{round}/{session}/weather': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Session Weather */
+    get: operations['session_weather_api_sessions__year___round___session__weather_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/sessions/{year}/{round}/{session}/telemetry': {
     parameters: {
       query?: never;
@@ -335,6 +369,28 @@ export interface components {
       /** Fastest */
       fastest: number[];
     };
+    /** RaceControlMessage */
+    RaceControlMessage: {
+      /**
+       * Utc
+       * Format: date-time
+       */
+      utc: string;
+      /** Category */
+      category: string;
+      /** Message */
+      message: string;
+      /** Flag */
+      flag: string | null;
+      /** Scope */
+      scope: string | null;
+      /** Sector */
+      sector: number | null;
+      /** Driver */
+      driver: string | null;
+      /** Lap */
+      lap: number | null;
+    };
     /** SeasonEvents */
     SeasonEvents: {
       /** Year */
@@ -416,6 +472,28 @@ export interface components {
       input?: unknown;
       /** Context */
       ctx?: Record<string, never>;
+    };
+    /**
+     * Weather
+     * @description Columnar, about one sample per minute.
+     */
+    Weather: {
+      /** Time */
+      time: number[];
+      /** Air Temp */
+      air_temp: number[];
+      /** Track Temp */
+      track_temp: number[];
+      /** Humidity */
+      humidity: number[];
+      /** Pressure */
+      pressure: number[];
+      /** Rainfall */
+      rainfall: boolean[];
+      /** Wind Speed */
+      wind_speed: number[];
+      /** Wind Direction */
+      wind_direction: number[];
     };
   };
   responses: never;
@@ -565,6 +643,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Circuit'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  session_race_control_api_sessions__year___round___session__race_control_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+        round: number;
+        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RaceControlMessage'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  session_weather_api_sessions__year___round___session__weather_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+        round: number;
+        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Weather'];
         };
       };
       /** @description Validation Error */

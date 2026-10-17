@@ -6,8 +6,10 @@ import {
   type Circuit,
   type Comparison,
   type Lap,
+  type RaceControlMessage,
   type SeasonEvents,
   type SessionDetail,
+  type Weather,
 } from './client';
 
 const HOUR = 60 * 60 * 1000;
@@ -34,6 +36,8 @@ function useSessionQuery<T>(resource: string, enabled = true) {
 export const useSessionDetail = () => useSessionQuery<SessionDetail>('');
 export const useLaps = () => useSessionQuery<Lap[]>('/laps');
 export const useCircuit = () => useSessionQuery<Circuit>('/circuit');
+export const useRaceControl = () => useSessionQuery<RaceControlMessage[]>('/race-control');
+export const useWeather = () => useSessionQuery<Weather>('/weather');
 
 export type CompareOptions = {
   /** Grid spacing in metres. */
