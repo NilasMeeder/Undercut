@@ -10,8 +10,11 @@ volgende fase voordat de vorige echt werkt.
 - Fase 2 af (2026-10-17): docking-dashboard met laptijden, telemetrie, delta en track map, gedeelde
   cursor/zoom per link-groep, instellingen (tandwiel) en uitleg (i) per paneel, popout naar een tweede
   venster. Getest in headless Chrome op Monza 2025 Q.
-- Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit- en compare-endpoints op
-  TracingInsights-data. Nog open: de OpenF1-fallback en de endpoints voor weer, race control en radio.
+- Fase 3 af (2026-10-17): Bests, Speed traps, Run timeline, Corners ("where is the time", met
+  verklarende zinnen), Race control en Weather; ⌘K-palette en sneltoetsen; dashboard-tabs, drie
+  presets en export/import van layouts.
+- Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
+  weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
 ## Visie
 
@@ -69,7 +72,8 @@ Kernbeslissingen:
 - [ ] Laadstatus: minder urgent, want TracingInsights laadt in <1 s per bestand (eerst in de UI zien of het nodig is)
 - [x] Tests voor resampling, delta, mini-sectoren en de API met een nep-archief (27 tests)
 - [ ] OpenF1-fallback voor sessies die (nog) niet in TracingInsights staan
-- [ ] Weer, race control en team radio endpoints (de data staat al in TracingInsights)
+- [x] Weer- en race-control-endpoints
+- [ ] Team radio endpoint (de data staat in TracingInsights)
 
 **Klaar als:** je met curl twee snelste kwalificatielaps kunt vergelijken en de delta klopt met de
 officiële gap (±0,02 s). ✅ Monza 2025 Q: NOR +0,077, LEC +0,215 (exact officieel).
@@ -103,18 +107,25 @@ alle panelen meeloopt.
 
 ## Fase 3 — Analyse-widgets
 
-- [ ] **Bests**: beste S1/S2/S3/lap per driver met % achterstand en **theoretische beste lap**
-- [ ] **Run timeline**: kolom per driver, vakje per lap (paars/groen/geel/in pit/out)
-- [ ] Mini-sector-tabel en "where is the time": bochten met het grootste verschil
-- [ ] Speed traps (I1, I2, finish, trap)
-- [ ] Race control-feed en weer-widget (backend-endpoints toevoegen)
-- [ ] Overlay van eerdere laps van dezelfde driver
-- [ ] Command palette (⌘K) en sneltoetsen (lap vooruit/achteruit, driver wisselen, cursor bevriezen)
-- [ ] Meer presets en meerdere dashboard-tabs; layout export/import als JSON
+- [x] **Bests**: beste S1/S2/S3/lap per driver met % achterstand en **theoretische beste lap**
+- [x] **Run timeline**: kolom per driver, vakje per lap (paars/groen/geel/in pit/out), per Q-segment,
+      kleuren zoals ze op het moment zelf waren, cool-down laps grijs
+- [x] "Where is the time" (widget Corners): per bocht tijd, rempunt, minimumsnelheid, vol gas en
+      topsnelheid t.o.v. de referentie, met zinnen als "NOR loses 0.141 s to VER in T1–2: brakes
+      10 m earlier". Segmenten en metingen in `analysis.corner_segments` (backend, getest)
+- [x] Speed traps (I1, I2, finish, trap)
+- [x] Race control-feed en weer-widget
+- [x] Overlay van eerdere laps van dezelfde driver (sneltoets `o`)
+- [x] Command palette (⌘K) en sneltoetsen: `[` `]` lap, `,` `.` driver, `o` overlay, `f` cursor
+      bevriezen, `z` zoom resetten
+- [x] Presets (Quali duel, Engineer, Session overview), meerdere dashboard-tabs, export/import als JSON
+- [ ] Mini-sector-tabel (per mini-sector de tijden; de track map kleurt ze nu alleen)
+- [ ] Inzichten in de Corners-widget naast de telemetrie tonen (bv. markering in de speed-chart)
 
 ## Fase 4 — Replay
 
-- [ ] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets
+- [ ] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets. Let op: race
+      control heeft UTC-tijden, laps en weer sessietijd (s); die moeten eerst op één as
 - [ ] Backend: toestand op tijd t (posities, gaps, laatste laps, tyres, track status)
 - [ ] **Timing tower** op tijd t (gap, interval, sectoren, laatste lap, banden)
 - [ ] Track map met alle auto's; **Track Line** (de baan als rechte lijn met auto's erop)

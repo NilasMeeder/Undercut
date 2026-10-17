@@ -13,9 +13,10 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0, 1 en 2 zijn af: een docking-dashboard (dockview) met de widgets Laps, Telemetry, Delta en
-Track map, link-groepen, een gedeelde cursor/zoom, en per paneel instellingen (tandwiel) en uitleg (i).
-Volgende stap: fase 3 (analyse-widgets), zie ROADMAP.md.
+Fase 0 t/m 3 zijn af: een docking-dashboard (dockview) met tien widgets (Laps, Telemetry, Delta, Track
+map, Bests, Speed traps, Run timeline, Corners, Race control, Weather), link-groepen, gedeelde
+cursor/zoom, instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, en
+dashboard-tabs met presets. Volgende stap: fase 4 (replay), zie ROADMAP.md.
 
 **Visueel testen:** de Chrome-extensie is vaak niet verbonden. Gebruik dan headless Chrome via
 `playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
@@ -76,15 +77,18 @@ backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mi
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
 frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), schema.d.ts (gegenereerd)
-frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus)
+frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus,
+                           bevriezen), dashboards.ts (tabs met elk een layout)
 frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen),
                            HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
 frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
                            + de component; registry.ts somt ze op; types.ts (defineWidget, resolveConfig);
                            useGroupComparison.ts deelt de compare-data
 frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), data/bits.tsx (badges, swatches)
-frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, lijnstijlen)
-frontend/src/features/     topbalk: SessionPicker, GroupBar, useDefaultSelection
+frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
+                           lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts
+frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
+                           sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import)
 ```
 
 Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt
@@ -137,6 +141,10 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   `TrackStatus` (SC/VSC/rood). Filter die standaard uit bij pace-analyse, maar laat ze wel zien in tabellen.
 - **Timedelta/NaT**: FastF1 gebruikt pandas `Timedelta`. Converteer in de backend naar seconden
   (`float`, ms-precisie) en NaT naar `null`. Nooit timedelta-strings naar de frontend sturen.
+- **Corner-segmenten** (`analysis.corner_segments`): grens op de topsnelheid van de referentie tussen
+  twee bochten, dus segment = remzone + bocht + uitaccelereren. Bochten < 150 m uit elkaar of zonder
+  remmen ertussen (< 400 m) worden één segment (T1–2, T8–10). Rempunten op ~4 Hz data zijn ±10–20 m;
+  de frontend noemt verschillen onder 10 m / 3 km/h daarom niet als oorzaak.
 - **Delta-tijd zelf berekenen**: `fastf1.utils.delta_time` is onnauwkeurig (staat ook zo in de docs).
   Methode (`analysis.compare`): elke lap uitrekken naar de lengte van de referentielap (de rijlijnen
   verschillen een paar meter), resamplen op een grid van 5 m, tijd interpoleren, delta = t_b(d) − t_a(d).
@@ -206,7 +214,12 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   met dezelfde opties delen de query.
 - Widgets halen hun data via TanStack Query hooks in `src/api/`, zodat dezelfde data niet twee keer
   wordt opgehaald als twee panelen hem gebruiken.
-- De dockview-layout staat in localStorage als JSON (later export/import naar bestand).
+- Dashboards: elke tab heeft een eigen dockview-layout (`store/dashboards.ts`, localStorage
+  `f1dash-dashboards`); export/import als JSON-bestand via het Layout-menu.
+- **Sneltoetsen en commando's** staan op één plek (`features/commands/commands.ts`) en werken op de
+  link-groep van het actieve paneel. Nieuwe actie = één entry daar; de palette toont hem vanzelf.
+- **"Pogingen"** (`attempts` in `lib/timing.ts`): getimed, geen pit-lap, binnen 107% van de beste lap van
+  de driver. Gebruikt door lap-stappen, overlay en de Run timeline (cool-down laps).
 - Alleen donker thema (geen light mode). Alle kleuren als tokens in `src/index.css`, nooit hardcoded.
 - Performance: telemetrie-arrays nooit in React state die vaak re-rendert; uPlot direct updaten.
 
