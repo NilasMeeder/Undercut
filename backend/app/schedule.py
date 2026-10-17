@@ -65,3 +65,14 @@ def schedule_to_events(schedule: pd.DataFrame) -> list[EventInfo]:
 def get_season_events(year: int) -> SeasonEvents:
     schedule = fastf1.get_event_schedule(year, include_testing=False)
     return SeasonEvents(year=year, events=schedule_to_events(schedule))
+
+
+def resolve_session(year: int, round_number: int, code: str) -> tuple[EventInfo, SessionInfo]:
+    """Look up the event and session for an API path; raises KeyError if unknown."""
+    event = next((e for e in get_season_events(year).events if e.round == round_number), None)
+    if event is None:
+        raise KeyError(f"No round {round_number} in {year}")
+    session = next((s for s in event.sessions if s.code == code), None)
+    if session is None:
+        raise KeyError(f"No session {code} at {event.name} {year}")
+    return event, session

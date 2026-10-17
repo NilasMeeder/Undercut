@@ -96,6 +96,16 @@ Nog geen widget-systeem, gewoon een vaste pagina die werkt.
 - [ ] Weer-widget: lucht/baantemperatuur, regen, wind over de sessie
 - [ ] Speed trap / top speeds-vergelijking
 
+## Later / backlog
+
+- [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
+      en de FastF1 Companion-extensie. Voorwaarden:
+      - het token **alleen** meesturen naar `livetiming.formula1.com`, nooit naar `livetiming-mirror.fastf1.dev` (FastF1's
+        `_api.headers` worden voor beide gebruikt, dus niet daar injecteren maar host-specifiek)
+      - het token nooit loggen, nooit naar de frontend, nooit in de repo
+      - de extensie na het inloggen weer uitzetten
+      - het is alleen nodig voor sessies die nog niet in TracingInsights staan
+
 ## Fase 5 — Replay & live (optioneel, groot)
 
 - [ ] Replay-modus: tijdslider, alle auto's op de track map, timing tower op dat moment

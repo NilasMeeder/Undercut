@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.f1data import schedule_to_events
+from app.schedule import schedule_to_events
 
 
 def make_schedule() -> pd.DataFrame:
