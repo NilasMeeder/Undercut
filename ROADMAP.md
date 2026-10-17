@@ -21,6 +21,11 @@ volgende fase voordat de vorige echt werkt.
   met notitie en tags, in Telemetry, Delta, Track map, Track line en de klokbalk, plus een Markers-
   widget; opgeslagen views (sessie, laps, zoom, klok, layout) als bladwijzer met `#view=`-links.
   Alles in SQLite (`backend/data/f1dash.db`). Getest in headless Chrome op Monza 2025 Q en R.
+- Fase 6 af (2026-10-17): strategie op de sessieklok: Stints (balken, pitverlies, deg per stint), Gaps
+  (race history), Positions (lap chart vanaf de grid), Race pace (brandstofgecorrigeerde laptijden met
+  degradatie-fits, per lap of bandleeftijd), Pit window (pit nu → rejoin, undercut/overcut met zinnen),
+  pitverlies-ghosts (PIT en SC) op de kaart en de Track line, preset "Strategy". Getest in headless
+  Chrome op Monza 2025 R, Q en (API) FP2.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
@@ -164,10 +169,21 @@ Ontwerp (zie CLAUDE.md "Markeringen en views"): markeringen per sessie, op afsta
 
 ## Fase 6 — Strategie en race-analyse
 
-- [ ] Bandenstrategie (stints als balken), tyre degradation met fit, brandstofcorrectie
-- [ ] Racetempo, gap-chart, posities per lap
-- [ ] Pitverlies-ghosts op de track map ("als je nu pit kom je hier uit")
-- [ ] Undercut/overcut-calculator
+Ontwerp: zie CLAUDE.md "Strategie". Backend rekent (history, fits, pit window), de frontend filtert op
+de klok; fits en pit window per leiderslap.
+
+- [x] Bandenstrategie (stints als balken), tyre degradation met fit, brandstofcorrectie
+- [x] Racetempo, gap-chart, posities per lap
+- [x] Pitverlies-ghosts op de track map ("als je nu pit kom je hier uit"), ook op de Track line
+- [x] Undercut/overcut-calculator (widget Pit window)
+- [ ] Voorspelling naast de werkelijkheid: als beide auto's echt gestopt zijn, de echte gap tonen naast
+      wat het pit window voorspelde
+- [ ] Compoundtempo uit de trainingen (FP2-long runs van hetzelfde weekend) als start voor het pit
+      window, nu is een nog ongebruikte compound "zo snel als een nieuwe set van de huidige"
+- [ ] Verkeer na de rejoin meenemen in de undercut (nu alleen als waarschuwing < 1,5 s)
+- [ ] Ghost-labels botsen in een dicht pakket (kaart): labelrijen zoals de Track line
+- [ ] Gaps: y-zoom (slepen zoomt nu alleen laps) en "gap tot gemiddeld winnaarstempo" als referentie
+- [ ] Klik in een lap-chart = klok naar die lap (nu alleen hover)
 
 ## Fase 7 — Live
 

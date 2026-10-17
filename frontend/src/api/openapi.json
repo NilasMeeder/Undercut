@@ -759,6 +759,298 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/race-history": {
+      "get": {
+        "summary": "Race History",
+        "operationId": "race_history_api_sessions__year___round___session__race_history_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RaceHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/degradation": {
+      "get": {
+        "summary": "Degradation",
+        "operationId": "degradation_api_sessions__year___round___session__degradation_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Session time (s): only laps completed by then count; omit for all",
+              "title": "Until"
+            },
+            "description": "Session time (s): only laps completed by then count; omit for all"
+          },
+          {
+            "name": "fuel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 0.1,
+              "minimum": 0,
+              "description": "Fuel effect in s per kg (100 kg at the start of a race)",
+              "default": 0.03,
+              "title": "Fuel"
+            },
+            "description": "Fuel effect in s per kg (100 kg at the start of a race)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Degradation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/pit-window": {
+      "get": {
+        "summary": "Pit Window",
+        "operationId": "pit_window_api_sessions__year___round___session__pit_window_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "driver",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$",
+              "title": "Driver"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Session time (s): only laps completed by then count; omit for all",
+              "title": "Until"
+            },
+            "description": "Session time (s): only laps completed by then count; omit for all"
+          },
+          {
+            "name": "fuel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 0.1,
+              "minimum": 0,
+              "description": "Fuel effect in s per kg (100 kg at the start of a race)",
+              "default": 0.03,
+              "title": "Fuel"
+            },
+            "description": "Fuel effect in s per kg (100 kg at the start of a race)"
+          },
+          {
+            "name": "compound",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(SOFT|MEDIUM|HARD|INTERMEDIATE|WET)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Compound"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PitWindow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/telemetry": {
       "get": {
         "summary": "Lap Telemetry",
@@ -1659,6 +1951,40 @@
         ],
         "title": "Comparison"
       },
+      "CompoundPace": {
+        "properties": {
+          "compound": {
+            "type": "string",
+            "title": "Compound"
+          },
+          "slope": {
+            "type": "number",
+            "title": "Slope"
+          },
+          "base": {
+            "type": "number",
+            "title": "Base"
+          },
+          "stints": {
+            "type": "integer",
+            "title": "Stints"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "compound",
+          "slope",
+          "base",
+          "stints",
+          "laps"
+        ],
+        "title": "CompoundPace",
+        "description": "The field's degradation on one compound: stint fits combined."
+      },
       "Corner": {
         "properties": {
           "label": {
@@ -1777,6 +2103,91 @@
         "title": "CornerSegment",
         "description": "A corner (or chicane) with its braking zone and the straight after it."
       },
+      "DegFit": {
+        "properties": {
+          "slope": {
+            "type": "number",
+            "title": "Slope"
+          },
+          "base": {
+            "type": "number",
+            "title": "Base"
+          },
+          "residual": {
+            "type": "number",
+            "title": "Residual"
+          },
+          "laps": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Laps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slope",
+          "base",
+          "residual",
+          "laps"
+        ],
+        "title": "DegFit",
+        "description": "Fuel-corrected lap time = base + slope \u00d7 tyre age, fitted on the stint's clean laps."
+      },
+      "Degradation": {
+        "properties": {
+          "until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          },
+          "total_laps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Laps"
+          },
+          "fuel_per_lap": {
+            "type": "number",
+            "title": "Fuel Per Lap"
+          },
+          "stints": {
+            "items": {
+              "$ref": "#/components/schemas/StintPace"
+            },
+            "type": "array",
+            "title": "Stints"
+          },
+          "compounds": {
+            "items": {
+              "$ref": "#/components/schemas/CompoundPace"
+            },
+            "type": "array",
+            "title": "Compounds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "until",
+          "total_laps",
+          "fuel_per_lap",
+          "stints",
+          "compounds"
+        ],
+        "title": "Degradation"
+      },
       "DriverInfo": {
         "properties": {
           "code": {
@@ -1826,6 +2237,203 @@
           "headshot_url"
         ],
         "title": "DriverInfo"
+      },
+      "DriverRace": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "grid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grid"
+          },
+          "laps": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Laps"
+          },
+          "line": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Line"
+          },
+          "gap": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Gap"
+          },
+          "position": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Position"
+          },
+          "lap_time": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Lap Time"
+          },
+          "tyre_life": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Tyre Life"
+          },
+          "clean": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Clean"
+          },
+          "stints": {
+            "items": {
+              "$ref": "#/components/schemas/Stint"
+            },
+            "type": "array",
+            "title": "Stints"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/PitStop"
+            },
+            "type": "array",
+            "title": "Stops"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "grid",
+          "laps",
+          "line",
+          "gap",
+          "position",
+          "lap_time",
+          "tyre_life",
+          "clean",
+          "stints",
+          "stops"
+        ],
+        "title": "DriverRace",
+        "description": "One driver's race lap by lap, columnar: index i is lap laps[i]."
+      },
+      "Duel": {
+        "properties": {
+          "rival": {
+            "type": "string",
+            "title": "Rival"
+          },
+          "ahead": {
+            "type": "boolean",
+            "title": "Ahead"
+          },
+          "gap": {
+            "type": "number",
+            "title": "Gap"
+          },
+          "rival_compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rival Compound"
+          },
+          "rival_life": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rival Life"
+          },
+          "first": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "First"
+          },
+          "second": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Second"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rival",
+          "ahead",
+          "gap",
+          "rival_compound",
+          "rival_life",
+          "first",
+          "second"
+        ],
+        "title": "Duel",
+        "description": "Undercut and overcut against one car around the driver.\n\nfirst[k \u2212 1]: the driver stops on the next lap and the rival k laps later; second[k \u2212 1]: the\nrival stops on the next lap and the driver k laps later. Both are seconds the driver gains on\nthe rival once both have stopped (negative = loses), on top of the gap now."
       },
       "EventInfo": {
         "properties": {
@@ -2443,6 +3051,166 @@
         ],
         "title": "MiniSectors"
       },
+      "PitStop": {
+        "properties": {
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "pit_in": {
+            "type": "number",
+            "title": "Pit In"
+          },
+          "pit_out": {
+            "type": "number",
+            "title": "Pit Out"
+          },
+          "lane": {
+            "type": "number",
+            "title": "Lane"
+          },
+          "loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loss"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "sc",
+              "vsc",
+              "vsc_ending",
+              "red",
+              "chequered"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lap",
+          "pit_in",
+          "pit_out",
+          "lane",
+          "loss",
+          "status"
+        ],
+        "title": "PitStop"
+      },
+      "PitWindow": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "life": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Life"
+          },
+          "new_compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Compound"
+          },
+          "pit_loss": {
+            "type": "number",
+            "title": "Pit Loss"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "sc",
+              "vsc",
+              "vsc_ending",
+              "red",
+              "chequered"
+            ],
+            "title": "Status"
+          },
+          "rejoin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Rejoin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duels": {
+            "items": {
+              "$ref": "#/components/schemas/Duel"
+            },
+            "type": "array",
+            "title": "Duels"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "position",
+          "compound",
+          "life",
+          "new_compound",
+          "pit_loss",
+          "status",
+          "rejoin",
+          "duels",
+          "notes"
+        ],
+        "title": "PitWindow",
+        "description": "A pit stop for one driver at the cutoff: where he rejoins, and undercut/overcut on the cars\nahead and behind. Tyre model from Degradation; pit loss from the circuit."
+      },
       "RaceControlMessage": {
         "properties": {
           "utc": {
@@ -2538,6 +3306,115 @@
           "lap"
         ],
         "title": "RaceControlMessage"
+      },
+      "RaceHistory": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "race",
+              "quali",
+              "practice"
+            ],
+            "title": "Kind"
+          },
+          "total_laps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Laps"
+          },
+          "leader_line": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Leader Line"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DriverRace"
+            },
+            "type": "array",
+            "title": "Drivers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "total_laps",
+          "leader_line",
+          "drivers"
+        ],
+        "title": "RaceHistory",
+        "description": "The session lap by lap for every driver: what gap, position and stint charts need."
+      },
+      "Rejoin": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead"
+          },
+          "gap_ahead": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Ahead"
+          },
+          "behind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Behind"
+          },
+          "gap_behind": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Behind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position",
+          "ahead",
+          "gap_ahead",
+          "behind",
+          "gap_behind"
+        ],
+        "title": "Rejoin",
+        "description": "Where a car comes out after a pit stop now, if nobody else stops."
       },
       "ReplayPositions": {
         "properties": {
@@ -2917,6 +3794,116 @@
           "status"
         ],
         "title": "StatusPeriod"
+      },
+      "Stint": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "fresh": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fresh"
+          },
+          "start_lap": {
+            "type": "integer",
+            "title": "Start Lap"
+          },
+          "end_lap": {
+            "type": "integer",
+            "title": "End Lap"
+          },
+          "start_life": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Life"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "compound",
+          "fresh",
+          "start_lap",
+          "end_lap",
+          "start_life"
+        ],
+        "title": "Stint"
+      },
+      "StintPace": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "stint": {
+            "type": "integer",
+            "title": "Stint"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "start_lap": {
+            "type": "integer",
+            "title": "Start Lap"
+          },
+          "end_lap": {
+            "type": "integer",
+            "title": "End Lap"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DegFit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "stint",
+          "compound",
+          "start_lap",
+          "end_lap",
+          "fit"
+        ],
+        "title": "StintPace"
       },
       "TagCount": {
         "properties": {

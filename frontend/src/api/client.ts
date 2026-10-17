@@ -29,6 +29,15 @@ export type TagCount = Schemas['TagCount'];
 export type View = Schemas['View'];
 export type ViewIn = Schemas['ViewIn'];
 export type ViewState = Schemas['ViewState-Output'];
+export type RaceHistory = Schemas['RaceHistory'];
+export type DriverRace = Schemas['DriverRace'];
+export type Stint = Schemas['Stint'];
+export type PitStop = Schemas['PitStop'];
+export type Degradation = Schemas['Degradation'];
+export type StintPace = Schemas['StintPace'];
+export type CompoundPace = Schemas['CompoundPace'];
+export type PitWindow = Schemas['PitWindow'];
+export type Duel = Schemas['Duel'];
 
 export class ApiError extends Error {
   readonly status: number;

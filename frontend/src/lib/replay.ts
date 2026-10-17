@@ -1,5 +1,5 @@
 import type { PositionTrack } from '@/api/queries';
-import type { TrackStatus } from '@/api/client';
+import type { Circuit, TrackStatus } from '@/api/client';
 
 export type CarPosition = { x: number; y: number; progress: number };
 
@@ -44,3 +44,31 @@ export const TRACK_STATUS_LABEL: Record<TrackStatus, string> = {
   red: 'RED FLAG',
   chequered: 'CHEQUERED',
 };
+
+/** The two pit stops RaceX draws: under green flag and under a safety car. */
+export type GhostKind = { label: 'PIT' | 'SC'; loss: number };
+
+export function ghostKinds(circuit: Circuit | undefined): GhostKind[] {
+  if (!circuit?.pit_loss) return [];
+  const kinds: GhostKind[] = [{ label: 'PIT', loss: circuit.pit_loss }];
+  if (circuit.pit_loss_sc) kinds.push({ label: 'SC', loss: circuit.pit_loss_sc });
+  return kinds;
+}
+
+/**
+ * Where car `i` would be now had it made a pit stop costing `loss` seconds: its own position
+ * `loss` seconds ago. `position` is where it would rejoin: behind every car further along now.
+ */
+export function pitGhost(
+  track: PositionTrack,
+  i: number,
+  t: number,
+  loss: number,
+  now: (CarPosition | null)[]
+): (CarPosition & { position: number }) | null {
+  if (!now[i]) return null;
+  const ghost = carAt(track, i, t - loss);
+  if (!ghost) return null;
+  const ahead = now.filter((car, j) => j !== i && car && car.progress > ghost.progress).length;
+  return { ...ghost, position: ahead + 1 };
+}

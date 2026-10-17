@@ -78,7 +78,7 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
     )
 
 
-def _starting_grid(year: int, round_number: int, code: str) -> dict[str, int]:
+def starting_grid(year: int, round_number: int, code: str) -> dict[str, int]:
     """Race and sprint grids; without one the tower falls back to the first passage."""
     if code not in ("R", "S"):
         return {}
@@ -96,7 +96,7 @@ def get_timing_index(year: int, round_number: int, code: str) -> replay.TimingIn
         sessions.get_laps(year, round_number, code),
         timeline.kind,
         timeline.track_status,
-        _starting_grid(year, round_number, code),
+        starting_grid(year, round_number, code),
     )
 
 

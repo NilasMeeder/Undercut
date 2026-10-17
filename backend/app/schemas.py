@@ -461,3 +461,164 @@ class View(ViewIn):
     id: int
     created: datetime
     updated: datetime
+
+
+# --- Strategy (phase 6) --------------------------------------------------------------------------
+
+
+class Stint(BaseModel):
+    number: int
+    compound: str | None
+    fresh: bool | None
+    start_lap: int
+    end_lap: int
+    """First and last lap on this set, the out-lap and in-lap included."""
+    start_life: int | None
+    """Tyre age (laps) on the first lap of the stint: 1 for a new set."""
+
+
+class PitStop(BaseModel):
+    lap: int
+    """The in-lap; the car leaves the pit lane on the next lap."""
+    pit_in: float
+    pit_out: float
+    """Session time (s) of pit entry and exit."""
+    lane: float
+    """Seconds from pit entry to pit exit."""
+    loss: float | None
+    """Seconds lost on the in-lap and out-lap together, against the driver's pace on the laps around
+    them; null when one of those laps has no time."""
+    status: TrackStatus
+    """Track status at pit entry: a stop under SC or VSC costs less."""
+
+
+class DriverRace(BaseModel):
+    """One driver's race lap by lap, columnar: index i is lap laps[i]."""
+
+    driver: str
+    grid: int | None
+    """Starting position (Jolpica); 99 for a pit-lane start, null when unknown."""
+    laps: list[int]
+    line: list[float | None]
+    """Session time (s) at which the car crossed the line at the end of the lap."""
+    gap: list[float | None]
+    """Seconds behind the first car to complete that lap (race only)."""
+    position: list[int | None]
+    """Position at the end of the lap."""
+    lap_time: list[float | None]
+    tyre_life: list[int | None]
+    """Tyre age (laps) on that lap."""
+    clean: list[bool]
+    """A racing lap that says something about pace: timed, not a pit lap or lap 1, no SC/VSC."""
+    stints: list[Stint]
+    stops: list[PitStop]
+
+
+class RaceHistory(BaseModel):
+    """The session lap by lap for every driver: what gap, position and stint charts need."""
+
+    kind: Literal["race", "quali", "practice"]
+    total_laps: int | None
+    leader_line: list[float]
+    """Per lap (index lap − 1): when the first car completed it."""
+    drivers: list[DriverRace]
+    """Classification order: most laps first, then who crossed the line first."""
+
+
+class DegFit(BaseModel):
+    """Fuel-corrected lap time = base + slope × tyre age, fitted on the stint's clean laps."""
+
+    slope: float
+    """Seconds per lap of tyre age: the degradation."""
+    base: float
+    """Fuel-corrected lap time (s) on a new tyre (age 0)."""
+    residual: float
+    """Standard deviation (s) of the clean laps around the fit."""
+    laps: list[int]
+    """The laps the fit used (clean laps, outliers removed)."""
+
+
+class StintPace(BaseModel):
+    driver: str
+    stint: int
+    compound: str | None
+    start_lap: int
+    end_lap: int
+    fit: DegFit | None
+    """Null with fewer than 4 clean laps."""
+
+
+class CompoundPace(BaseModel):
+    """The field's degradation on one compound: stint fits combined."""
+
+    compound: str
+    slope: float
+    """Mean of the stint slopes, weighted by their laps."""
+    base: float
+    """Median of the stint bases."""
+    stints: int
+    laps: int
+
+
+class Degradation(BaseModel):
+    until: float | None
+    """Only laps completed by this session time (s) were used; null = the whole session."""
+    total_laps: int | None
+    """The race distance, or the session's last lap outside races (the fuel reference)."""
+    fuel_per_lap: float
+    """Seconds a lap gets quicker by burning fuel. Fuel-corrected lap time =
+    lap_time − fuel_per_lap × (total_laps − lap): the lap as if run with the last lap's fuel.
+    Outside races the load is unknown: a burn of 1.8 kg/lap is assumed and total_laps is the
+    session's last lap, so the slopes mean something but the levels only within a stint."""
+    stints: list[StintPace]
+    compounds: list[CompoundPace]
+
+
+class Rejoin(BaseModel):
+    """Where a car comes out after a pit stop now, if nobody else stops."""
+
+    position: int
+    ahead: str | None
+    gap_ahead: float | None
+    behind: str | None
+    gap_behind: float | None
+    """Seconds to the cars around the rejoin point."""
+
+
+class Duel(BaseModel):
+    """Undercut and overcut against one car around the driver.
+
+    first[k − 1]: the driver stops on the next lap and the rival k laps later; second[k − 1]: the
+    rival stops on the next lap and the driver k laps later. Both are seconds the driver gains on
+    the rival once both have stopped (negative = loses), on top of the gap now.
+    """
+
+    rival: str
+    ahead: bool
+    """The rival is ahead of the driver now."""
+    gap: float
+    """Seconds between the two at the last line both crossed."""
+    rival_compound: str | None
+    rival_life: int | None
+    first: list[float]
+    second: list[float]
+
+
+class PitWindow(BaseModel):
+    """A pit stop for one driver at the cutoff: where he rejoins, and undercut/overcut on the cars
+    ahead and behind. Tyre model from Degradation; pit loss from the circuit."""
+
+    driver: str
+    lap: int
+    """Laps the driver had completed."""
+    position: int
+    compound: str | None
+    life: int | None
+    new_compound: str | None
+    pit_loss: float
+    status: TrackStatus
+    """Track status at the cutoff; under SC or VSC the pit loss is smaller."""
+    rejoin: Rejoin | None
+    duels: list[Duel]
+    notes: list[str]
+    """Assumptions the numbers rest on, e.g. a compound nobody has run yet."""

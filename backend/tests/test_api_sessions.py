@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from app import replays, schedule, sessions
+from app import replays, schedule, sessions, strategies
 from app.main import app
 from app.schemas import EventInfo, SessionInfo
 from app.sources import tracinginsights as ti
@@ -121,6 +121,8 @@ CACHES = (
     replays.get_timeline,
     replays.get_timing_index,
     replays.positions_gzip,
+    strategies.get_history,
+    strategies.get_paces,
 )
 
 
@@ -243,3 +245,23 @@ def test_positions_are_prepared_once(client: TestClient) -> None:
     i = round((30.0 - body["start"]) / body["step"])
     assert nor["progress"][i] == pytest.approx(0.5, abs=0.01)
     assert nor["x"][-1] is None  # NOR's only lap ended at 60.5 s
+
+
+def test_race_history_and_degradation(client: TestClient) -> None:
+    history = client.get("/api/sessions/2025/1/Q/race-history").json()
+    assert history["kind"] == "quali"
+    ver = next(d for d in history["drivers"] if d["driver"] == "VER")
+    assert ver["laps"] == [1, 2]
+    assert ver["line"] == [100.0, 160.0]
+    assert ver["gap"] == [None, None]  # gaps only in a race
+    assert ver["stints"][0]["start_lap"] == 1
+    deg = client.get("/api/sessions/2025/1/Q/degradation?until=120").json()
+    assert deg["until"] == 120.0
+    assert deg["fuel_per_lap"] == pytest.approx(0.054)  # 1.8 kg/lap assumed outside races
+    assert deg["total_laps"] == 2  # corrected to the session's last lap
+    assert all(s["fit"] is None for s in deg["stints"])  # too few laps
+
+
+def test_pit_window_is_for_races(client: TestClient) -> None:
+    response = client.get("/api/sessions/2025/1/Q/pit-window?driver=VER")
+    assert response.status_code == 404

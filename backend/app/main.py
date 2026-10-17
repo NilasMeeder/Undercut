@@ -8,18 +8,21 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app import analysis, replays, schedule, sessions, store
+from app import analysis, replays, schedule, sessions, store, strategies, strategy
 from app.schemas import (
     Circuit,
     ComparedLap,
     Comparison,
     CornerLap,
     CornerSegment,
+    Degradation,
     Lap,
     Marker,
     MarkerIn,
     MiniSectors,
+    PitWindow,
     RaceControlMessage,
+    RaceHistory,
     ReplayPositions,
     ReplayStatus,
     SeasonEvents,
@@ -155,6 +158,47 @@ def positions(year: int, round: int, session: SessionCode, request: Request) -> 
         headers = {"Content-Encoding": "gzip", "Vary": "Accept-Encoding"}
         return Response(body, media_type="application/json", headers=headers)
     return Response(gzip.decompress(body), media_type="application/json")
+
+
+Until = Annotated[
+    float | None,
+    Query(description="Session time (s): only laps completed by then count; omit for all"),
+]
+Fuel = Annotated[
+    float,
+    Query(ge=0, le=0.1, description="Fuel effect in s per kg (100 kg at the start of a race)"),
+]
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/race-history")
+def race_history(year: int, round: int, session: SessionCode) -> RaceHistory:
+    return _guard(lambda: strategies.get_history(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/degradation")
+def degradation(
+    year: int,
+    round: int,
+    session: SessionCode,
+    until: Until = None,
+    fuel: Fuel = strategy.FUEL_EFFECT,
+) -> Degradation:
+    return _guard(lambda: strategies.get_degradation(year, round, session, fuel, until))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/pit-window")
+def pit_window(
+    year: int,
+    round: int,
+    session: SessionCode,
+    driver: Annotated[str, Query(pattern=r"^[A-Z]{3}$")],
+    until: Until = None,
+    fuel: Fuel = strategy.FUEL_EFFECT,
+    compound: Annotated[str | None, Query(pattern=r"^(SOFT|MEDIUM|HARD|INTERMEDIATE|WET)$")] = None,
+) -> PitWindow:
+    return _guard(
+        lambda: strategies.get_pit_window(year, round, session, driver, fuel, until, compound)
+    )
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/telemetry")

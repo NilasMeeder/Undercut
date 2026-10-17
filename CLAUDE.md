@@ -13,18 +13,20 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 5 zijn af: een docking-dashboard (dockview) met dertien widgets (Laps, Telemetry, Delta,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met achttien widgets (Laps, Telemetry, Delta,
 Track map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower, Track line,
-Markers), link-groepen, gedeelde cursor/zoom, instellingen (tandwiel) en uitleg (i) per paneel,
-⌘K-palette met sneltoetsen, dashboard-tabs met presets, replay (een sessieklok onderin waar de tower,
-de kaart met alle auto's, de Track line en race control op lopen, zie "Replay"), en markeringen met
-notitie en tags plus opgeslagen views als bladwijzer (zie "Markeringen en views"). Volgende stap:
-fase 6 (strategie), zie ROADMAP.md.
+Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
+instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
+presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
+control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
+(zie "Markeringen en views"), en strategie: stints, degradatie, gaps, posities, undercut en
+pitverlies-ghosts, allemaal op de sessieklok (zie "Strategie"). Volgende stap: fase 7 (live) of de
+open punten, zie ROADMAP.md.
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
 `F1DASH_DB=<scratchpad>/test.db uv run uvicorn app.main:app --port 8001` en
-`F1DASH_API=http://localhost:8001 npx vite --port 5174 --strictPort` (de bron-cache in `.cache/` wordt
+`F1DASH_API=http://localhost:8001 npx vite --port 5174 --strictPort` (is 5174 bezet, neem 5175; de bron-cache in `.cache/` wordt
 gedeeld, dus niets wordt opnieuw gedownload). De Chrome-extensie is vaak niet verbonden. Gebruik dan
 headless Chrome via `playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
 `localStorage['f1dash-selection'] = {"state":{"year":2025,"round":16,"session":"Q"},"version":0}`.
@@ -44,6 +46,11 @@ Valkuilen bij het headless testen:
   met +4.366 voor NOR, en de eindstand op de baan is VER, NOR +19.207, PIA +21.351.
   Lees de `boundingBox` van de scrubber pas als "Positions ready" er staat: de voortgangsbalk ernaast
   verandert de breedte. `LAP 12/53` staat ook in de tower: gebruik `getByText(/^LAP/).first()`.
+- Strategie: preset `strategy` (zelfde `f1dash-dashboards`-truc, `preset: 'strategy'`), wacht op `LAP`.
+  Controlegetallen Monza R (fuel 0,03): VER stopt L37 (verlies 25,5 s), NOR L46 (28,7 s, de trage
+  stop), PIA L45 (23,2 s); VER medium +0,038 s/lap, NOR medium +0,029. Op lap 36 zegt het pit window
+  voor NOR: pit nu = P4, undercut op VER +0,56 / +1,46 / +2,39 op een gap van 5,46 s; de ghost
+  "NOR PIT P4" op de kaart zegt hetzelfde. Q en FP: gaps/positions/pit window tonen "for races".
 - Markeringen: `keyboard.down('Shift')` en dan slepen of klikken in een `.u-over` (de grootste is de
   speed-chart); de editor heeft het placeholder `What happens here` en Enter slaat op. Een view openen
   via een link: `page.goto` naar alleen een andere hash herlaadt de pagina niet (dat vangt de
@@ -107,6 +114,8 @@ backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mi
 backend/app/replay.py      pure replay-logica: positiespoor (build_track), timing tower op t (timing_state),
                            track status uit race control
 backend/app/replays.py     replay per sessie: tijdlijn, timing-index, de bouwjob van het positiespoor (.npz)
+backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
+                           pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
 backend/app/store.py       gebruikersdata in SQLite: markeringen en views (migraties via PRAGMA user_version)
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
@@ -119,11 +128,14 @@ frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout
                            HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
 frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
                            + de component; registry.ts somt ze op; types.ts (defineWidget, resolveConfig);
-                           useGroupComparison.ts deelt de compare-data; hooks.ts (useClockDraw, useElementSize)
-frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), data/bits.tsx (badges, swatches)
+                           useGroupComparison.ts deelt de compare-data; hooks.ts (useClockDraw, useElementSize);
+                           useStrategy.ts (history + klok + cutoff, drivers van een groep, driverkleuren)
+frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), chart/LapChart.tsx (uPlot over laps:
+                           SC-banden, klok-lijn, labels, readout), data/bits.tsx (badges, swatches)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
                            lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts,
-                           replay.ts (auto op t interpoleren, klokformaat), markers.ts (labels, plaats als tekst)
+                           replay.ts (auto op t interpoleren, klokformaat, pit-ghosts), markers.ts (labels, plaats
+                           als tekst), strategy.ts (cutoff, volgorde op t, lap-as, SC-banden)
 frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
                            sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import),
                            clock/ (ClockBar onderin, useSessionClock), markers/ (MarkerEditor, actions:
@@ -226,6 +238,43 @@ andere sessie: de klok springt pas als de nieuwe tijdlijn er is (`clock.seekAfte
 API: `GET/POST /api/sessions/{y}/{r}/{s}/markers`, `PUT/DELETE /api/markers/{id}`,
 `GET /api/markers/tags`, `GET/POST /api/views`, `PUT/DELETE /api/views/{id}`. Responses hebben alle
 velden (`json_schema_serialization_defaults_required`), inputs mogen velden met een default weglaten.
+
+## Strategie (fase 6)
+
+Alles uit de lapdata (geen telemetrie), rekenwerk in `strategy.py` (getest), per sessie in
+`strategies.py`. Drie endpoints, bewust gescheiden naar hoe ze op de klok lopen:
+- **`/race-history`** (één keer, volledig): per driver kolommen per lap (passeertijd `line`, `gap` tot de
+  eerste die die lap afmaakte, `position`, laptijd, bandleeftijd, `clean`), plus stints, pitstops en de
+  grid (Jolpica). De frontend filtert zelf op `line ≤ t`, dus gaps/posities/stints lopen per passage mee.
+- **`/degradation?until=&fuel=`**: per stint een lineaire fit van brandstofgecorrigeerde laptijd op
+  bandleeftijd, en per compound het veld (gewogen slope, mediane base).
+- **`/pit-window?driver=&until=&fuel=&compound=`** (alleen race/sprint): pit nu → rejoin (positie, gaps,
+  als niemand anders stopt) en undercut/overcut op de auto ervoor en erachter.
+De frontend vraagt die twee laatste op met **`until` = einde van de laatste leiderslap** op de klok
+(`lib/strategy.ts` `strategyCutoff`; buiten races per minuut), dus één query per ronde, gecachet. Klok
+op het einde = `until` weg = alles.
+
+Modelkeuzes (in de (i)-uitleg van de widgets ook):
+- **Schone lap** (`is_clean`): getimed, geen pit in/out, niet lap 1, niet verwijderd, track status
+  alleen 1/2 (geen SC 4, rood 5, VSC 6/7). Per stint ook geen laps > 107% van de snelste schone lap
+  (cool-down laps in Q/FP). Fit: kleinste kwadraten, uitschieters (> max(0,6 s, 2,5σ)) eruit en
+  opnieuw, max 3 rondes, minstens 4 laps.
+- **Brandstof**: `fuel` s/kg (standaard 0,03) × 100 kg / racelaps per lap; gecorrigeerd =
+  laptijd − fuel_per_lap × (totaal − lap). Buiten races 1,8 kg/lap en de laatste lap van de sessie als
+  referentie: dan zeggen alleen de slopes iets. Zonder correctie lijken race-stints "sneller" te worden.
+- **Pitverlies per stop**: in-lap + out-lap − 2 × mediaan van de schone laps tot 3 laps eromheen.
+- **Undercut** (`first_gain`): jij stopt volgende lap, de ander k laps later; tijd tot beiden op nieuwe
+  banden. Oude band = eigen stintfit, nieuwe = compoundfit + eigen tempo-offset (stintbase −
+  compoundbase); een compound zonder data = "zo snel als een nieuwe set van de huidige" (staat in
+  `notes`). Pitverlies valt weg (gelijk voor beiden); tempoverschil tussen de twee telt wel mee.
+  Nieuwe band automatisch: hard na soft/medium, medium na hard.
+- **Ghosts** (frontend, `lib/replay.ts` `pitGhost`): de eigen positie van de auto `pit_loss` seconden
+  geleden op het positiespoor; rejoin-positie = 1 + auto's met meer lap-voortgang nu. Twee per
+  geselecteerde driver: PIT (`Circuit.pit_loss`) en SC (`pit_loss_sc`, gestippeld). Op de kaart met
+  alle auto's en op de Track line (instelling "Pit stop ghosts").
+- **Lap-charts** (`LapChart`): x = lapnummer op de lijn, vaste x-range (0 of 1 tot het totaal) zodat de
+  chart niet verspringt; uPlot `cursor.sync` per link-groep; SC/VSC/rood als banden via
+  `lapAxis` (sessietijd → leiderslap). Data hangt aan `crossingsKey` (aantal passages), niet aan t.
 
 ## Domeinkennis & FastF1-valkuilen
 

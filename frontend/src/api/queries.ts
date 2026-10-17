@@ -8,7 +8,10 @@ import {
   apiPost,
   type Circuit,
   type Comparison,
+  type Degradation,
   type Lap,
+  type PitWindow,
+  type RaceHistory,
   type RaceControlMessage,
   type ReplayPositions,
   type ReplayStatus,
@@ -67,6 +70,48 @@ export function useComparison(laps: LapRef[], { step = 5, miniSectors = 25 }: Co
 }
 
 export const useTimeline = () => useSessionQuery<SessionTimeline>('/timeline');
+export const useRaceHistory = () => useSessionQuery<RaceHistory>('/race-history');
+
+/** A strategy query at a cutoff (session time, null = everything); keeps the previous answer
+ * on screen while the next lap's one loads. */
+function useStrategyQuery<T>(
+  resource: string,
+  params: Record<string, string | number | null | undefined>,
+  enabled = true
+) {
+  const key = useSessionKey();
+  const query = Object.entries(params)
+    .filter(([, v]) => v != null)
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&');
+  return useQuery({
+    queryKey: ['session', key, resource, query],
+    queryFn: () => apiGet<T>(`${sessionPath(key!)}${resource}?${query}`),
+    enabled: key != null && enabled,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** Cutoff in session time: null = the whole session, undefined = not known yet (no query). */
+type Until = number | null | undefined;
+
+/** Tyre degradation per stint up to the cutoff; `fuel` in s per kg. */
+export const useDegradation = (until: Until, fuel: number) =>
+  useStrategyQuery<Degradation>('/degradation', { until, fuel }, until !== undefined);
+
+export const usePitWindow = (
+  driver: string | null,
+  until: Until,
+  fuel: number,
+  compound: string | null
+) =>
+  useStrategyQuery<PitWindow>(
+    '/pit-window',
+    { driver, until, fuel, compound },
+    driver != null && until !== undefined
+  );
 
 function covers(state: TimingState, t: number): boolean {
   return (

@@ -8,7 +8,7 @@ import {
 } from '@/api/queries';
 import { useDistanceMarks } from '@/api/markers';
 import { COLORS } from '@/lib/colors';
-import { carAt } from '@/lib/replay';
+import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import { useGroupLaps, type GroupId } from '@/store/groups';
 import { useClockDraw, useElementSize } from '../hooks';
 import { PositionsMessage } from '../PositionsMessage';
@@ -20,11 +20,16 @@ const PAD = 24;
 const LABEL_WIDTH = 24;
 /** Label rows, nearest first, alternating above and below the line. */
 const LANES = [-9, 17, -21, 29, -33, 41];
+const NO_GHOSTS: GhostKind[] = [];
 
 export function TrackLineWidget({ group, config }: WidgetProps<TrackLineConfig>) {
   const { status, track, error } = useReplayPositions();
   const detail = useSessionDetail();
   const circuit = useCircuit();
+  const ghosts = useMemo(
+    () => (config.ghosts ? ghostKinds(circuit.data) : NO_GHOSTS),
+    [config.ghosts, circuit.data]
+  );
   if (!track || !detail.data) return <PositionsMessage status={status} error={error} />;
   return (
     <TrackLine
@@ -33,6 +38,7 @@ export function TrackLineWidget({ group, config }: WidgetProps<TrackLineConfig>)
       drivers={detail.data.drivers}
       circuit={config.corners ? circuit.data : undefined}
       showMarks={config.markers}
+      ghosts={ghosts}
     />
   );
 }
@@ -43,14 +49,17 @@ function TrackLine({
   drivers,
   circuit,
   showMarks,
+  ghosts,
 }: {
   group: GroupId;
   track: PositionTrack;
   drivers: DriverInfo[];
   circuit: Circuit | undefined;
   showMarks: boolean;
+  ghosts: GhostKind[];
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const ghostsRef = useRef<SVGGElement>(null);
   const carsRef = useRef<SVGGElement>(null);
   const emptyRef = useRef<SVGTextElement>(null);
   const { width, height } = useElementSize(boxRef);
@@ -76,11 +85,20 @@ function TrackLine({
     (t: number) => {
       const g = carsRef.current;
       if (!g || width === 0) return;
-      const placed = track.cars
-        .map((_, i) => {
-          const at = carAt(track, i, t);
-          return at ? { i, x: PAD + (at.progress % 1) * length } : null;
-        })
+      const now = track.cars.map((_, i) => carAt(track, i, t));
+      Array.from(ghostsRef.current?.children ?? []).forEach((node) => {
+        const i = Number(node.getAttribute('data-car'));
+        const ghost = pitGhost(track, i, t, Number(node.getAttribute('data-loss')), now);
+        node.setAttribute('visibility', ghost ? 'visible' : 'hidden');
+        if (!ghost) return;
+        node.setAttribute(
+          'transform',
+          `translate(${(PAD + (ghost.progress % 1) * length).toFixed(1)},${mid})`
+        );
+        node.lastElementChild!.textContent = `${node.getAttribute('data-label')} P${ghost.position}`;
+      });
+      const placed = now
+        .map((at, i) => (at ? { i, x: PAD + (at.progress % 1) * length } : null))
         .filter((c) => c != null)
         .sort((a, b) => a.x - b.x);
       emptyRef.current?.setAttribute('visibility', placed.length ? 'hidden' : 'visible');
@@ -103,7 +121,9 @@ function TrackLine({
         label.setAttribute('y', String(offset));
       });
     },
-    [track, width, length, mid]
+    // Ghost nodes change with the selection: redraw them at once, also with the clock paused.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [track, width, length, mid, highlight, ghosts]
   );
   useClockDraw(draw);
 
@@ -177,6 +197,40 @@ function TrackLine({
             </g>
           );
         })}
+        <g ref={ghostsRef}>
+          {track.cars.flatMap((car, i) =>
+            highlight.has(car.driver)
+              ? ghosts.map((kind) => (
+                  <g
+                    key={`${car.driver}-${kind.label}`}
+                    data-car={i}
+                    data-loss={kind.loss}
+                    data-label={`${car.driver} ${kind.label}`}
+                    visibility="hidden"
+                  >
+                    <title>{`${car.driver} after a pit stop now (${kind.loss.toFixed(1)} s lost)`}</title>
+                    <line y1={-6} y2={6} stroke={color(car.driver)} strokeWidth={2} />
+                    <rect
+                      x={-4}
+                      y={-4}
+                      width={8}
+                      height={8}
+                      fill="none"
+                      stroke={color(car.driver)}
+                      strokeWidth={1.5}
+                      strokeDasharray={kind.label === 'SC' ? '2 2' : undefined}
+                    />
+                    <text
+                      y={kind.label === 'SC' ? 32 : 22}
+                      fill={COLORS.textDim}
+                      fontSize={9}
+                      textAnchor="middle"
+                    />
+                  </g>
+                ))
+              : []
+          )}
+        </g>
         <g ref={carsRef}>
           {track.cars.map((car) => {
             const strong = highlight.has(car.driver);

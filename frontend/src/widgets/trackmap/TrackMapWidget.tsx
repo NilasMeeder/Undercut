@@ -10,7 +10,7 @@ import { useDistanceMarks } from '@/api/markers';
 import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import type { DistanceMark } from '@/lib/markers';
-import { carAt } from '@/lib/replay';
+import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom } from '@/store/cursor';
 import { useGroupLaps, type GroupId } from '@/store/groups';
@@ -21,6 +21,8 @@ import { useGroupComparison } from '../useGroupComparison';
 import type { TrackMapConfig } from './widget';
 
 type Point = [number, number];
+
+const NO_GHOSTS: GhostKind[] = [];
 
 /** Rotate by the circuit's official orientation; SVG y points down, so flip it. */
 function project(x: number, y: number, rotation: number): Point {
@@ -56,6 +58,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         circuit={circuit.data}
         showCorners={config.corners}
         showMarks={config.markers}
+        showGhosts={config.ghosts}
       />
     );
   return (
@@ -76,14 +79,20 @@ function ReplayMap({
   circuit,
   showCorners,
   showMarks,
+  showGhosts,
 }: {
   group: GroupId;
   circuit: Circuit;
   showCorners: boolean;
   showMarks: boolean;
+  showGhosts: boolean;
 }) {
   const { status, track, error } = useReplayPositions();
   const detail = useSessionDetail();
+  const ghosts = useMemo(
+    () => (showGhosts ? ghostKinds(circuit) : NO_GHOSTS),
+    [showGhosts, circuit]
+  );
   const loading =
     error?.message ??
     (status?.state === 'error'
@@ -101,6 +110,7 @@ function ReplayMap({
       showMarks={showMarks}
       note={loading}
       cars={track && detail.data ? { track, drivers: detail.data.drivers } : undefined}
+      ghosts={ghosts}
     />
   );
 }
@@ -114,6 +124,7 @@ function TrackMap({
   showMarks,
   note,
   cars,
+  ghosts = NO_GHOSTS,
 }: {
   group: GroupId;
   circuit: Circuit;
@@ -123,8 +134,11 @@ function TrackMap({
   showMarks: boolean;
   note?: string | null;
   cars?: { track: PositionTrack; drivers: DriverInfo[] };
+  /** Pit stop ghosts of the drivers selected in the group (with all cars). */
+  ghosts?: GhostKind[];
 }) {
   const zoom = useZoom(group);
+  const ghostsRef = useRef<SVGGElement>(null);
   const dotsRef = useRef<SVGGElement>(null);
   const carsRef = useRef<SVGGElement>(null);
   const emptyRef = useRef<HTMLDivElement>(null);
@@ -219,18 +233,29 @@ function TrackMap({
     (t: number) => {
       const g = carsRef.current;
       if (!g || !cars) return;
-      let shown = 0;
+      const now = cars.track.cars.map((_, i) => carAt(cars.track, i, t));
       Array.from(g.children).forEach((node, i) => {
-        const at = carAt(cars.track, i, t);
+        const at = now[i];
         node.setAttribute('visibility', at ? 'visible' : 'hidden');
         if (!at) return;
-        shown++;
         const [x, y] = project(at.x, at.y, circuit.rotation);
         node.setAttribute('transform', `translate(${x.toFixed(0)},${y.toFixed(0)})`);
       });
-      if (emptyRef.current) emptyRef.current.hidden = shown > 0;
+      if (emptyRef.current) emptyRef.current.hidden = now.some((at) => at);
+      // Pit ghosts: <g data-car data-loss> per selected driver and kind of stop.
+      Array.from(ghostsRef.current?.children ?? []).forEach((node) => {
+        const i = Number(node.getAttribute('data-car'));
+        const ghost = pitGhost(cars.track, i, t, Number(node.getAttribute('data-loss')), now);
+        node.setAttribute('visibility', ghost ? 'visible' : 'hidden');
+        if (!ghost) return;
+        const [x, y] = project(ghost.x, ghost.y, circuit.rotation);
+        node.setAttribute('transform', `translate(${x.toFixed(0)},${y.toFixed(0)})`);
+        node.lastElementChild!.textContent = `${node.getAttribute('data-label')} P${ghost.position}`;
+      });
     },
-    [cars, circuit.rotation]
+    // Ghost nodes change with the selection: redraw them at once, also with the clock paused.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cars, circuit.rotation, highlight, ghosts]
   );
   useClockDraw(cars ? drawCars : null);
 
@@ -325,6 +350,37 @@ function TrackMap({
             {c.label}
           </text>
         ))}
+        <g ref={ghostsRef}>
+          {cars?.track.cars.flatMap((car, i) =>
+            highlight.has(car.driver)
+              ? ghosts.map((kind) => (
+                  <g
+                    key={`${car.driver}-${kind.label}`}
+                    data-car={i}
+                    data-loss={kind.loss}
+                    data-label={`${car.driver} ${kind.label}`}
+                    visibility="hidden"
+                  >
+                    <title>{`${car.driver} after a pit stop now (${kind.label === 'SC' ? 'under a safety car, ' : ''}${kind.loss.toFixed(1)} s lost)`}</title>
+                    <circle
+                      r={u * 1.5}
+                      fill="none"
+                      stroke={color(car.driver)}
+                      strokeWidth={u * 0.45}
+                      strokeDasharray={kind.label === 'SC' ? `${u * 0.8} ${u * 0.6}` : undefined}
+                    />
+                    <text
+                      x={u * 2}
+                      y={u * 2.6}
+                      fill={COLORS.textDim}
+                      fontSize={u * 2.2}
+                      dominantBaseline="central"
+                    />
+                  </g>
+                ))
+              : []
+          )}
+        </g>
         <g ref={carsRef}>
           {cars?.track.cars.map((car) => {
             const strong = highlight.has(car.driver);

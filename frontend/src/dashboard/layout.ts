@@ -105,6 +105,29 @@ function replay(api: DockviewApi) {
   line.group.api.setSize({ height: 120 });
 }
 
+/** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */
+function strategy(api: DockviewApi) {
+  const stints = addWidget(api, 'stints', 'blue');
+  // Right column first, so it runs the full height: map over the pit window (and the tower).
+  const map = addWidget(
+    api,
+    'trackmap',
+    'blue',
+    { referencePanel: stints, direction: 'right' },
+    { cars: 'all' }
+  );
+  const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: map, direction: 'below' });
+  addWidget(api, 'tower', 'blue', { referencePanel: pit, direction: 'within' });
+  pit.api.setActive();
+  const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: stints, direction: 'below' });
+  addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
+  gaps.api.setActive();
+  const pace = addWidget(api, 'pace', 'blue', { referencePanel: gaps, direction: 'right' });
+  map.group.api.setSize({ width: 470, height: 330 });
+  stints.group.api.setSize({ height: 380 });
+  pace.group.api.setSize({ width: 500 });
+}
+
 export const PRESETS = [
   {
     id: 'quali-duel',
@@ -129,6 +152,12 @@ export const PRESETS = [
     title: 'Replay',
     description: 'Timing tower, every car on the map and the track line, with the clock',
     apply: replay,
+  },
+  {
+    id: 'strategy',
+    title: 'Strategy',
+    description: 'Stints, gaps, positions, race pace, pit window and pit ghosts on the map',
+    apply: strategy,
   },
 ] as const;
 

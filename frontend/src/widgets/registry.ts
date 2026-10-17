@@ -1,10 +1,15 @@
 import { bestsWidget } from './bests/widget';
 import { cornersWidget } from './corners/widget';
 import { deltaWidget } from './delta/widget';
+import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
 import { markersWidget } from './markers/widget';
+import { paceWidget } from './pace/widget';
+import { pitWindowWidget } from './pitwindow/widget';
+import { positionsWidget } from './positions/widget';
 import { raceControlWidget } from './racecontrol/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
+import { stintsWidget } from './stints/widget';
 import { telemetryWidget } from './telemetry/widget';
 import { timelineWidget } from './timeline/widget';
 import { towerWidget } from './tower/widget';
@@ -31,6 +36,11 @@ export const WIDGETS: AnyWidgetDef[] = [
   towerWidget,
   trackLineWidget,
   markersWidget,
+  stintsWidget,
+  gapsWidget,
+  positionsWidget,
+  paceWidget,
+  pitWindowWidget,
 ];
 
 export const WIDGETS_BY_ID = new Map(WIDGETS.map((w) => [w.id, w]));

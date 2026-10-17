@@ -211,6 +211,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/race-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Race History */
+        get: operations["race_history_api_sessions__year___round___session__race_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/degradation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Degradation */
+        get: operations["degradation_api_sessions__year___round___session__degradation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/pit-window": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pit Window */
+        get: operations["pit_window_api_sessions__year___round___session__pit_window_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/telemetry": {
         parameters: {
             query?: never;
@@ -419,6 +470,22 @@ export interface components {
             /** Corners */
             corners: components["schemas"]["CornerSegment"][];
         };
+        /**
+         * CompoundPace
+         * @description The field's degradation on one compound: stint fits combined.
+         */
+        CompoundPace: {
+            /** Compound */
+            compound: string;
+            /** Slope */
+            slope: number;
+            /** Base */
+            base: number;
+            /** Stints */
+            stints: number;
+            /** Laps */
+            laps: number;
+        };
         /** Corner */
         Corner: {
             /** Label */
@@ -464,6 +531,33 @@ export interface components {
             /** Laps */
             laps: components["schemas"]["CornerLap"][];
         };
+        /**
+         * DegFit
+         * @description Fuel-corrected lap time = base + slope × tyre age, fitted on the stint's clean laps.
+         */
+        DegFit: {
+            /** Slope */
+            slope: number;
+            /** Base */
+            base: number;
+            /** Residual */
+            residual: number;
+            /** Laps */
+            laps: number[];
+        };
+        /** Degradation */
+        Degradation: {
+            /** Until */
+            until: number | null;
+            /** Total Laps */
+            total_laps: number | null;
+            /** Fuel Per Lap */
+            fuel_per_lap: number;
+            /** Stints */
+            stints: components["schemas"]["StintPace"][];
+            /** Compounds */
+            compounds: components["schemas"]["CompoundPace"][];
+        };
         /** DriverInfo */
         DriverInfo: {
             /** Code */
@@ -480,6 +574,58 @@ export interface components {
             color: string;
             /** Headshot Url */
             headshot_url: string | null;
+        };
+        /**
+         * DriverRace
+         * @description One driver's race lap by lap, columnar: index i is lap laps[i].
+         */
+        DriverRace: {
+            /** Driver */
+            driver: string;
+            /** Grid */
+            grid: number | null;
+            /** Laps */
+            laps: number[];
+            /** Line */
+            line: (number | null)[];
+            /** Gap */
+            gap: (number | null)[];
+            /** Position */
+            position: (number | null)[];
+            /** Lap Time */
+            lap_time: (number | null)[];
+            /** Tyre Life */
+            tyre_life: (number | null)[];
+            /** Clean */
+            clean: boolean[];
+            /** Stints */
+            stints: components["schemas"]["Stint"][];
+            /** Stops */
+            stops: components["schemas"]["PitStop"][];
+        };
+        /**
+         * Duel
+         * @description Undercut and overcut against one car around the driver.
+         *
+         *     first[k − 1]: the driver stops on the next lap and the rival k laps later; second[k − 1]: the
+         *     rival stops on the next lap and the driver k laps later. Both are seconds the driver gains on
+         *     the rival once both have stopped (negative = loses), on top of the gap now.
+         */
+        Duel: {
+            /** Rival */
+            rival: string;
+            /** Ahead */
+            ahead: boolean;
+            /** Gap */
+            gap: number;
+            /** Rival Compound */
+            rival_compound: string | null;
+            /** Rival Life */
+            rival_life: number | null;
+            /** First */
+            first: number[];
+            /** Second */
+            second: number[];
         };
         /** EventInfo */
         EventInfo: {
@@ -658,6 +804,55 @@ export interface components {
             /** Fastest */
             fastest: number[];
         };
+        /** PitStop */
+        PitStop: {
+            /** Lap */
+            lap: number;
+            /** Pit In */
+            pit_in: number;
+            /** Pit Out */
+            pit_out: number;
+            /** Lane */
+            lane: number;
+            /** Loss */
+            loss: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+        };
+        /**
+         * PitWindow
+         * @description A pit stop for one driver at the cutoff: where he rejoins, and undercut/overcut on the cars
+         *     ahead and behind. Tyre model from Degradation; pit loss from the circuit.
+         */
+        PitWindow: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Position */
+            position: number;
+            /** Compound */
+            compound: string | null;
+            /** Life */
+            life: number | null;
+            /** New Compound */
+            new_compound: string | null;
+            /** Pit Loss */
+            pit_loss: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+            rejoin: components["schemas"]["Rejoin"] | null;
+            /** Duels */
+            duels: components["schemas"]["Duel"][];
+            /** Notes */
+            notes: string[];
+        };
         /** RaceControlMessage */
         RaceControlMessage: {
             /**
@@ -681,6 +876,39 @@ export interface components {
             driver: string | null;
             /** Lap */
             lap: number | null;
+        };
+        /**
+         * RaceHistory
+         * @description The session lap by lap for every driver: what gap, position and stint charts need.
+         */
+        RaceHistory: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "race" | "quali" | "practice";
+            /** Total Laps */
+            total_laps: number | null;
+            /** Leader Line */
+            leader_line: number[];
+            /** Drivers */
+            drivers: components["schemas"]["DriverRace"][];
+        };
+        /**
+         * Rejoin
+         * @description Where a car comes out after a pit stop now, if nobody else stops.
+         */
+        Rejoin: {
+            /** Position */
+            position: number;
+            /** Ahead */
+            ahead: string | null;
+            /** Gap Ahead */
+            gap_ahead: number | null;
+            /** Behind */
+            behind: string | null;
+            /** Gap Behind */
+            gap_behind: number | null;
         };
         /**
          * ReplayPositions
@@ -821,6 +1049,35 @@ export interface components {
              * @enum {string}
              */
             status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+        };
+        /** Stint */
+        Stint: {
+            /** Number */
+            number: number;
+            /** Compound */
+            compound: string | null;
+            /** Fresh */
+            fresh: boolean | null;
+            /** Start Lap */
+            start_lap: number;
+            /** End Lap */
+            end_lap: number;
+            /** Start Life */
+            start_life: number | null;
+        };
+        /** StintPace */
+        StintPace: {
+            /** Driver */
+            driver: string;
+            /** Stint */
+            stint: number;
+            /** Compound */
+            compound: string | null;
+            /** Start Lap */
+            start_lap: number;
+            /** End Lap */
+            end_lap: number;
+            fit: components["schemas"]["DegFit"] | null;
         };
         /** TagCount */
         TagCount: {
@@ -1473,6 +1730,117 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    race_history_api_sessions__year___round___session__race_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaceHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    degradation_api_sessions__year___round___session__degradation_get: {
+        parameters: {
+            query?: {
+                /** @description Session time (s): only laps completed by then count; omit for all */
+                until?: number | null;
+                /** @description Fuel effect in s per kg (100 kg at the start of a race) */
+                fuel?: number;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Degradation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pit_window_api_sessions__year___round___session__pit_window_get: {
+        parameters: {
+            query: {
+                driver: string;
+                /** @description Session time (s): only laps completed by then count; omit for all */
+                until?: number | null;
+                /** @description Fuel effect in s per kg (100 kg at the start of a race) */
+                fuel?: number;
+                compound?: string | null;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PitWindow"];
+                };
             };
             /** @description Validation Error */
             422: {

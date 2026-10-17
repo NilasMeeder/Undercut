@@ -1,0 +1,551 @@
+"""Strategy and race analysis from the lap data alone (no telemetry), pure functions.
+
+- history: every driver lap by lap (line crossings, gaps, positions, stints, pit stops).
+- degradation: per stint a straight line through the fuel-corrected lap times against tyre age.
+- pit_window: where a driver rejoins after a stop now, and undercut/overcut on the cars around.
+
+Everything takes an `until` (session time): only laps completed by then count, so the session
+clock can step through a race without seeing the future.
+"""
+
+import math
+from collections import defaultdict
+from dataclasses import dataclass
+
+import numpy as np
+
+from app.replay import driven, status_at
+from app.schemas import (
+    CompoundPace,
+    DegFit,
+    Degradation,
+    DriverRace,
+    Duel,
+    Lap,
+    PitStop,
+    PitWindow,
+    RaceHistory,
+    Rejoin,
+    StatusPeriod,
+    Stint,
+    StintPace,
+    TrackStatus,
+)
+
+FUEL_START = 100.0
+"""kg of fuel at the start of a race (the limit is 110 kg; teams start a bit under it)."""
+PRACTICE_BURN = 1.8
+"""kg per lap outside races, where the fuel load is unknown (about 100 kg over a race distance)."""
+FUEL_EFFECT = 0.03
+"""Seconds per lap per kg of fuel, a common estimate (track-dependent)."""
+CLEAN_STATUS = set("12")
+"""Track status digits a clean lap may have: green and yellow (not SC 4, red 5, VSC 6/7)."""
+MIN_FIT_LAPS = 4
+COOL_DOWN = 1.07
+"""A lap this much slower than the stint's quickest clean lap is a cool-down or SC-paced lap."""
+OUTLIER_FLOOR = 0.6
+"""A lap further than this (s) and 2.5 standard deviations from the fit is traffic or a mistake."""
+FIT_ROUNDS = 3
+STOP_REFERENCE_LAPS = 3
+"""Laps either side of a stop whose median is the driver's pace, to measure the stop's loss."""
+DUEL_LAPS = 3
+"""Undercut/overcut: the other car stops 1 to DUEL_LAPS laps later."""
+DEFAULT_PIT_LOSS = 22.0
+"""Seconds, for a circuit without an estimate in the archive."""
+LAP_DONE_SLACK = 0.01
+"""The cutoff is a lap end time; floating point must not drop that lap."""
+
+NEXT_COMPOUND = {"SOFT": "HARD", "MEDIUM": "HARD", "HARD": "MEDIUM"}
+"""A guess at the set a driver goes to when none is given: another dry compound."""
+
+
+def fuel_per_lap(total_laps: int | None, effect: float = FUEL_EFFECT) -> float:
+    """Seconds a lap gets quicker from the fuel burnt on the lap before it."""
+    if not total_laps:
+        return effect * PRACTICE_BURN
+    return effect * FUEL_START / total_laps
+
+
+def corrected(lap: Lap, fuel: float, total_laps: int | None) -> float | None:
+    """Lap time as if run with the fuel of the last lap."""
+    if lap.lap_time is None:
+        return None
+    return lap.lap_time - fuel * ((total_laps or lap.lap) - lap.lap)
+
+
+def is_clean(lap: Lap) -> bool:
+    """A racing lap that says something about pace: timed, no pit lane, not lap 1, no SC/VSC."""
+    return (
+        lap.lap_time is not None
+        and lap.lap > 1
+        and not lap.pit_in
+        and not lap.pit_out
+        and not lap.deleted
+        and set(lap.track_status or "1") <= CLEAN_STATUS
+    )
+
+
+def done(lap: Lap, until: float | None) -> bool:
+    if until is None:
+        return True
+    return lap.end_time is not None and lap.end_time <= until + LAP_DONE_SLACK
+
+
+def by_driver(laps: list[Lap]) -> dict[str, list[Lap]]:
+    """Driven laps per driver, in lap order."""
+    out: dict[str, list[Lap]] = defaultdict(list)
+    for lap in laps:
+        if driven(lap):
+            out[lap.driver].append(lap)
+    for own in out.values():
+        own.sort(key=lambda lap: lap.lap)
+    return dict(out)
+
+
+# --- Degradation ---------------------------------------------------------------------------------
+
+
+@dataclass
+class Fit:
+    slope: float
+    base: float
+    residual: float
+    laps: list[int]
+
+    def at(self, age: float) -> float:
+        return self.base + self.slope * age
+
+
+def fit_line(ages: list[float], times: list[float], laps: list[int]) -> Fit | None:
+    """Least squares, refitted without outliers until none are left (at most FIT_ROUNDS)."""
+    x, y, n = np.asarray(ages, float), np.asarray(times, float), np.asarray(laps)
+    for _ in range(FIT_ROUNDS):
+        if len(x) < MIN_FIT_LAPS or np.ptp(x) == 0:
+            return None
+        slope, base = np.polyfit(x, y, 1)
+        residual = y - (base + slope * x)
+        keep = np.abs(residual) <= max(OUTLIER_FLOOR, 2.5 * float(np.std(residual)))
+        if keep.all():
+            break
+        x, y, n = x[keep], y[keep], n[keep]
+    if len(x) < MIN_FIT_LAPS or np.ptp(x) == 0:
+        return None
+    slope, base = np.polyfit(x, y, 1)
+    spread = float(np.std(y - (base + slope * x)))
+    return Fit(float(slope), float(base), spread, [int(v) for v in n])
+
+
+def stints(own: list[Lap]) -> list[Stint]:
+    groups: dict[int, list[Lap]] = defaultdict(list)
+    current = 1
+    for lap in own:
+        current = lap.stint if lap.stint is not None else current
+        groups[current].append(lap)
+    out = []
+    for number, laps in sorted(groups.items()):
+        compound = next((lap.compound for lap in laps if lap.compound), None)
+        out.append(
+            Stint(
+                number=number,
+                compound=compound,
+                fresh=laps[0].fresh_tyre,
+                start_lap=laps[0].lap,
+                end_lap=laps[-1].lap,
+                start_life=laps[0].tyre_life,
+            )
+        )
+    return out
+
+
+def stint_fits(
+    own: list[Lap], fuel: float, total_laps: int | None, until: float | None
+) -> list[tuple[Stint, Fit | None]]:
+    """Each stint of a driver (up to the cutoff) with its degradation fit."""
+    seen = [lap for lap in own if done(lap, until)]
+    out = []
+    for stint in stints(seen):
+        laps = [
+            lap
+            for lap in seen
+            if stint.start_lap <= lap.lap <= stint.end_lap
+            and is_clean(lap)
+            and lap.tyre_life is not None
+        ]
+        if laps:
+            quickest = min(lap.lap_time or math.inf for lap in laps)
+            laps = [lap for lap in laps if (lap.lap_time or math.inf) <= quickest * COOL_DOWN]
+        fit = fit_line(
+            [lap.tyre_life for lap in laps],
+            [corrected(lap, fuel, total_laps) for lap in laps],
+            [lap.lap for lap in laps],
+        )
+        out.append((stint, fit))
+    return out
+
+
+def compound_paces(fits: list[tuple[Stint, Fit | None]]) -> list[CompoundPace]:
+    pooled: dict[str, list[Fit]] = defaultdict(list)
+    for stint, fit in fits:
+        if fit and stint.compound:
+            pooled[stint.compound].append(fit)
+    out = []
+    for compound, group in sorted(pooled.items()):
+        weights = np.array([len(f.laps) for f in group], float)
+        out.append(
+            CompoundPace(
+                compound=compound,
+                slope=round(float(np.average([f.slope for f in group], weights=weights)), 4),
+                base=round(float(np.median([f.base for f in group])), 3),
+                stints=len(group),
+                laps=int(weights.sum()),
+            )
+        )
+    return out
+
+
+def _deg_fit(fit: Fit | None) -> DegFit | None:
+    if fit is None:
+        return None
+    return DegFit(
+        slope=round(fit.slope, 4),
+        base=round(fit.base, 3),
+        residual=round(fit.residual, 3),
+        laps=fit.laps,
+    )
+
+
+@dataclass
+class Paces:
+    """Every stint fit up to a cutoff, as the degradation response and the pit window use them."""
+
+    fuel: float
+    total_laps: int | None
+    fits: dict[str, list[tuple[Stint, Fit | None]]]
+    compounds: dict[str, CompoundPace]
+
+
+def paces(laps: list[Lap], total_laps: int | None, effect: float, until: float | None) -> Paces:
+    fuel = fuel_per_lap(total_laps, effect)
+    # Outside races lap times are corrected to the session's last lap: only slopes compare.
+    total_laps = total_laps or max((lap.lap for lap in laps), default=None)
+    fits = {
+        driver: stint_fits(own, fuel, total_laps, until)
+        for driver, own in sorted(by_driver(laps).items())
+    }
+    pooled = compound_paces([pair for pairs in fits.values() for pair in pairs])
+    return Paces(fuel, total_laps, fits, {c.compound: c for c in pooled})
+
+
+def degradation(p: Paces, until: float | None) -> Degradation:
+    return Degradation(
+        until=until,
+        total_laps=p.total_laps,
+        fuel_per_lap=round(p.fuel, 4),
+        stints=[
+            StintPace(
+                driver=driver,
+                stint=stint.number,
+                compound=stint.compound,
+                start_lap=stint.start_lap,
+                end_lap=stint.end_lap,
+                fit=_deg_fit(fit),
+            )
+            for driver, pairs in p.fits.items()
+            for stint, fit in pairs
+        ],
+        compounds=list(p.compounds.values()),
+    )
+
+
+# --- History -------------------------------------------------------------------------------------
+
+
+def leader_line(per_driver: dict[str, list[Lap]]) -> list[float]:
+    """Per lap: when the first car completed it."""
+    first: dict[int, float] = {}
+    for own in per_driver.values():
+        for lap in own:
+            if lap.end_time is not None:
+                first[lap.lap] = min(lap.end_time, first.get(lap.lap, math.inf))
+    return [first[n] for n in sorted(first)]
+
+
+def pit_stops(own: list[Lap], status: list[StatusPeriod]) -> list[PitStop]:
+    by_lap = {lap.lap: lap for lap in own}
+    stops = []
+    for lap in own:
+        out_lap = by_lap.get(lap.lap + 1)
+        if not lap.pit_in or lap.pit_in_time is None or out_lap is None:
+            continue
+        if out_lap.pit_out_time is None:
+            continue
+        stops.append(
+            PitStop(
+                lap=lap.lap,
+                pit_in=lap.pit_in_time,
+                pit_out=out_lap.pit_out_time,
+                lane=round(out_lap.pit_out_time - lap.pit_in_time, 3),
+                loss=_stop_loss(own, lap, out_lap),
+                status=status_at(status, lap.pit_in_time),
+            )
+        )
+    return stops
+
+
+def _stop_loss(own: list[Lap], in_lap: Lap, out_lap: Lap) -> float | None:
+    """In-lap plus out-lap against two laps at the driver's pace around the stop."""
+    if in_lap.lap_time is None or out_lap.lap_time is None:
+        return None
+    window = range(in_lap.lap - STOP_REFERENCE_LAPS, out_lap.lap + STOP_REFERENCE_LAPS + 1)
+    around = [lap.lap_time for lap in own if lap.lap in window and is_clean(lap)]
+    if not around:
+        return None
+    return round(in_lap.lap_time + out_lap.lap_time - 2 * float(np.median(around)), 3)
+
+
+def classification(per_driver: dict[str, list[Lap]], until: float | None) -> list[str]:
+    """Most laps completed first, then who completed the last of them first."""
+
+    def key(driver: str) -> tuple[int, float]:
+        seen = [lap for lap in per_driver[driver] if done(lap, until) and lap.end_time is not None]
+        if not seen:
+            return (0, math.inf)
+        return (-seen[-1].lap, seen[-1].end_time or math.inf)
+
+    return sorted(per_driver, key=key)
+
+
+def history(
+    laps: list[Lap],
+    kind: str,
+    total_laps: int | None,
+    grid: dict[str, int],
+    status: list[StatusPeriod],
+) -> RaceHistory:
+    per_driver = by_driver(laps)
+    leaders = leader_line(per_driver)
+    race = kind == "race"
+    drivers = []
+    for driver in classification(per_driver, None):
+        own = per_driver[driver]
+        lines = [lap.end_time for lap in own]
+        gaps = [
+            round(line - leaders[lap.lap - 1], 3)
+            if race and line is not None and lap.lap <= len(leaders)
+            else None
+            for lap, line in zip(own, lines, strict=True)
+        ]
+        drivers.append(
+            DriverRace(
+                driver=driver,
+                grid=grid.get(driver),
+                laps=[lap.lap for lap in own],
+                line=lines,
+                gap=gaps,
+                position=[lap.position if race else None for lap in own],
+                lap_time=[lap.lap_time for lap in own],
+                tyre_life=[lap.tyre_life for lap in own],
+                clean=[is_clean(lap) for lap in own],
+                stints=stints(own),
+                stops=pit_stops(own, status),
+            )
+        )
+    return RaceHistory(
+        kind=kind,  # type: ignore[arg-type]
+        total_laps=total_laps,
+        leader_line=leaders,
+        drivers=drivers,
+    )
+
+
+# --- Pit window ----------------------------------------------------------------------------------
+
+
+@dataclass
+class TyreModel:
+    """Predicted fuel-corrected lap times of one driver: on the current set and on a new one."""
+
+    old: Fit
+    new: Fit
+    age: int
+    """Age of the current set at the cutoff (laps)."""
+
+    def stay(self, laps: int) -> float:
+        """Time for the next `laps` laps on the current set."""
+        return sum(self.old.at(self.age + j) for j in range(1, laps + 1))
+
+    def fresh(self, laps: int) -> float:
+        """Time for the first `laps` laps on the new set."""
+        return sum(self.new.at(j) for j in range(1, laps + 1))
+
+
+def first_gain(me: TyreModel, rival: TyreModel, later: int) -> float:
+    """Seconds `me` gains on `rival` by stopping on the next lap while the rival stops `later` laps
+    after, counted until both are on new tyres. The pit loss is the same for both and cancels."""
+    mine = me.stay(1) + me.fresh(later + 1)
+    theirs = rival.stay(later + 1) + rival.fresh(1)
+    return theirs - mine
+
+
+def tyre_model(
+    p: Paces, driver: str, own: list[Lap], new_compound: str | None, notes: list[str]
+) -> TyreModel | None:
+    pairs = p.fits.get(driver) or []
+    if not pairs:
+        return None
+    stint, fit = pairs[-1]
+    seen = [lap for lap in own if stint.start_lap <= lap.lap <= stint.end_lap]
+    age = next((lap.tyre_life for lap in reversed(seen) if lap.tyre_life is not None), None)
+    if age is None:
+        return None
+    field = p.compounds.get(stint.compound or "")
+    if fit is None:
+        if field is None:
+            return None
+        # Too few clean laps on this set: the field's line, at this driver's latest pace.
+        recent = [lap for lap in seen if is_clean(lap) and lap.tyre_life is not None][-3:]
+        offsets = [
+            (corrected(lap, p.fuel, p.total_laps) or 0.0) - field.base - field.slope * lap.tyre_life
+            for lap in recent
+        ]
+        offset = float(np.median(offsets)) if offsets else 0.0
+        fit = Fit(field.slope, field.base + offset, 0.0, [])
+        notes.append(f"{driver}: too few clean laps on this set, the field's degradation is used")
+    target = p.compounds.get(new_compound or "")
+    if target is None:
+        new = Fit(fit.slope, fit.base, 0.0, [])
+        if new_compound and new_compound != stint.compound:
+            notes.append(
+                f"No {new_compound} running yet: assumed as quick as a new {stint.compound}"
+            )
+    else:
+        # The driver's own pace relative to the field, carried over to the new compound.
+        offset = fit.base - field.base if field else 0.0
+        new = Fit(target.slope, target.base + offset, 0.0, [])
+    return TyreModel(old=fit, new=new, age=age)
+
+
+def pit_window(
+    laps: list[Lap],
+    p: Paces,
+    driver: str,
+    until: float | None,
+    losses: dict[TrackStatus, float],
+    status: TrackStatus,
+    compound: str | None = None,
+) -> PitWindow:
+    per_driver = by_driver(laps)
+    if driver not in per_driver:
+        raise LookupError(f"{driver} has no laps in this session")
+    running = [d for d in classification(per_driver, until) if _running(per_driver[d], until)]
+    if driver not in running:
+        raise LookupError(f"{driver} is not running at that moment")
+    seen = {d: [lap for lap in per_driver[d] if done(lap, until)] for d in running}
+    leaders = leader_line({d: seen[d] for d in running})
+    gap_now = {d: _gap(seen[d], leaders) for d in running}
+
+    own = seen[driver]
+    pairs = p.fits.get(driver) or []
+    current = pairs[-1][0] if pairs else None
+    current_compound = current.compound if current else None
+    new_compound = compound or NEXT_COMPOUND.get(current_compound or "", current_compound)
+    loss = losses.get(status, losses["green"])
+    notes: list[str] = []
+    models: dict[str, TyreModel | None] = {}
+
+    def model(d: str) -> TyreModel | None:
+        if d not in models:
+            models[d] = tyre_model(p, d, seen[d], new_compound if d == driver else None, notes)
+        return models[d]
+
+    rejoin = None
+    if gap_now[driver] is not None:
+        rejoin = _rejoin(driver, gap_now[driver] + loss, gap_now)
+
+    duels = []
+    index = running.index(driver)
+    for k, ahead in ((index - 1, True), (index + 1, False)):
+        if not 0 <= k < len(running):
+            continue
+        rival = running[k]
+        gap = _gap_between(seen[driver], seen[rival])
+        me, them = model(driver), _rival_model(p, rival, seen[rival], notes)
+        if gap is None or me is None or them is None:
+            continue
+        last = seen[rival][-1] if seen[rival] else None
+        duels.append(
+            Duel(
+                rival=rival,
+                ahead=ahead,
+                gap=round(gap, 3),
+                rival_compound=last.compound if last else None,
+                rival_life=last.tyre_life if last else None,
+                first=[round(first_gain(me, them, n), 3) for n in range(1, DUEL_LAPS + 1)],
+                second=[round(-first_gain(them, me, n), 3) for n in range(1, DUEL_LAPS + 1)],
+            )
+        )
+    last = own[-1] if own else None
+    return PitWindow(
+        driver=driver,
+        lap=last.lap if last else 0,
+        position=index + 1,
+        compound=last.compound if last else current_compound,
+        life=last.tyre_life if last else None,
+        new_compound=new_compound,
+        pit_loss=round(loss, 2),
+        status=status,
+        rejoin=rejoin,
+        duels=duels,
+        notes=list(dict.fromkeys(notes)),
+    )
+
+
+def _rival_model(p: Paces, rival: str, seen: list[Lap], notes: list[str]) -> TyreModel | None:
+    """A rival goes to the same kind of set the guess gives for him."""
+    pairs = p.fits.get(rival) or []
+    compound = pairs[-1][0].compound if pairs else None
+    return tyre_model(p, rival, seen, NEXT_COMPOUND.get(compound or "", compound), notes)
+
+
+def _running(own: list[Lap], until: float | None) -> bool:
+    """Still in the race at the cutoff: on a lap that ends after it (or the race is over)."""
+    if until is None:
+        return own[-1].end_time is not None
+    return any(
+        lap.start_time is not None
+        and lap.start_time <= until + LAP_DONE_SLACK
+        and lap.end_time is not None
+        and lap.end_time >= until - LAP_DONE_SLACK
+        for lap in own
+    )
+
+
+def _gap(seen: list[Lap], leaders: list[float]) -> float | None:
+    last = next((lap for lap in reversed(seen) if lap.end_time is not None), None)
+    if last is None or last.lap > len(leaders):
+        return None
+    return last.end_time - leaders[last.lap - 1]
+
+
+def _gap_between(a: list[Lap], b: list[Lap]) -> float | None:
+    """Seconds between two cars at the last line both crossed."""
+    lines_b = {lap.lap: lap.end_time for lap in b if lap.end_time is not None}
+    for lap in reversed(a):
+        if lap.end_time is not None and lap.lap in lines_b:
+            return abs(lap.end_time - lines_b[lap.lap])
+    return None
+
+
+def _rejoin(driver: str, gap: float, gaps: dict[str, float | None]) -> Rejoin:
+    others = sorted((g, d) for d, g in gaps.items() if d != driver and g is not None)
+    ahead = [(g, d) for g, d in others if g <= gap]
+    behind = [(g, d) for g, d in others if g > gap]
+    front = ahead[-1] if ahead else None
+    back = behind[0] if behind else None
+    return Rejoin(
+        position=len(ahead) + 1,
+        ahead=front[1] if front else None,
+        gap_ahead=round(gap - front[0], 3) if front else None,
+        behind=back[1] if back else None,
+        gap_behind=round(back[0] - gap, 3) if back else None,
+    )
