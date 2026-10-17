@@ -7,8 +7,9 @@ volgende fase voordat de vorige echt werkt.
 
 - Fase 0 af (2026-10-17): de Next.js-template is vervangen door `backend/` (FastAPI + FastF1) en
   `frontend/` (Vite + React 19 + Tailwind 4). De kalender per seizoen werkt, met een sessiekiezer.
-- Fase 2 grotendeels af (2026-10-17): docking-dashboard met laptijden, telemetrie, delta en track map,
-  gedeelde cursor/zoom per link-groep. Getest in headless Chrome op Monza 2025 Q.
+- Fase 2 af (2026-10-17): docking-dashboard met laptijden, telemetrie, delta en track map, gedeelde
+  cursor/zoom per link-groep, instellingen (tandwiel) en uitleg (i) per paneel, popout naar een tweede
+  venster. Getest in headless Chrome op Monza 2025 Q.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit- en compare-endpoints op
   TracingInsights-data. Nog open: de OpenF1-fallback en de endpoints voor weer, race control en radio.
 
@@ -90,10 +91,12 @@ Alles waar elke latere widget op leunt. Pas klaar als het goed voelt, niet als h
   - [x] **Delta-chart**
   - [x] **Track map**: outline, bochten, cursorpositie, mini-sectoren gekleurd per snelste lap
 - [x] Preset-layout "Quali-duel" die je met één klik krijgt
-- [ ] Paneel-instellingen (tandwiel): kanalen aan/uit, aantal mini-sectoren, step
-- [ ] (i)-uitleg per widget (zie UX-principes)
-- [ ] Popout naar een tweede venster en het wisselen van link-groep in de browser testen (gebouwd, nog niet getest)
-- [ ] Code splitting: de bundle is >500 kB (dockview + uPlot), Vite waarschuwt
+- [x] Paneel-instellingen (tandwiel): kanalen aan/uit en resolutie (Telemetry), resolutie (Delta),
+      aantal mini-sectoren en bochtnummers (Track map). Bewaard per paneel in de layout
+- [x] (i)-uitleg per widget: wat je ziet, waar je op let, bediening
+- [x] Popout naar een tweede venster en link-groep wisselen getest: cursor loopt mee tussen vensters,
+      knoppen werken in de popout, "terug" zet het paneel op zijn oude plek
+- [x] Code splitting: widgets lazy (elk een eigen chunk), react en dockview als vendor-chunks
 
 **Klaar als:** je een Q3-duel kunt analyseren in een zelf ingedeeld scherm, en de cursor soepel over
 alle panelen meeloopt.

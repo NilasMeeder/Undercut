@@ -10,7 +10,7 @@ import type { WidgetProps } from '../types';
 
 type View = 'classification' | 'laps';
 
-export function LapsWidget({ group }: WidgetProps) {
+export function LapsWidget({ group }: WidgetProps<Record<string, never>>) {
   const laps = useLaps();
   const detail = useSessionDetail();
   const [view, setView] = useState<View>('classification');

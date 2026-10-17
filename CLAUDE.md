@@ -13,9 +13,9 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0, 1 en het grootste deel van 2 zijn af: een docking-dashboard (dockview) met de widgets Laps,
-Telemetry, Delta en Track map, link-groepen en een gedeelde cursor/zoom. Wat nog open staat, staat in
-ROADMAP.md bij fase 2; daarna volgt fase 3 (analyse-widgets).
+Fase 0, 1 en 2 zijn af: een docking-dashboard (dockview) met de widgets Laps, Telemetry, Delta en
+Track map, link-groepen, een gedeelde cursor/zoom, en per paneel instellingen (tandwiel) en uitleg (i).
+Volgende stap: fase 3 (analyse-widgets), zie ROADMAP.md.
 
 **Visueel testen:** de Chrome-extensie is vaak niet verbonden. Gebruik dan headless Chrome via
 `playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
@@ -77,8 +77,11 @@ backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
 frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), schema.d.ts (gegenereerd)
 frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus)
-frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen)
-frontend/src/widgets/      één map per widget + registry.ts; useGroupComparison.ts deelt de compare-data
+frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen),
+                           HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
+frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
+                           + de component; registry.ts somt ze op; types.ts (defineWidget, resolveConfig);
+                           useGroupComparison.ts deelt de compare-data
 frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), data/bits.tsx (badges, swatches)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, lijnstijlen)
 frontend/src/features/     topbalk: SessionPicker, GroupBar, useDefaultSelection
@@ -193,7 +196,14 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
 - **Sessieklok** (vanaf fase 4): replay en live leveren allebei "tijd t". Widgets vragen de toestand op t
   en weten niet welke bron erachter zit.
 - Widgets zijn losse componenten in `frontend/src/widgets/<Naam>/` met een registry
-  (`widgets/registry.ts`): id, titel, config. Nieuwe widget = nieuw bestand + registry-entry.
+  (`widgets/registry.ts`). Nieuwe widget = component + `widget.ts` met `defineWidget({ id, title,
+  description, help, defaults, settings, component: lazy(...) })` + entry in de registry.
+- **Paneel-instellingen** zijn declaratief: het type van het config-veld bepaalt de control (boolean =
+  aan/uit, array = meerdere aan/uit, anders één keuze). Ze staan in de panel-params (`config`, alleen
+  wat afwijkt van de defaults) en dus in de layout. `resolveConfig` valt terug op de default als een
+  bewaarde waarde niet meer past, zodat oude layouts blijven laden.
+- Een paneel met andere compare-opties (resolutie, mini-sectoren) haalt een eigen `/compare` op; panelen
+  met dezelfde opties delen de query.
 - Widgets halen hun data via TanStack Query hooks in `src/api/`, zodat dezelfde data niet twee keer
   wordt opgehaald als twee panelen hem gebruiken.
 - De dockview-layout staat in localStorage als JSON (later export/import naar bestand).

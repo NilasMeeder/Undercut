@@ -1,18 +1,24 @@
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useMemo, useSyncExternalStore } from 'react';
 import {
   DockviewReact,
   type DockviewApi,
+  type DockviewGroupPanel,
   type DockviewReadyEvent,
   type DockviewTheme,
   type IDockviewHeaderActionsProps,
+  type IDockviewPanel,
   type IDockviewPanelHeaderProps,
   type IDockviewPanelProps,
 } from 'dockview-react';
-import { ExternalLink, Plus, X } from 'lucide-react';
+import { ExternalLink, Info, PanelTopClose, Plus, Settings, X } from 'lucide-react';
+import { PanelMessage } from '@/components/data/bits';
 import { GROUP_COLORS, nextGroup, type GroupId } from '@/store/groups';
-import { WIDGETS } from '@/widgets/registry';
-import { addWidget, applyQualiDuel, restoreLayout, saveLayout, type PanelParams } from './layout';
+import { WIDGETS, WIDGETS_BY_ID } from '@/widgets/registry';
+import { resolveConfig } from '@/widgets/types';
 import { useDashboardApi } from './api';
+import { HeaderMenu, headerButton } from './HeaderMenu';
+import { addWidget, applyQualiDuel, restoreLayout, saveLayout, type PanelParams } from './layout';
+import { HelpContent, SettingsContent } from './PanelMenus';
 
 const theme: DockviewTheme = {
   name: 'pitwall',
@@ -24,9 +30,15 @@ const theme: DockviewTheme = {
 const components = Object.fromEntries(
   WIDGETS.map((widget) => {
     const Widget = widget.component;
-    const Panel = ({ params }: IDockviewPanelProps<PanelParams>) => (
-      <Widget group={params.group ?? 'blue'} />
-    );
+    const Panel = ({ params }: IDockviewPanelProps<PanelParams>) => {
+      // Stable identity until the panel's settings change, so charts are not rebuilt per render.
+      const config = useMemo(() => resolveConfig(widget, params.config), [params.config]);
+      return (
+        <Suspense fallback={<PanelMessage>Loading…</PanelMessage>}>
+          <Widget group={params.group ?? 'blue'} config={config} />
+        </Suspense>
+      );
+    };
     Panel.displayName = `Panel(${widget.id})`;
     return [widget.id, Panel];
   })
@@ -72,59 +84,113 @@ function AddWidgetMenu({
   onPick: (widget: string) => void;
   align?: 'left' | 'right';
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <div className="relative">
-      <button
-        type="button"
-        title="Add panel"
-        onClick={() => setOpen((o) => !o)}
-        className="flex h-6 w-6 items-center justify-center text-faint hover:bg-raised hover:text-text"
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </button>
-      {open ? (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            className={`absolute top-6 z-50 w-64 border border-line-strong bg-header py-0.5 ${align === 'right' ? 'right-0' : 'left-0'}`}
-          >
-            {WIDGETS.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onPick(w.id);
-                }}
-                className="block w-full px-2 py-1 text-left hover:bg-raised"
-              >
-                <div className="text-[11px] text-text">{w.title}</div>
-                <div className="text-[10px] text-faint">{w.description}</div>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : null}
-    </div>
+    <HeaderMenu icon={<Plus className="h-3.5 w-3.5" />} title="Add panel" align={align}>
+      {(close) => (
+        <div className="py-0.5">
+          {WIDGETS.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => {
+                close();
+                onPick(w.id);
+              }}
+              className="block w-full px-2 py-1 text-left hover:bg-raised"
+            >
+              <div className="text-text">{w.title}</div>
+              <div className="text-[10px] text-faint">{w.description}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </HeaderMenu>
   );
 }
 
+/** A panel's params, re-read whenever they change (link group, settings). */
+function usePanelParams(panel: IDockviewPanel | undefined): PanelParams | undefined {
+  return useSyncExternalStore(
+    (fn) => {
+      const sub = panel?.api.onDidParametersChange(fn);
+      return () => sub?.dispose();
+    },
+    () => panel?.params as PanelParams | undefined
+  );
+}
+
+function useGroupLocation(group: DockviewGroupPanel) {
+  return useSyncExternalStore(
+    (fn) => {
+      const sub = group.api.onDidLocationChange(fn);
+      return () => sub.dispose();
+    },
+    () => group.api.location
+  );
+}
+
+/** Title-bar buttons of a tab group; help and settings act on the visible panel. */
 function GroupActions({ containerApi, group, activePanel }: IDockviewHeaderActionsProps) {
-  const linkGroup = (activePanel?.params as PanelParams | undefined)?.group ?? 'blue';
+  const params = usePanelParams(activePanel);
+  const location = useGroupLocation(group);
+  const widget = activePanel ? WIDGETS_BY_ID.get(activePanel.api.component) : undefined;
+  const config = useMemo(
+    () => (widget ? resolveConfig(widget, params?.config) : undefined),
+    [widget, params?.config]
+  );
+  const linkGroup = params?.group ?? 'blue';
+
   return (
     <div className="flex h-full items-center">
       <AddWidgetMenu
-        onPick={(widget) => addWidget(containerApi, widget, linkGroup, { referenceGroup: group })}
+        onPick={(id) => addWidget(containerApi, id, linkGroup, { referenceGroup: group })}
       />
-      <button
-        type="button"
-        title="Open in a separate window"
-        onClick={() => void containerApi.addPopoutGroup(group)}
-        className="flex h-6 w-6 items-center justify-center text-faint hover:bg-raised hover:text-text"
-      >
-        <ExternalLink className="h-3 w-3" />
-      </button>
+      {widget ? (
+        <HeaderMenu
+          icon={<Info className="h-3 w-3" />}
+          title={`About ${widget.title}`}
+          width="w-80"
+        >
+          {() => <HelpContent widget={widget} />}
+        </HeaderMenu>
+      ) : null}
+      {widget && config && widget.settings.length > 0 ? (
+        <HeaderMenu
+          icon={<Settings className="h-3 w-3" />}
+          title={`${widget.title} settings`}
+          width="w-80"
+        >
+          {() => (
+            <SettingsContent
+              widget={widget}
+              config={config}
+              onChange={(stored) => activePanel?.api.updateParameters({ config: stored })}
+            />
+          )}
+        </HeaderMenu>
+      ) : null}
+      {location.type === 'popout' ? (
+        <button
+          type="button"
+          title="Back to the dashboard"
+          aria-label="Back to the dashboard"
+          // Closing the window hands the group back to the main grid where it came from.
+          onClick={() => location.getWindow().close()}
+          className={headerButton}
+        >
+          <PanelTopClose className="h-3 w-3" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          title="Open in a separate window"
+          aria-label="Open in a separate window"
+          onClick={() => void containerApi.addPopoutGroup(group)}
+          className={headerButton}
+        >
+          <ExternalLink className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }

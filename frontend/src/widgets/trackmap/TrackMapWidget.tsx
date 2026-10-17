@@ -5,8 +5,10 @@ import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom } from '@/store/cursor';
+import type { GroupId } from '@/store/groups';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
+import type { TrackMapConfig } from './widget';
 
 type Point = [number, number];
 
@@ -31,13 +33,21 @@ function toPath(points: Point[]): string {
   return points.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(0)},${y.toFixed(0)}`).join('');
 }
 
-export function TrackMapWidget({ group }: WidgetProps) {
+export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
   const circuit = useCircuit();
-  const { data, styles } = useGroupComparison(group);
+  const { data, styles } = useGroupComparison(group, { miniSectors: config.miniSectors });
 
   if (circuit.error) return <PanelMessage>{circuit.error.message}</PanelMessage>;
   if (!circuit.data) return <PanelMessage>Loading circuit…</PanelMessage>;
-  return <TrackMap group={group} circuit={circuit.data} comparison={data} styles={styles} />;
+  return (
+    <TrackMap
+      group={group}
+      circuit={circuit.data}
+      comparison={data}
+      styles={styles}
+      showCorners={config.corners}
+    />
+  );
 }
 
 function TrackMap({
@@ -45,7 +55,14 @@ function TrackMap({
   circuit,
   comparison,
   styles,
-}: WidgetProps & { circuit: Circuit; comparison: Comparison | undefined; styles: LapStyle[] }) {
+  showCorners,
+}: {
+  group: GroupId;
+  circuit: Circuit;
+  comparison: Comparison | undefined;
+  styles: LapStyle[];
+  showCorners: boolean;
+}) {
   const zoom = useZoom(group);
   const dotsRef = useRef<SVGGElement>(null);
 
@@ -160,7 +177,7 @@ function TrackMap({
             strokeLinecap="round"
           />
         ) : null}
-        {geometry.corners.map((c) => (
+        {(showCorners ? geometry.corners : []).map((c) => (
           <text
             key={c.label}
             x={c.x}
@@ -179,7 +196,7 @@ function TrackMap({
               key={n}
               r={u * 1.4}
               fill={s.color}
-              stroke="#08080a"
+              stroke={COLORS.bg}
               strokeWidth={u * 0.4}
               visibility="hidden"
             />

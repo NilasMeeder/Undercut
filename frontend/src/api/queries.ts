@@ -35,12 +35,19 @@ export const useSessionDetail = () => useSessionQuery<SessionDetail>('');
 export const useLaps = () => useSessionQuery<Lap[]>('/laps');
 export const useCircuit = () => useSessionQuery<Circuit>('/circuit');
 
-export function useComparison(laps: LapRef[]) {
+export type CompareOptions = {
+  /** Grid spacing in metres. */
+  step?: number;
+  miniSectors?: number;
+};
+
+export function useComparison(laps: LapRef[], { step = 5, miniSectors = 25 }: CompareOptions = {}) {
   const key = useSessionKey();
   const spec = laps.map((l) => `${l.driver}:${l.lap}`).join(',');
+  const query = `laps=${spec}&step=${step}&mini_sectors=${miniSectors}`;
   return useQuery({
-    queryKey: ['session', key, 'compare', spec],
-    queryFn: () => apiGet<Comparison>(`${sessionPath(key!)}/compare?laps=${spec}`),
+    queryKey: ['session', key, 'compare', query],
+    queryFn: () => apiGet<Comparison>(`${sessionPath(key!)}/compare?${query}`),
     enabled: key != null && laps.length > 0,
     staleTime: Infinity,
     // Keep showing the previous comparison while a new selection loads (no layout jump).

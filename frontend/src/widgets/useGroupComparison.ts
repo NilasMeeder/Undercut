@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
-import { useComparison, useSessionDetail } from '@/api/queries';
+import { useComparison, useSessionDetail, type CompareOptions } from '@/api/queries';
 import { lapStyles } from '@/lib/timing';
 import { useGroupLaps, type GroupId } from '@/store/groups';
 
 /** The group's lap comparison plus a line style per lap. Shared by all chart/map widgets. */
-export function useGroupComparison(group: GroupId) {
+export function useGroupComparison(group: GroupId, options?: CompareOptions) {
   const laps = useGroupLaps(group);
   const detail = useSessionDetail();
-  const comparison = useComparison(laps);
+  const comparison = useComparison(laps, options);
   const data = laps.length > 0 ? comparison.data : undefined;
   const styles = useMemo(
     () => (data ? lapStyles(data.laps, detail.data?.drivers) : []),

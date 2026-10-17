@@ -1,17 +1,18 @@
 import { useMemo } from 'react';
 import type uPlot from 'uplot';
 import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
-import { LineSwatch, PanelMessage } from '@/components/data/bits';
+import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
+import type { DeltaConfig } from './widget';
 
 const deltaFormat = (v: number) =>
   v === 0 ? '0' : `${v > 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`;
 
 /** Time behind the reference lap (the first selected) along the lap; above zero = slower. */
-export function DeltaWidget({ group }: WidgetProps) {
-  const { laps, data, styles, error } = useGroupComparison(group);
+export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
+  const { laps, data, styles, error } = useGroupComparison(group, { step: config.step });
 
   const chart = useMemo(() => {
     if (!data) return null;
@@ -23,8 +24,8 @@ export function DeltaWidget({ group }: WidgetProps) {
     return { data: [data.distance, ...data.laps.map((l) => l.delta)] as uPlot.AlignedData, series };
   }, [data, styles]);
 
-  if (laps.length < 2)
-    return <PanelMessage>Select at least two laps to see the delta.</PanelMessage>;
+  if (laps.length === 0) return <NoLapsMessage group={group} />;
+  if (laps.length === 1) return <PanelMessage>Select a second lap to see the delta.</PanelMessage>;
   if (error) return <PanelMessage>{error.message}</PanelMessage>;
   if (!data || !chart) return <PanelMessage>Loading…</PanelMessage>;
 

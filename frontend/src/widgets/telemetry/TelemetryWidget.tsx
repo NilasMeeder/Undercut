@@ -2,19 +2,20 @@ import { useMemo } from 'react';
 import type uPlot from 'uplot';
 import type { ComparedLap } from '@/api/client';
 import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
-import { LineSwatch, PanelMessage } from '@/components/data/bits';
+import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
 import type { LapStyle } from '@/lib/timing';
 import { useCursor } from '@/store/cursor';
 import type { GroupId } from '@/store/groups';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
-
-type ChannelKey = 'speed' | 'throttle' | 'brake' | 'gear' | 'rpm' | 'drs';
+import type { ChannelKey, TelemetryConfig } from './widget';
 
 type Channel = {
   key: ChannelKey;
   label: string;
+  /** Column header in the readout table. */
+  short: string;
   flex: number;
   stepped?: boolean;
   yRange?: [number, number];
@@ -23,10 +24,11 @@ type Channel = {
 };
 
 const CHANNELS: Channel[] = [
-  { key: 'speed', label: 'Speed km/h', flex: 3, format: (v) => v.toFixed(0) },
+  { key: 'speed', label: 'Speed km/h', short: 'km/h', flex: 3, format: (v) => v.toFixed(0) },
   {
     key: 'throttle',
     label: 'Throttle %',
+    short: 'Thr',
     flex: 1.4,
     yRange: [-5, 105],
     yTicks: () => [0, 50, 100],
@@ -35,30 +37,33 @@ const CHANNELS: Channel[] = [
   {
     key: 'brake',
     label: 'Brake',
+    short: 'Brk',
     flex: 0.7,
     stepped: true,
     yRange: [-0.15, 1.15],
     yTicks: () => [0, 1],
-    format: (v) => (v ? 'ON' : '–'),
+    format: (v) => (v ? 'ON' : ''),
   },
   {
     key: 'gear',
     label: 'Gear',
+    short: 'Gear',
     flex: 1.2,
     stepped: true,
     yRange: [0.5, 8.5],
     yTicks: () => [2, 4, 6, 8],
     format: (v) => v.toFixed(0),
   },
-  { key: 'rpm', label: 'RPM', flex: 1.4, format: (v) => v.toFixed(0) },
+  { key: 'rpm', label: 'RPM', short: 'RPM', flex: 1.4, format: (v) => v.toFixed(0) },
   {
     key: 'drs',
     label: 'DRS',
+    short: 'DRS',
     flex: 0.6,
     stepped: true,
     yRange: [-0.15, 1.15],
     yTicks: () => [0, 1],
-    format: (v) => (v ? 'OPEN' : '–'),
+    format: (v) => (v ? 'OPEN' : ''),
   },
 ];
 
@@ -70,12 +75,17 @@ const rpmTicks = (min: number, max: number) => {
 };
 const rpmFormat = (v: number) => `${Math.round(v / 1000)}k`;
 
-export function TelemetryWidget({ group }: WidgetProps) {
-  const { laps, data, styles, detail, isFetching, error } = useGroupComparison(group);
+export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>) {
+  const { laps, data, styles, detail, isFetching, error } = useGroupComparison(group, {
+    step: config.step,
+  });
 
   const channels = useMemo(
-    () => CHANNELS.filter((c) => c.key !== 'drs' || detail?.has_drs !== false),
-    [detail?.has_drs]
+    () =>
+      CHANNELS.filter(
+        (c) => config.channels.includes(c.key) && (c.key !== 'drs' || detail?.has_drs !== false)
+      ),
+    [config.channels, detail?.has_drs]
   );
   const charts = useMemo(() => {
     if (!data) return [];
@@ -90,13 +100,19 @@ export function TelemetryWidget({ group }: WidgetProps) {
     });
   }, [data, styles, channels]);
 
-  if (laps.length === 0) return <PanelMessage>Select laps in the Laps panel.</PanelMessage>;
+  if (laps.length === 0) return <NoLapsMessage group={group} />;
   if (error) return <PanelMessage>{error.message}</PanelMessage>;
   if (!data) return <PanelMessage>Loading telemetry…</PanelMessage>;
 
   return (
     <div className={`flex h-full flex-col ${isFetching ? 'opacity-60' : ''}`}>
-      <Readout group={group} distance={data.distance} laps={data.laps} styles={styles} />
+      <Readout
+        group={group}
+        distance={data.distance}
+        laps={data.laps}
+        styles={styles}
+        channels={channels}
+      />
       <div className="flex min-h-0 flex-1 flex-col">
         {charts.map(({ channel, data: chartData, series }, i) => (
           <div
@@ -138,11 +154,13 @@ function Readout({
   distance,
   laps,
   styles,
+  channels,
 }: {
   group: GroupId;
   distance: number[];
   laps: ComparedLap[];
   styles: LapStyle[];
+  channels: Channel[];
 }) {
   const cursor = useCursor(group);
   const i = cursor == null ? null : indexAt(distance, cursor);
@@ -155,11 +173,11 @@ function Readout({
             {i == null ? 'Hover a chart' : `${Math.round(distance[i])} m`}
           </th>
           <th className={`${cell} font-medium`}>Δ</th>
-          <th className={`${cell} font-medium`}>km/h</th>
-          <th className={`${cell} font-medium`}>Thr</th>
-          <th className={`${cell} font-medium`}>Brk</th>
-          <th className={`${cell} font-medium`}>Gear</th>
-          <th className={`${cell} font-medium`}>RPM</th>
+          {channels.map((c) => (
+            <th key={c.key} className={`${cell} font-medium`}>
+              {c.short}
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody>
@@ -170,11 +188,14 @@ function Readout({
               {lap.driver} <span className="text-faint">L{lap.lap}</span>
             </td>
             <td className={cell}>{i == null ? '' : n === 0 ? 'REF' : formatGap(lap.delta[i])}</td>
-            <td className={cell}>{i == null ? '' : lap.speed[i].toFixed(0)}</td>
-            <td className={cell}>{i == null ? '' : lap.throttle[i].toFixed(0)}</td>
-            <td className={cell}>{i == null ? '' : lap.brake[i] ? 'ON' : ''}</td>
-            <td className={cell}>{i == null ? '' : lap.gear[i]}</td>
-            <td className={cell}>{i == null ? '' : lap.rpm[i].toFixed(0)}</td>
+            {channels.map((c) => {
+              const value = i == null ? null : lap[c.key]?.[i];
+              return (
+                <td key={c.key} className={cell}>
+                  {value == null ? '' : c.format(value)}
+                </td>
+              );
+            })}
           </tr>
         ))}
       </tbody>

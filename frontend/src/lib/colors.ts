@@ -1,5 +1,6 @@
 /** Canvas charts can't read CSS variables cheaply; keep in sync with src/index.css. */
 export const COLORS = {
+  bg: '#08080a',
   line: '#1f1f25',
   lineStrong: '#2c2c33',
   text: '#e8e8ec',

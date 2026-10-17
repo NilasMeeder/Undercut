@@ -1,8 +1,10 @@
 import type { DockviewApi, SerializedDockview } from 'dockview-react';
 import type { GroupId } from '@/store/groups';
 import { WIDGETS_BY_ID } from '@/widgets/registry';
+import type { WidgetConfig } from '@/widgets/types';
 
-export type PanelParams = { group: GroupId };
+/** Stored per panel in the layout JSON. `config` only holds what differs from the widget defaults. */
+export type PanelParams = { group: GroupId; config?: WidgetConfig };
 
 const STORAGE_KEY = 'f1dash-layout-v1';
 

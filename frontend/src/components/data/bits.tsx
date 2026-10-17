@@ -1,10 +1,24 @@
 import { TYRE_COLORS } from '@/lib/colors';
+import { GROUP_COLORS, type GroupId } from '@/store/groups';
 
 export function PanelMessage({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-full items-center justify-center p-4 text-center text-[11px] text-faint">
       {children}
     </div>
+  );
+}
+
+/** Empty state of a chart panel: says which link group needs laps, since that is easy to miss. */
+export function NoLapsMessage({ group }: { group: GroupId }) {
+  return (
+    <PanelMessage>
+      <span
+        className="mr-1.5 inline-block h-2.5 w-2.5 align-[-1px]"
+        style={{ background: GROUP_COLORS[group] }}
+      />
+      No laps in the {group} group. Click rows in a Laps panel set to {group}.
+    </PanelMessage>
   );
 }
 
