@@ -209,6 +209,12 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [ ] Late start: een opname die halverwege begint mist laps (FastF1 telt NumberOfLaps per stap);
       eventueel de eerste toestand als startpunt van de lap-telling gebruiken
 - [ ] Tower live direct uit TimingData (gaps/intervallen van F1 zelf), nu uit de laps (tot 3 s later)
+- [ ] Live telemetrie volgen (Nilas, 2026-10-18): (1) "volg de laatste lap" per link-groep, bv.
+      `VER:last` tegen `VER:last-1`, schuift elke lap mee (nu staat de selectie op vaste lapnummers);
+      (2) de lap die nu bezig is als groeiende trace, met de delta tot de vorige lap op hetzelfde punt
+      (zoals de live delta op tv); (3) eventueel live meters (snelheid, gear, gas/rem nu). De data is er:
+      CarData.z en Position.z komen al binnen, telemetrie van afgeronde laps staat er ~3 s na de lijn.
+      Te bouwen en te testen met de simulator (die stuurt CarData.z ook).
 
 ## Later / backlog
 
