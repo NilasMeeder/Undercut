@@ -1,33 +1,26 @@
-# App Template
+# F1 Pitwall
 
-Frontend-only Next.js UI starter with shadcn/ui and a mock login flow.
+Een F1-analysedashboard in pitwall-stijl, gebouwd op [FastF1](https://docs.fastf1.dev): laps vergelijken,
+mini-sectoren, telemetrie-overlays en zelf in te delen widgets.
 
-## Stack
-- Next.js (App Router) + TypeScript + npm
-- Tailwind CSS + shadcn/ui components
-- Mock auth via localStorage (no backend)
+- `backend/`: Python 3.12, FastAPI en FastF1
+- `frontend/`: Vite, React, TypeScript en Tailwind
 
-## Quickstart
-1. Install deps: `npm install`
-2. Dev server: `npm run dev` (http://localhost:3000)
+## Starten
 
-## Scripts
-- `npm run dev` – run Next.js locally
-- `npm run lint` – ESLint
-- `npm run typecheck` – `tsc --noEmit`
+Vereist: [uv](https://docs.astral.sh/uv/) (`brew install uv`) en Node 20+.
 
-## Mock Auth
-- `/login` lets users continue without credentials.
-- A `mock-auth=true` flag is stored in localStorage.
-- Protected routes check the flag client-side and redirect to `/login`.
-- Logout clears localStorage and returns to `/login`.
+```bash
+make install
+make dev        # API op :8000, dashboard op http://localhost:5173
+```
 
-## Project Structure
-- `app/(auth)/login` – mock login page
-- `app/(app)/` – app shell and home page (client-side guard)
-- `components/app-shell` – header + sidebar nav + guard
-- `components/ui` – shadcn/ui primitives
-- `lib` – UI helpers
+De eerste keer laden van een sessie duurt lang (FastF1 downloadt de data); daarna komt het uit de cache in
+`backend/.cache/`.
 
-## Notes
-- No backend, database, or environment variables are required.
+## Overig
+
+- `make check`: lint, tests, typecheck en build
+- `make gen-api`: TypeScript-types opnieuw genereren na een wijziging in de API
+
+Zie `ROADMAP.md` voor de planning en `CLAUDE.md` voor conventies en FastF1-valkuilen.
