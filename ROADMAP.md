@@ -37,8 +37,8 @@ volgende fase voordat de vorige echt werkt.
 
 ## Fase 1 — Data-API (historisch)
 
-- [ ] Data-source laag: FastF1 primair, OpenF1 als fallback, met dezelfde interne vorm (zie CLAUDE.md
-      "Databronnen"). Eerst testen of FastF1 vanaf een thuisverbinding werkt.
+- [ ] Data-source laag: TracingInsights primair, OpenF1 als fallback, FastF1 later weer aan te sluiten
+      (zie CLAUDE.md "Databronnen"; F1 heeft het live-timing-archief sinds 15 okt 2026 achter een login gezet)
 - [ ] Eigen opslag van verwerkte sessies (parquet), zodat een sessie maar één keer van een externe bron
       komt. Dat beschermt tegen blokkades en rate limits.
 - [x] `GET /api/seasons/{year}/events`: schema met rondes en sessies

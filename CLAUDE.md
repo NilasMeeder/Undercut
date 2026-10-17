@@ -25,7 +25,9 @@ frontend/   Vite + React + TypeScript        → SPA op :5173, praat met /api (p
 - **Backend** doet al het zware werk: FastF1 laden, cachen, telemetrie resamplen, delta's en
   mini-sectoren berekenen. De frontend rekent zo min mogelijk.
 - **Frontend** is een puur client-side dashboard. Geen SSR nodig (canvas-charts, localStorage-layouts).
-- Geen auth, geen database. Lokaal draaien is het doel.
+- Geen auth, geen databaseserver. Opslag is embedded (parquet-bestanden, eventueel DuckDB).
+- **Draait als gewone processen op macOS (uv + npm), zonder Docker of containers.** Een Dockerfile voor
+  de thuis-desktop mag later als optie, maar mag nooit nodig zijn om lokaal te ontwikkelen.
 
 ### Stack-keuzes
 
@@ -74,17 +76,23 @@ TS 6 nog niet als peer, daarom draait `gen:api` het via `npx` in plaats van als 
 
 ## Databronnen (getest 2026-10-17)
 
+**Sinds 14–15 okt 2026 zit het hele archief van livetiming.formula1.com achter een login (401).** Dat geldt
+ook voor thuisverbindingen; datacenter-IP's kregen al sinds ~mei 2026 een 403. Alleen met een F1 TV
+`Authorization: Bearer`-token lukt het (FastF1 issue #978, de maintainer kijkt ernaar). FastF1 kan dus
+zonder cache geen laps of telemetrie meer laden. Het schema werkt nog wel, dat komt uit een andere bron.
+
 | Bron | Wat | Status |
 |---|---|---|
-| FastF1 (livetiming.formula1.com) | Alles, 2018+ | **Geeft 403 vanaf datacenter-/VPN-IP's** (F1 blokkeert dat sinds ~mei 2026). Werkt alleen vanaf een thuisverbinding. Het schema en de rijderslijst komen uit andere bronnen en werken wel. |
-| OpenF1 (`api.openf1.org/v1`) | Laps, sectoren, car_data, location, stints, pit, weer, race control, team radio | Historisch (2023+) gratis zonder key, max 3 req/s en 30 req/min. Live alleen betaald. |
-| Jolpica (Ergast-opvolger) | Uitslagen, standen, schema's | Gratis. FastF1 gebruikt dit intern. |
-| TracingInsights (GitHub) | Voorverwerkte telemetrie per seizoen | Mogelijke bulk-bron, nog niet onderzocht |
+| **TracingInsights** (`github.com/TracingInsights/<jaar>`) | 2018–2026, per sessie: `session_laptimes.json`, `drivers.json`, `corners.json`, `rcm.json`, `weather.json`, `team_radio.json`, en per driver `<DRV>/<lap>_tel.json` | **Primaire bron.** Gratis (Apache 2.0) via `raw.githubusercontent.com`. Gemaakt met FastF1, al kolom-georiënteerd met distance, x/y/z, acc_x/y/z en DriverAhead. Nieuwe sessies na 15 okt 2026 komen er mogelijk niet meer bij. Zie hun `DATA_REFERENCE.md`. |
+| **OpenF1** (`api.openf1.org/v1`) | Laps, sectoren, car_data, location, stints, pit, weer, race control, team radio | **Fallback** voor sessies die nog niet in TracingInsights staan. Historisch (2023+) gratis zonder key, max 3 req/s en 30 req/min. Live alleen betaald. |
+| FastF1 | Schema (`get_event_schedule`), en alles als er een F1 TV-token of een fix komt | Nu alleen voor het schema. De bron-laag zo bouwen dat FastF1 later weer kan aansluiten. |
+| Jolpica (Ergast-opvolger) | Uitslagen, standen | Gratis |
 
-Gevolg: de backend krijgt een **data-source laag** (`app/sources/`). FastF1 is de primaire bron, OpenF1 de
-fallback, en beide leveren dezelfde interne DataFrames. Detecteer een lege FastF1-load
-(`DataNotLoadedError` op `session.laps`) en val dan terug op OpenF1, in plaats van dat het stil faalt.
-Let op: `session.load()` gooit **geen** exception als de bron 403 geeft. Het logt alleen warnings.
+Gevolg: de backend krijgt een **data-source laag** (`app/sources/`) waarin elke bron dezelfde interne vorm
+levert. Volgorde: lokale opslag → TracingInsights → OpenF1. Een opgehaalde sessie wordt meteen lokaal
+opgeslagen (`backend/.cache/`), zodat elke sessie maar één keer van internet komt.
+Let op: FastF1's `session.load()` gooit **geen** exception als de bron faalt. Het logt alleen warnings,
+en daarna geeft `session.laps` een `DataNotLoadedError`.
 
 **2026-regels:** DRS bestaat niet meer (active aero + overtake mode). In de 2026-data is `drs` leeg
 (`null`), en er is geen kanaal voor wingstand of energie-inzet. Het DRS-kanaal dus alleen tonen als er data is.
@@ -122,6 +130,15 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   Corner-nummers ook uit `get_circuit_info().corners`.
 - **Teamkleuren**: `fastf1.plotting.get_team_color()` / `get_driver_color()` met de sessie erbij.
   Twee drivers van hetzelfde team: tweede driver gestippeld of lichtere tint.
+
+## UX-principes
+
+- **Geleidelijk meer laten zien:** begin met een rustige layout en laat de gebruiker zelf widgets
+  toevoegen. Presets van simpel ("Quali-duel") tot dicht ("Engineer").
+- **Elke widget legt zichzelf uit:** een (i)-knop met wat je ziet en waar je op moet letten.
+- **Automatische inzichten boven ruwe data:** bv. "NOR wint 0,12 s in T4 door later te remmen". Dat
+  maakt het dashboard bruikbaar zonder engineer-kennis.
+- **Compacte modus** voor wie veel tegelijk wil zien (kleinere fonts, minder padding).
 
 ## API-conventies
 
