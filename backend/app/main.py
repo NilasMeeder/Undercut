@@ -4,10 +4,10 @@ from datetime import date
 from typing import Annotated
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app import analysis, schedule, sessions
+from app import analysis, replays, schedule, sessions
 from app.schemas import (
     Circuit,
     ComparedLap,
@@ -17,10 +17,14 @@ from app.schemas import (
     Lap,
     MiniSectors,
     RaceControlMessage,
+    ReplayPositions,
+    ReplayStatus,
     SeasonEvents,
     SessionCode,
     SessionDetail,
+    SessionTimeline,
     Telemetry,
+    TimingState,
     Weather,
 )
 from app.sources.tracinginsights import SourceNotAvailable
@@ -103,6 +107,44 @@ def session_race_control(year: int, round: int, session: SessionCode) -> list[Ra
 @app.get("/api/sessions/{year}/{round}/{session}/weather")
 def session_weather(year: int, round: int, session: SessionCode) -> Weather:
     return _guard(lambda: sessions.get_weather(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/timeline")
+def session_timeline(year: int, round: int, session: SessionCode) -> SessionTimeline:
+    return _guard(lambda: replays.get_timeline(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/timing")
+def session_timing(
+    year: int,
+    round: int,
+    session: SessionCode,
+    t: Annotated[float, Query(description="Session time (s)")],
+) -> TimingState:
+    return _guard(lambda: replays.timing_state(year, round, session, t))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/positions/status")
+def positions_status(year: int, round: int, session: SessionCode) -> ReplayStatus:
+    return _guard(lambda: replays.status(year, round, session))
+
+
+@app.post("/api/sessions/{year}/{round}/{session}/positions/prepare")
+def positions_prepare(year: int, round: int, session: SessionCode) -> ReplayStatus:
+    """Start downloading the telemetry and building the position track (once per session)."""
+    return _guard(lambda: replays.prepare(year, round, session))
+
+
+@app.get(
+    "/api/sessions/{year}/{round}/{session}/positions",
+    response_model=ReplayPositions,
+    responses={409: {"description": "Not prepared yet: POST .../positions/prepare first"}},
+)
+def positions(year: int, round: int, session: SessionCode) -> Response:
+    if _guard(lambda: replays.status(year, round, session)).state != "ready":
+        raise HTTPException(409, "The position track is not prepared yet")
+    body = _guard(lambda: replays.positions_json(year, round, session))
+    return Response(body, media_type="application/json")
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/telemetry")

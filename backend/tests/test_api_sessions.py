@@ -1,12 +1,14 @@
 """End-to-end through the API with a fake TracingInsights archive (no network)."""
 
+import time
 from collections.abc import Iterator
+from pathlib import Path
 
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from app import schedule, sessions
+from app import replays, schedule, sessions
 from app.main import app
 from app.schemas import EventInfo, SessionInfo
 from app.sources import tracinginsights as ti
@@ -54,6 +56,13 @@ ARCHIVE = {
         "pin": ["None", "None", "None"],
         "pout": [100.0, "None", "None"],
         "status": ["1", "1", "1"],
+        "lST": [40.0, 100.0, 0.0],
+        "sesT": [100.0, 160.0, 60.5],
+        "lSD": [
+            "2025-03-16T05:00:40.000000000",
+            "2025-03-16T05:01:40.000000000",
+            "2025-03-16T05:00:00.000000000",
+        ],
     },
     "drivers.json": {
         "drivers": [
@@ -102,23 +111,34 @@ ARCHIVE = {
 
 
 CACHES = (
-    sessions._folders,
+    sessions.folders,
+    sessions.get_t0,
     sessions.get_detail,
     sessions.get_laps,
     sessions.get_trace,
     sessions.get_race_control,
     sessions.get_weather,
+    replays.get_timeline,
+    replays.get_timing_index,
+    replays.positions_json,
 )
 
 
 @pytest.fixture
-def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
+def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[TestClient]:
     def fake_fetch(year: int, event: str, session: str, file: str):
         if file not in ARCHIVE:
             raise ti.SourceNotAvailable(f"{file} not in TracingInsights")
         return ARCHIVE[file]
 
+    def fake_prefetch(year, event, session, files, progress) -> set[str]:
+        progress(1.0)
+        return {f for f in files if f not in ARCHIVE}
+
     monkeypatch.setattr(ti, "fetch_json", fake_fetch)
+    monkeypatch.setattr(ti, "prefetch", fake_prefetch)
+    monkeypatch.setattr(replays, "REPLAY_CACHE_DIR", tmp_path)
+    replays._jobs.clear()
     monkeypatch.setattr(schedule, "resolve_session", lambda y, r, c: (EVENT, EVENT.sessions[0]))
     for cached in CACHES:
         cached.cache_clear()
@@ -182,3 +202,44 @@ def test_weather_is_columnar(client: TestClient) -> None:
     assert body["track_temp"] == [35.0, 36.5]
     assert body["rainfall"] == [False, True]
     assert body["wind_direction"] == [180, 190]
+
+
+def test_race_control_in_session_time(client: TestClient) -> None:
+    """t0 = lSD - lST (05:00:00 UTC here), so the 05:04:17 message is 257 s into the session."""
+    green, deleted = client.get("/api/sessions/2025/1/Q/race-control").json()
+    assert green["session_time"] == 0.0
+    assert deleted["session_time"] == pytest.approx(257.123)
+
+
+def test_timeline(client: TestClient) -> None:
+    body = client.get("/api/sessions/2025/1/Q/timeline").json()
+    assert (body["start"], body["end"], body["kind"]) == (0.0, 160.0, "quali")
+    assert body["t0_utc"] == "2025-03-16T05:00:00Z"
+    assert body["track_status"] == [{"start": 0.0, "end": 160.0, "status": "green"}]
+
+
+def test_timing_tower_at_t(client: TestClient) -> None:
+    early = client.get("/api/sessions/2025/1/Q/timing?t=70").json()
+    assert [r["driver"] for r in early["rows"]] == ["NOR", "VER"]
+    assert early["valid_until"] == 100.0
+    late = client.get("/api/sessions/2025/1/Q/timing?t=200").json()
+    assert [(r["driver"], r["gap"]) for r in late["rows"]] == [("VER", None), ("NOR", 0.5)]
+    assert late["rows"][0]["best_timing"] == "best"
+
+
+def test_positions_are_prepared_once(client: TestClient) -> None:
+    base = "/api/sessions/2025/1/Q/positions"
+    assert client.get(f"{base}/status").json()["state"] == "missing"
+    assert client.get(base).status_code == 409
+    client.post(f"{base}/prepare")
+    for _ in range(100):
+        if client.get(f"{base}/status").json()["state"] != "loading":
+            break
+        time.sleep(0.02)
+    assert client.get(f"{base}/status").json()["state"] == "ready"
+    body = client.get(base).json()
+    assert [c["driver"] for c in body["cars"]] == ["NOR", "VER"]
+    nor = body["cars"][0]
+    i = round((30.0 - body["start"]) / body["step"])
+    assert nor["progress"][i] == pytest.approx(0.5, abs=0.01)
+    assert nor["x"][-1] is None  # NOR's only lap ended at 60.5 s

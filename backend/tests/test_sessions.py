@@ -31,6 +31,11 @@ def lap(driver: str, number: int, time: float | None, deleted: bool = False) -> 
         speed_finish=None,
         speed_trap=None,
         start_time=None,
+        end_time=None,
+        sector_1_end=None,
+        sector_2_end=None,
+        pit_in_time=None,
+        pit_out_time=None,
     )
 
 

@@ -40,7 +40,7 @@ TRACE_CHANNELS = {
 
 
 @lru_cache(maxsize=64)
-def _folders(year: int, round_number: int, code: str) -> tuple[str, str]:
+def folders(year: int, round_number: int, code: str) -> tuple[str, str]:
     event, session = schedule.resolve_session(year, round_number, code)
     return event.name, session.name
 
@@ -51,7 +51,7 @@ def has_drs(year: int) -> bool:
 
 @lru_cache(maxsize=16)
 def get_detail(year: int, round_number: int, code: str) -> SessionDetail:
-    event, session = _folders(year, round_number, code)
+    event, session = folders(year, round_number, code)
     drivers = [
         DriverInfo(
             code=d["driver"],
@@ -81,7 +81,7 @@ def _as_bool(value: Any) -> bool:
 
 @lru_cache(maxsize=16)
 def get_laps(year: int, round_number: int, code: str) -> list[Lap]:
-    event, session = _folders(year, round_number, code)
+    event, session = folders(year, round_number, code)
     cols = ti.session_laps(year, event, session)
     laps = []
     for i in range(len(cols["lap"])):
@@ -112,6 +112,11 @@ def get_laps(year: int, round_number: int, code: str) -> list[Lap]:
                 speed_finish=row.get("vfl"),
                 speed_trap=row.get("vst"),
                 start_time=row.get("lST"),
+                end_time=row.get("sesT"),
+                sector_1_end=row.get("s1T"),
+                sector_2_end=row.get("s2T"),
+                pit_in_time=row.get("pin"),
+                pit_out_time=row.get("pout"),
             )
         )
     return laps
@@ -152,7 +157,7 @@ def resolve_lap(year: int, round_number: int, code: str, driver: str, lap: int |
 
 @lru_cache(maxsize=256)
 def get_trace(year: int, round_number: int, code: str, driver: str, lap: int) -> analysis.LapTrace:
-    event, session = _folders(year, round_number, code)
+    event, session = folders(year, round_number, code)
     tel = ti.lap_telemetry(year, event, session, driver, lap)
     channels = {
         name: np.asarray(tel[key], dtype=float)
@@ -175,7 +180,7 @@ def lap_time(year: int, round_number: int, code: str, driver: str, lap: int) -> 
 
 @lru_cache(maxsize=16)
 def get_circuit(year: int, round_number: int, code: str) -> Circuit:
-    event, session = _folders(year, round_number, code)
+    event, session = folders(year, round_number, code)
     data = ti.corners(year, event, session)
     track_x, track_y = data.get("TrackX") or [], data.get("TrackY") or []
     if not track_x:
@@ -228,19 +233,38 @@ def _utc(value: str) -> datetime:
 
 
 @lru_cache(maxsize=16)
+def get_t0(year: int, round_number: int, code: str) -> datetime | None:
+    """UTC at session time 0. Every lap has its start in both clocks (lST and lSD); the difference
+    is the same for every lap of a session, so the median only guards against a stray value."""
+    event, session = folders(year, round_number, code)
+    cols = ti.session_laps(year, event, session)
+    offsets = [
+        _utc(date).timestamp() - start
+        for date, start in zip(cols.get("lSD", []), cols.get("lST", []), strict=False)
+        if date is not None and start is not None
+    ]
+    if not offsets:
+        return None
+    return datetime.fromtimestamp(float(np.median(offsets)), tz=UTC)
+
+
+@lru_cache(maxsize=16)
 def get_race_control(year: int, round_number: int, code: str) -> list[RaceControlMessage]:
-    event, session = _folders(year, round_number, code)
+    event, session = folders(year, round_number, code)
     cols = ti.race_control(year, event, session)
     by_number = {d.number: d.code for d in get_detail(year, round_number, code).drivers}
+    t0 = get_t0(year, round_number, code)
     messages = []
     for i in range(len(cols.get("msg", []))):
         number = _optional_int(cols["dNum"][i])
         driver = by_number.get(str(number)) if number is not None else None
         if driver is None and (match := _CAR_IN_MESSAGE.search(cols["msg"][i] or "")):
             driver = match.group(1)
+        utc = _utc(cols["time"][i])
         messages.append(
             RaceControlMessage(
-                utc=_utc(cols["time"][i]),
+                utc=utc,
+                session_time=None if t0 is None else round((utc - t0).total_seconds(), 3),
                 category=cols["cat"][i] or "Other",
                 message=cols["msg"][i] or "",
                 flag=cols["flag"][i],
@@ -255,7 +279,7 @@ def get_race_control(year: int, round_number: int, code: str) -> list[RaceContro
 
 @lru_cache(maxsize=16)
 def get_weather(year: int, round_number: int, code: str) -> Weather:
-    event, session = _folders(year, round_number, code)
+    event, session = folders(year, round_number, code)
     cols = ti.weather(year, event, session)
     return Weather(
         time=cols["wT"],

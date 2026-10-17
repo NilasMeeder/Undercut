@@ -7,8 +7,12 @@ and <DRV>/<lap>_tel.json. Missing values are the string "None".
 
 import gzip
 import json
+import logging
 import os
+import subprocess
 import threading
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -20,6 +24,9 @@ from app.config import (
     TRACINGINSIGHTS_BASE_URL,
     TRACINGINSIGHTS_CACHE_DIR,
 )
+from app.sources import tracinginsights_git as ti_git
+
+log = logging.getLogger(__name__)
 
 
 class SourceNotAvailable(Exception):
@@ -61,13 +68,78 @@ def _download(year: int, event: str, session: str, file: str, path: Path) -> Any
         raise SourceNotAvailable(f"{year} {event} {session}: {file} not in TracingInsights")
     response.raise_for_status()
     data = response.json()
+    _write(path, json.dumps(data, separators=(",", ":")).encode())
+    return data
 
+
+def _write(path: Path, raw: bytes) -> None:
+    """Write gzipped via a temp file, so a reader never sees half a file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
-    with gzip.open(tmp, "wt", encoding="utf-8") as f:
-        json.dump(data, f, separators=(",", ":"))
+    with gzip.open(tmp, "wb", compresslevel=6) as f:
+        f.write(raw)
     tmp.replace(path)
-    return data
+
+
+def is_cached(year: int, event: str, session: str, file: str) -> bool:
+    return _cache_path(year, event, session, file).exists()
+
+
+def store(year: int, event: str, session: str, file: str, raw: bytes) -> None:
+    """Cache a file obtained in bulk (see prefetch); `raw` is the JSON as served."""
+    _write(_cache_path(year, event, session, file), raw)
+
+
+Progress = Callable[[float], None]
+"""Called with the fraction done, 0 to 1."""
+
+HTTP_WORKERS = 8
+"""Parallel downloads when git is not available: enough to be quick, not enough to hammer GitHub."""
+
+
+def prefetch(year: int, event: str, session: str, files: list[str], progress: Progress) -> set[str]:
+    """Bring many files into the cache at once (a session's telemetry: ~1000 files for a race).
+
+    A git partial clone fetches them in one request (~15 s for a race); plain HTTP is the fallback
+    (~45 s). Returns the files that are not in the archive.
+    """
+    missing = [f for f in files if not is_cached(year, event, session, f)]
+    if not missing:
+        progress(1.0)
+        return set()
+    try:
+        return ti_git.prefetch(
+            year,
+            f"{event}/{session}",
+            missing,
+            progress,
+            lambda file, raw: store(year, event, session, file, raw),
+        )
+    except (OSError, subprocess.SubprocessError, ti_git.GitError) as error:
+        log.warning("git prefetch failed (%s), falling back to HTTP", error)
+    # Whatever git did cache before failing does not need downloading again.
+    missing = [f for f in missing if not is_cached(year, event, session, f)]
+    return _prefetch_http(year, event, session, missing, progress)
+
+
+def _prefetch_http(
+    year: int, event: str, session: str, files: list[str], progress: Progress
+) -> set[str]:
+    absent: set[str] = set()
+    done = 0
+
+    def get(file: str) -> None:
+        try:
+            fetch_json(year, event, session, file)
+        except SourceNotAvailable:
+            absent.add(file)
+
+    with ThreadPoolExecutor(HTTP_WORKERS) as pool:
+        for future in as_completed(pool.submit(get, f) for f in files):
+            future.result()
+            done += 1
+            progress(done / len(files))
+    return absent
 
 
 def clean(value: Any) -> Any:

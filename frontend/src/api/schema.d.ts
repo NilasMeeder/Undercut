@@ -4,798 +4,1256 @@
  */
 
 export interface paths {
-  '/api/health': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Health */
-    get: operations['health_api_health_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/seasons/{year}/events': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/seasons/{year}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Season Events */
+        get: operations["season_events_api_seasons__year__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Season Events */
-    get: operations['season_events_api_seasons__year__events_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Detail */
+        get: operations["session_detail_api_sessions__year___round___session__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Session Detail */
-    get: operations['session_detail_api_sessions__year___round___session__get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}/laps': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}/laps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Laps */
+        get: operations["session_laps_api_sessions__year___round___session__laps_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Session Laps */
-    get: operations['session_laps_api_sessions__year___round___session__laps_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}/circuit': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}/circuit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Circuit */
+        get: operations["session_circuit_api_sessions__year___round___session__circuit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Session Circuit */
-    get: operations['session_circuit_api_sessions__year___round___session__circuit_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}/race-control': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}/race-control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Race Control */
+        get: operations["session_race_control_api_sessions__year___round___session__race_control_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Session Race Control */
-    get: operations['session_race_control_api_sessions__year___round___session__race_control_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}/weather': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}/weather": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Weather */
+        get: operations["session_weather_api_sessions__year___round___session__weather_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Session Weather */
-    get: operations['session_weather_api_sessions__year___round___session__weather_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}/telemetry': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Timeline */
+        get: operations["session_timeline_api_sessions__year___round___session__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Lap Telemetry */
-    get: operations['lap_telemetry_api_sessions__year___round___session__telemetry_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/sessions/{year}/{round}/{session}/compare': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/sessions/{year}/{round}/{session}/timing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Timing */
+        get: operations["session_timing_api_sessions__year___round___session__timing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Compare Laps */
-    get: operations['compare_laps_api_sessions__year___round___session__compare_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/api/sessions/{year}/{round}/{session}/positions/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Positions Status */
+        get: operations["positions_status_api_sessions__year___round___session__positions_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/positions/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Positions Prepare
+         * @description Start downloading the telemetry and building the position track (once per session).
+         */
+        post: operations["positions_prepare_api_sessions__year___round___session__positions_prepare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Positions */
+        get: operations["positions_api_sessions__year___round___session__positions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/telemetry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lap Telemetry */
+        get: operations["lap_telemetry_api_sessions__year___round___session__telemetry_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compare Laps */
+        get: operations["compare_laps_api_sessions__year___round___session__compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** Circuit */
-    Circuit: {
-      /** Name */
-      name: string | null;
-      /** Rotation */
-      rotation: number;
-      /** Track X */
-      track_x: number[];
-      /** Track Y */
-      track_y: number[];
-      /** Corners */
-      corners: components['schemas']['Corner'][];
-      /** Pit Loss */
-      pit_loss: number | null;
-      /** Pit Loss Sc */
-      pit_loss_sc: number | null;
-      /** Pit Loss Vsc */
-      pit_loss_vsc: number | null;
+    schemas: {
+        /** CarTrack */
+        CarTrack: {
+            /** Driver */
+            driver: string;
+            /** X */
+            x: (number | null)[];
+            /** Y */
+            y: (number | null)[];
+            /** Progress */
+            progress: (number | null)[];
+        };
+        /** Circuit */
+        Circuit: {
+            /** Name */
+            name: string | null;
+            /** Rotation */
+            rotation: number;
+            /** Track X */
+            track_x: number[];
+            /** Track Y */
+            track_y: number[];
+            /** Corners */
+            corners: components["schemas"]["Corner"][];
+            /** Pit Loss */
+            pit_loss: number | null;
+            /** Pit Loss Sc */
+            pit_loss_sc: number | null;
+            /** Pit Loss Vsc */
+            pit_loss_vsc: number | null;
+        };
+        /**
+         * ComparedLap
+         * @description A lap resampled onto the comparison's shared distance grid.
+         */
+        ComparedLap: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Lap Time */
+            lap_time: number | null;
+            /** Time */
+            time: number[];
+            /** Delta */
+            delta: number[];
+            /** Speed */
+            speed: number[];
+            /** Throttle */
+            throttle: number[];
+            /** Brake */
+            brake: number[];
+            /** Gear */
+            gear: number[];
+            /** Rpm */
+            rpm: number[];
+            /** Drs */
+            drs: number[] | null;
+            /** X */
+            x: number[];
+            /** Y */
+            y: number[];
+        };
+        /** Comparison */
+        Comparison: {
+            /** Distance */
+            distance: number[];
+            /** Laps */
+            laps: components["schemas"]["ComparedLap"][];
+            mini_sectors: components["schemas"]["MiniSectors"];
+            /** Corners */
+            corners: components["schemas"]["CornerSegment"][];
+        };
+        /** Corner */
+        Corner: {
+            /** Label */
+            label: string;
+            /** Distance */
+            distance: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+            /** Angle */
+            angle: number;
+        };
+        /**
+         * CornerLap
+         * @description One lap through one corner segment.
+         */
+        CornerLap: {
+            /** Time */
+            time: number;
+            /** Brake At */
+            brake_at: number | null;
+            /** Min Speed */
+            min_speed: number;
+            /** Min Speed At */
+            min_speed_at: number;
+            /** Throttle At */
+            throttle_at: number | null;
+            /** Top Speed */
+            top_speed: number;
+        };
+        /**
+         * CornerSegment
+         * @description A corner (or chicane) with its braking zone and the straight after it.
+         */
+        CornerSegment: {
+            /** Label */
+            label: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Laps */
+            laps: components["schemas"]["CornerLap"][];
+        };
+        /** DriverInfo */
+        DriverInfo: {
+            /** Code */
+            code: string;
+            /** Number */
+            number: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Team */
+            team: string;
+            /** Color */
+            color: string;
+            /** Headshot Url */
+            headshot_url: string | null;
+        };
+        /** EventInfo */
+        EventInfo: {
+            /** Round */
+            round: number;
+            /** Name */
+            name: string;
+            /** Country */
+            country: string;
+            /** Location */
+            location: string;
+            /** Format */
+            format: string;
+            /**
+             * Date
+             * Format: date-time
+             */
+            date: string;
+            /** Sessions */
+            sessions: components["schemas"]["SessionInfo"][];
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** Lap */
+        Lap: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Lap Time */
+            lap_time: number | null;
+            /** Sector 1 */
+            sector_1: number | null;
+            /** Sector 2 */
+            sector_2: number | null;
+            /** Sector 3 */
+            sector_3: number | null;
+            /** Compound */
+            compound: string | null;
+            /** Tyre Life */
+            tyre_life: number | null;
+            /** Fresh Tyre */
+            fresh_tyre: boolean | null;
+            /** Stint */
+            stint: number | null;
+            /** Personal Best */
+            personal_best: boolean;
+            /** Deleted */
+            deleted: boolean;
+            /** Deleted Reason */
+            deleted_reason: string | null;
+            /** Accurate */
+            accurate: boolean;
+            /** Pit In */
+            pit_in: boolean;
+            /** Pit Out */
+            pit_out: boolean;
+            /** Track Status */
+            track_status: string | null;
+            /** Quali Segment */
+            quali_segment: string | null;
+            /** Position */
+            position: number | null;
+            /** Speed I1 */
+            speed_i1: number | null;
+            /** Speed I2 */
+            speed_i2: number | null;
+            /** Speed Finish */
+            speed_finish: number | null;
+            /** Speed Trap */
+            speed_trap: number | null;
+            /** Start Time */
+            start_time: number | null;
+            /** End Time */
+            end_time: number | null;
+            /** Sector 1 End */
+            sector_1_end: number | null;
+            /** Sector 2 End */
+            sector_2_end: number | null;
+            /** Pit In Time */
+            pit_in_time: number | null;
+            /** Pit Out Time */
+            pit_out_time: number | null;
+        };
+        /** MiniSectors */
+        MiniSectors: {
+            /** Boundaries */
+            boundaries: number[];
+            /** Times */
+            times: number[][];
+            /** Fastest */
+            fastest: number[];
+        };
+        /** RaceControlMessage */
+        RaceControlMessage: {
+            /**
+             * Utc
+             * Format: date-time
+             */
+            utc: string;
+            /** Session Time */
+            session_time: number | null;
+            /** Category */
+            category: string;
+            /** Message */
+            message: string;
+            /** Flag */
+            flag: string | null;
+            /** Scope */
+            scope: string | null;
+            /** Sector */
+            sector: number | null;
+            /** Driver */
+            driver: string | null;
+            /** Lap */
+            lap: number | null;
+        };
+        /**
+         * ReplayPositions
+         * @description Every car on a fixed time grid: sample i is at session time start + i * step.
+         */
+        ReplayPositions: {
+            /** Start */
+            start: number;
+            /** Step */
+            step: number;
+            /** Count */
+            count: number;
+            /** Lap Length */
+            lap_length: number;
+            /** Cars */
+            cars: components["schemas"]["CarTrack"][];
+        };
+        /**
+         * ReplayStatus
+         * @description Preparing the position track: every lap's telemetry is downloaded once (~10 s for a race).
+         */
+        ReplayStatus: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "missing" | "loading" | "ready" | "error";
+            /** Progress */
+            progress: number;
+            /** Phase */
+            phase: string | null;
+            /** Error */
+            error: string | null;
+        };
+        /** SeasonEvents */
+        SeasonEvents: {
+            /** Year */
+            year: number;
+            /** Events */
+            events: components["schemas"]["EventInfo"][];
+        };
+        /**
+         * Segment
+         * @description A qualifying part (Q1, Q2, Q3) in session time.
+         */
+        Segment: {
+            /** Name */
+            name: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+        };
+        /** SessionDetail */
+        SessionDetail: {
+            /** Year */
+            year: number;
+            /** Round */
+            round: number;
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            /** Event Name */
+            event_name: string;
+            /** Session Name */
+            session_name: string;
+            /** Has Drs */
+            has_drs: boolean;
+            /** Drivers */
+            drivers: components["schemas"]["DriverInfo"][];
+        };
+        /** SessionInfo */
+        SessionInfo: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            /** Name */
+            name: string;
+            /** Start Utc */
+            start_utc: string | null;
+        };
+        /**
+         * SessionTimeline
+         * @description What the session clock needs: its range, the laps and the track status over time.
+         */
+        SessionTimeline: {
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** T0 Utc */
+            t0_utc: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "race" | "quali" | "practice";
+            /** Total Laps */
+            total_laps: number | null;
+            /** Lap Starts */
+            lap_starts: number[];
+            /** Segments */
+            segments: components["schemas"]["Segment"][];
+            /** Track Status */
+            track_status: components["schemas"]["StatusPeriod"][];
+        };
+        /** StatusPeriod */
+        StatusPeriod: {
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+        };
+        /**
+         * Telemetry
+         * @description One lap, columnar, at the source sample rate (~4 Hz car data merged with position).
+         */
+        Telemetry: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Distance */
+            distance: number[];
+            /** Time */
+            time: number[];
+            /** Speed */
+            speed: number[];
+            /** Throttle */
+            throttle: number[];
+            /** Brake */
+            brake: number[];
+            /** Gear */
+            gear: number[];
+            /** Rpm */
+            rpm: number[];
+            /** Drs */
+            drs: number[] | null;
+            /** X */
+            x: number[];
+            /** Y */
+            y: number[];
+        };
+        /**
+         * TimingState
+         * @description The timing tower at session time `time`, valid from valid_from until valid_until.
+         */
+        TimingState: {
+            /** Time */
+            time: number;
+            /** Valid From */
+            valid_from: number | null;
+            /** Valid Until */
+            valid_until: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "race" | "quali" | "practice";
+            /** Lap */
+            lap: number | null;
+            /** Total Laps */
+            total_laps: number | null;
+            /** Segment */
+            segment: string | null;
+            /** Cutoff */
+            cutoff: number | null;
+            /**
+             * Track Status
+             * @enum {string}
+             */
+            track_status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+            /** Rows */
+            rows: components["schemas"]["TowerRow"][];
+        };
+        /** TowerRow */
+        TowerRow: {
+            /** Position */
+            position: number;
+            /** Driver */
+            driver: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "out_lap" | "in_lap" | "pit" | "garage" | "retired" | "finished";
+            /** Laps */
+            laps: number;
+            /** Gap */
+            gap: number | null;
+            /** Interval */
+            interval: number | null;
+            /** Laps Down */
+            laps_down: number;
+            /** Interval Laps */
+            interval_laps: number;
+            /** Best Lap */
+            best_lap: number | null;
+            /**
+             * Best Timing
+             * @enum {string}
+             */
+            best_timing: "best" | "pb" | "none";
+            /** Last Lap */
+            last_lap: number | null;
+            /**
+             * Last Timing
+             * @enum {string}
+             */
+            last_timing: "best" | "pb" | "none";
+            /** Sectors */
+            sectors: components["schemas"]["TowerSector"][];
+            /** Compound */
+            compound: string | null;
+            /** Tyre Age */
+            tyre_age: number | null;
+            /** Pit Stops */
+            pit_stops: number;
+            /** Eliminated */
+            eliminated: boolean;
+        };
+        /** TowerSector */
+        TowerSector: {
+            /** Time */
+            time: number | null;
+            /**
+             * Timing
+             * @enum {string}
+             */
+            timing: "best" | "pb" | "none";
+            /** Current */
+            current: boolean;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+        /**
+         * Weather
+         * @description Columnar, about one sample per minute.
+         */
+        Weather: {
+            /** Time */
+            time: number[];
+            /** Air Temp */
+            air_temp: number[];
+            /** Track Temp */
+            track_temp: number[];
+            /** Humidity */
+            humidity: number[];
+            /** Pressure */
+            pressure: number[];
+            /** Rainfall */
+            rainfall: boolean[];
+            /** Wind Speed */
+            wind_speed: number[];
+            /** Wind Direction */
+            wind_direction: number[];
+        };
     };
-    /**
-     * ComparedLap
-     * @description A lap resampled onto the comparison's shared distance grid.
-     */
-    ComparedLap: {
-      /** Driver */
-      driver: string;
-      /** Lap */
-      lap: number;
-      /** Lap Time */
-      lap_time: number | null;
-      /** Time */
-      time: number[];
-      /** Delta */
-      delta: number[];
-      /** Speed */
-      speed: number[];
-      /** Throttle */
-      throttle: number[];
-      /** Brake */
-      brake: number[];
-      /** Gear */
-      gear: number[];
-      /** Rpm */
-      rpm: number[];
-      /** Drs */
-      drs: number[] | null;
-      /** X */
-      x: number[];
-      /** Y */
-      y: number[];
-    };
-    /** Comparison */
-    Comparison: {
-      /** Distance */
-      distance: number[];
-      /** Laps */
-      laps: components['schemas']['ComparedLap'][];
-      mini_sectors: components['schemas']['MiniSectors'];
-      /** Corners */
-      corners: components['schemas']['CornerSegment'][];
-    };
-    /** Corner */
-    Corner: {
-      /** Label */
-      label: string;
-      /** Distance */
-      distance: number;
-      /** X */
-      x: number;
-      /** Y */
-      y: number;
-      /** Angle */
-      angle: number;
-    };
-    /**
-     * CornerLap
-     * @description One lap through one corner segment.
-     */
-    CornerLap: {
-      /** Time */
-      time: number;
-      /** Brake At */
-      brake_at: number | null;
-      /** Min Speed */
-      min_speed: number;
-      /** Min Speed At */
-      min_speed_at: number;
-      /** Throttle At */
-      throttle_at: number | null;
-      /** Top Speed */
-      top_speed: number;
-    };
-    /**
-     * CornerSegment
-     * @description A corner (or chicane) with its braking zone and the straight after it.
-     */
-    CornerSegment: {
-      /** Label */
-      label: string;
-      /** Start */
-      start: number;
-      /** End */
-      end: number;
-      /** Laps */
-      laps: components['schemas']['CornerLap'][];
-    };
-    /** DriverInfo */
-    DriverInfo: {
-      /** Code */
-      code: string;
-      /** Number */
-      number: string;
-      /** First Name */
-      first_name: string;
-      /** Last Name */
-      last_name: string;
-      /** Team */
-      team: string;
-      /** Color */
-      color: string;
-      /** Headshot Url */
-      headshot_url: string | null;
-    };
-    /** EventInfo */
-    EventInfo: {
-      /** Round */
-      round: number;
-      /** Name */
-      name: string;
-      /** Country */
-      country: string;
-      /** Location */
-      location: string;
-      /** Format */
-      format: string;
-      /**
-       * Date
-       * Format: date-time
-       */
-      date: string;
-      /** Sessions */
-      sessions: components['schemas']['SessionInfo'][];
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components['schemas']['ValidationError'][];
-    };
-    /** Lap */
-    Lap: {
-      /** Driver */
-      driver: string;
-      /** Lap */
-      lap: number;
-      /** Lap Time */
-      lap_time: number | null;
-      /** Sector 1 */
-      sector_1: number | null;
-      /** Sector 2 */
-      sector_2: number | null;
-      /** Sector 3 */
-      sector_3: number | null;
-      /** Compound */
-      compound: string | null;
-      /** Tyre Life */
-      tyre_life: number | null;
-      /** Fresh Tyre */
-      fresh_tyre: boolean | null;
-      /** Stint */
-      stint: number | null;
-      /** Personal Best */
-      personal_best: boolean;
-      /** Deleted */
-      deleted: boolean;
-      /** Deleted Reason */
-      deleted_reason: string | null;
-      /** Accurate */
-      accurate: boolean;
-      /** Pit In */
-      pit_in: boolean;
-      /** Pit Out */
-      pit_out: boolean;
-      /** Track Status */
-      track_status: string | null;
-      /** Quali Segment */
-      quali_segment: string | null;
-      /** Position */
-      position: number | null;
-      /** Speed I1 */
-      speed_i1: number | null;
-      /** Speed I2 */
-      speed_i2: number | null;
-      /** Speed Finish */
-      speed_finish: number | null;
-      /** Speed Trap */
-      speed_trap: number | null;
-      /** Start Time */
-      start_time: number | null;
-    };
-    /** MiniSectors */
-    MiniSectors: {
-      /** Boundaries */
-      boundaries: number[];
-      /** Times */
-      times: number[][];
-      /** Fastest */
-      fastest: number[];
-    };
-    /** RaceControlMessage */
-    RaceControlMessage: {
-      /**
-       * Utc
-       * Format: date-time
-       */
-      utc: string;
-      /** Category */
-      category: string;
-      /** Message */
-      message: string;
-      /** Flag */
-      flag: string | null;
-      /** Scope */
-      scope: string | null;
-      /** Sector */
-      sector: number | null;
-      /** Driver */
-      driver: string | null;
-      /** Lap */
-      lap: number | null;
-    };
-    /** SeasonEvents */
-    SeasonEvents: {
-      /** Year */
-      year: number;
-      /** Events */
-      events: components['schemas']['EventInfo'][];
-    };
-    /** SessionDetail */
-    SessionDetail: {
-      /** Year */
-      year: number;
-      /** Round */
-      round: number;
-      /**
-       * Code
-       * @enum {string}
-       */
-      code: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      /** Event Name */
-      event_name: string;
-      /** Session Name */
-      session_name: string;
-      /** Has Drs */
-      has_drs: boolean;
-      /** Drivers */
-      drivers: components['schemas']['DriverInfo'][];
-    };
-    /** SessionInfo */
-    SessionInfo: {
-      /**
-       * Code
-       * @enum {string}
-       */
-      code: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      /** Name */
-      name: string;
-      /** Start Utc */
-      start_utc: string | null;
-    };
-    /**
-     * Telemetry
-     * @description One lap, columnar, at the source sample rate (~4 Hz car data merged with position).
-     */
-    Telemetry: {
-      /** Driver */
-      driver: string;
-      /** Lap */
-      lap: number;
-      /** Distance */
-      distance: number[];
-      /** Time */
-      time: number[];
-      /** Speed */
-      speed: number[];
-      /** Throttle */
-      throttle: number[];
-      /** Brake */
-      brake: number[];
-      /** Gear */
-      gear: number[];
-      /** Rpm */
-      rpm: number[];
-      /** Drs */
-      drs: number[] | null;
-      /** X */
-      x: number[];
-      /** Y */
-      y: number[];
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-      /** Input */
-      input?: unknown;
-      /** Context */
-      ctx?: Record<string, never>;
-    };
-    /**
-     * Weather
-     * @description Columnar, about one sample per minute.
-     */
-    Weather: {
-      /** Time */
-      time: number[];
-      /** Air Temp */
-      air_temp: number[];
-      /** Track Temp */
-      track_temp: number[];
-      /** Humidity */
-      humidity: number[];
-      /** Pressure */
-      pressure: number[];
-      /** Rainfall */
-      rainfall: boolean[];
-      /** Wind Speed */
-      wind_speed: number[];
-      /** Wind Direction */
-      wind_direction: number[];
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  health_api_health_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    health_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    season_events_api_seasons__year__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': {
-            [key: string]: string;
-          };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonEvents"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  season_events_api_seasons__year__events_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-      };
-      cookie?: never;
+    session_detail_api_sessions__year___round___session__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    session_laps_api_sessions__year___round___session__laps_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['SeasonEvents'];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lap"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
     };
-  };
-  session_detail_api_sessions__year___round___session__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
+    session_circuit_api_sessions__year___round___session__circuit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Circuit"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    session_race_control_api_sessions__year___round___session__race_control_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['SessionDetail'];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaceControlMessage"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
     };
-  };
-  session_laps_api_sessions__year___round___session__laps_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
+    session_weather_api_sessions__year___round___session__weather_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Weather"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    session_timeline_api_sessions__year___round___session__timeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Lap'][];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionTimeline"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
     };
-  };
-  session_circuit_api_sessions__year___round___session__circuit_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
+    session_timing_api_sessions__year___round___session__timing_get: {
+        parameters: {
+            query: {
+                /** @description Session time (s) */
+                t: number;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimingState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    positions_status_api_sessions__year___round___session__positions_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Circuit'];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplayStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
     };
-  };
-  session_race_control_api_sessions__year___round___session__race_control_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
+    positions_prepare_api_sessions__year___round___session__positions_prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplayStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    positions_api_sessions__year___round___session__positions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['RaceControlMessage'][];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplayPositions"];
+                };
+            };
+            /** @description Not prepared yet: POST .../positions/prepare first */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
     };
-  };
-  session_weather_api_sessions__year___round___session__weather_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
+    lap_telemetry_api_sessions__year___round___session__telemetry_get: {
+        parameters: {
+            query: {
+                driver: string;
+                /** @description Lap number or 'fastest' */
+                lap?: string;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Telemetry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    compare_laps_api_sessions__year___round___session__compare_get: {
+        parameters: {
+            query: {
+                /** @description Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference */
+                laps: string;
+                /** @description Grid spacing in metres */
+                step?: number;
+                mini_sectors?: number;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Weather'];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
     };
-  };
-  lap_telemetry_api_sessions__year___round___session__telemetry_get: {
-    parameters: {
-      query: {
-        driver: string;
-        /** @description Lap number or 'fastest' */
-        lap?: string;
-      };
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Telemetry'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  compare_laps_api_sessions__year___round___session__compare_get: {
-    parameters: {
-      query: {
-        /** @description Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference */
-        laps: string;
-        /** @description Grid spacing in metres */
-        step?: number;
-        mini_sectors?: number;
-      };
-      header?: never;
-      path: {
-        year: number;
-        round: number;
-        session: 'FP1' | 'FP2' | 'FP3' | 'SQ' | 'SS' | 'S' | 'Q' | 'R';
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Comparison'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
 }

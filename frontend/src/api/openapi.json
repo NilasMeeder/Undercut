@@ -94,7 +94,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -152,7 +161,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -214,7 +232,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -272,7 +299,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -334,7 +370,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -350,6 +395,356 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/timeline": {
+      "get": {
+        "summary": "Session Timeline",
+        "operationId": "session_timeline_api_sessions__year___round___session__timeline_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionTimeline"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/timing": {
+      "get": {
+        "summary": "Session Timing",
+        "operationId": "session_timing_api_sessions__year___round___session__timing_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Session time (s)",
+              "title": "T"
+            },
+            "description": "Session time (s)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimingState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/positions/status": {
+      "get": {
+        "summary": "Positions Status",
+        "operationId": "positions_status_api_sessions__year___round___session__positions_status_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/positions/prepare": {
+      "post": {
+        "summary": "Positions Prepare",
+        "description": "Start downloading the telemetry and building the position track (once per session).",
+        "operationId": "positions_prepare_api_sessions__year___round___session__positions_prepare_post",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/positions": {
+      "get": {
+        "summary": "Positions",
+        "operationId": "positions_api_sessions__year___round___session__positions_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayPositions"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not prepared yet: POST .../positions/prepare first"
           },
           "422": {
             "description": "Validation Error",
@@ -392,7 +787,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -473,7 +877,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
               "type": "string",
               "title": "Session"
             }
@@ -543,6 +956,64 @@
   },
   "components": {
     "schemas": {
+      "CarTrack": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "x": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "X"
+          },
+          "y": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Y"
+          },
+          "progress": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "x",
+          "y",
+          "progress"
+        ],
+        "title": "CarTrack"
+      },
       "Circuit": {
         "properties": {
           "name": {
@@ -774,7 +1245,12 @@
           }
         },
         "type": "object",
-        "required": ["distance", "laps", "mini_sectors", "corners"],
+        "required": [
+          "distance",
+          "laps",
+          "mini_sectors",
+          "corners"
+        ],
         "title": "Comparison"
       },
       "Corner": {
@@ -801,7 +1277,13 @@
           }
         },
         "type": "object",
-        "required": ["label", "distance", "x", "y", "angle"],
+        "required": [
+          "label",
+          "distance",
+          "x",
+          "y",
+          "angle"
+        ],
         "title": "Corner"
       },
       "CornerLap": {
@@ -846,7 +1328,14 @@
           }
         },
         "type": "object",
-        "required": ["time", "brake_at", "min_speed", "min_speed_at", "throttle_at", "top_speed"],
+        "required": [
+          "time",
+          "brake_at",
+          "min_speed",
+          "min_speed_at",
+          "throttle_at",
+          "top_speed"
+        ],
         "title": "CornerLap",
         "description": "One lap through one corner segment."
       },
@@ -873,7 +1362,12 @@
           }
         },
         "type": "object",
-        "required": ["label", "start", "end", "laps"],
+        "required": [
+          "label",
+          "start",
+          "end",
+          "laps"
+        ],
         "title": "CornerSegment",
         "description": "A corner (or chicane) with its braking zone and the straight after it."
       },
@@ -916,7 +1410,15 @@
           }
         },
         "type": "object",
-        "required": ["code", "number", "first_name", "last_name", "team", "color", "headshot_url"],
+        "required": [
+          "code",
+          "number",
+          "first_name",
+          "last_name",
+          "team",
+          "color",
+          "headshot_url"
+        ],
         "title": "DriverInfo"
       },
       "EventInfo": {
@@ -955,7 +1457,15 @@
           }
         },
         "type": "object",
-        "required": ["round", "name", "country", "location", "format", "date", "sessions"],
+        "required": [
+          "round",
+          "name",
+          "country",
+          "location",
+          "format",
+          "date",
+          "sessions"
+        ],
         "title": "EventInfo"
       },
       "HTTPValidationError": {
@@ -1187,6 +1697,61 @@
               }
             ],
             "title": "Start Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "sector_1_end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector 1 End"
+          },
+          "sector_2_end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector 2 End"
+          },
+          "pit_in_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pit In Time"
+          },
+          "pit_out_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pit Out Time"
           }
         },
         "type": "object",
@@ -1214,7 +1779,12 @@
           "speed_i2",
           "speed_finish",
           "speed_trap",
-          "start_time"
+          "start_time",
+          "end_time",
+          "sector_1_end",
+          "sector_2_end",
+          "pit_in_time",
+          "pit_out_time"
         ],
         "title": "Lap"
       },
@@ -1246,7 +1816,11 @@
           }
         },
         "type": "object",
-        "required": ["boundaries", "times", "fastest"],
+        "required": [
+          "boundaries",
+          "times",
+          "fastest"
+        ],
         "title": "MiniSectors"
       },
       "RaceControlMessage": {
@@ -1255,6 +1829,17 @@
             "type": "string",
             "format": "date-time",
             "title": "Utc"
+          },
+          "session_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Time"
           },
           "category": {
             "type": "string",
@@ -1321,8 +1906,104 @@
           }
         },
         "type": "object",
-        "required": ["utc", "category", "message", "flag", "scope", "sector", "driver", "lap"],
+        "required": [
+          "utc",
+          "session_time",
+          "category",
+          "message",
+          "flag",
+          "scope",
+          "sector",
+          "driver",
+          "lap"
+        ],
         "title": "RaceControlMessage"
+      },
+      "ReplayPositions": {
+        "properties": {
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "step": {
+            "type": "number",
+            "title": "Step"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "lap_length": {
+            "type": "number",
+            "title": "Lap Length"
+          },
+          "cars": {
+            "items": {
+              "$ref": "#/components/schemas/CarTrack"
+            },
+            "type": "array",
+            "title": "Cars"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "step",
+          "count",
+          "lap_length",
+          "cars"
+        ],
+        "title": "ReplayPositions",
+        "description": "Every car on a fixed time grid: sample i is at session time start + i * step."
+      },
+      "ReplayStatus": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "loading",
+              "ready",
+              "error"
+            ],
+            "title": "State"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "progress",
+          "phase",
+          "error"
+        ],
+        "title": "ReplayStatus",
+        "description": "Preparing the position track: every lap's telemetry is downloaded once (~10 s for a race)."
       },
       "SeasonEvents": {
         "properties": {
@@ -1339,8 +2020,35 @@
           }
         },
         "type": "object",
-        "required": ["year", "events"],
+        "required": [
+          "year",
+          "events"
+        ],
         "title": "SeasonEvents"
+      },
+      "Segment": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "start",
+          "end"
+        ],
+        "title": "Segment",
+        "description": "A qualifying part (Q1, Q2, Q3) in session time."
       },
       "SessionDetail": {
         "properties": {
@@ -1354,7 +2062,16 @@
           },
           "code": {
             "type": "string",
-            "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
             "title": "Code"
           },
           "event_name": {
@@ -1378,14 +2095,31 @@
           }
         },
         "type": "object",
-        "required": ["year", "round", "code", "event_name", "session_name", "has_drs", "drivers"],
+        "required": [
+          "year",
+          "round",
+          "code",
+          "event_name",
+          "session_name",
+          "has_drs",
+          "drivers"
+        ],
         "title": "SessionDetail"
       },
       "SessionInfo": {
         "properties": {
           "code": {
             "type": "string",
-            "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
             "title": "Code"
           },
           "name": {
@@ -1406,8 +2140,122 @@
           }
         },
         "type": "object",
-        "required": ["code", "name", "start_utc"],
+        "required": [
+          "code",
+          "name",
+          "start_utc"
+        ],
         "title": "SessionInfo"
+      },
+      "SessionTimeline": {
+        "properties": {
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "t0_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T0 Utc"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "race",
+              "quali",
+              "practice"
+            ],
+            "title": "Kind"
+          },
+          "total_laps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Laps"
+          },
+          "lap_starts": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Lap Starts"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "track_status": {
+            "items": {
+              "$ref": "#/components/schemas/StatusPeriod"
+            },
+            "type": "array",
+            "title": "Track Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "t0_utc",
+          "kind",
+          "total_laps",
+          "lap_starts",
+          "segments",
+          "track_status"
+        ],
+        "title": "SessionTimeline",
+        "description": "What the session clock needs: its range, the laps and the track status over time."
+      },
+      "StatusPeriod": {
+        "properties": {
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "sc",
+              "vsc",
+              "vsc_ending",
+              "red",
+              "chequered"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "status"
+        ],
+        "title": "StatusPeriod"
       },
       "Telemetry": {
         "properties": {
@@ -1515,6 +2363,316 @@
         "title": "Telemetry",
         "description": "One lap, columnar, at the source sample rate (~4 Hz car data merged with position)."
       },
+      "TimingState": {
+        "properties": {
+          "time": {
+            "type": "number",
+            "title": "Time"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "race",
+              "quali",
+              "practice"
+            ],
+            "title": "Kind"
+          },
+          "lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap"
+          },
+          "total_laps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Laps"
+          },
+          "segment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment"
+          },
+          "cutoff": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff"
+          },
+          "track_status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "sc",
+              "vsc",
+              "vsc_ending",
+              "red",
+              "chequered"
+            ],
+            "title": "Track Status"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TowerRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "valid_from",
+          "valid_until",
+          "kind",
+          "lap",
+          "total_laps",
+          "segment",
+          "cutoff",
+          "track_status",
+          "rows"
+        ],
+        "title": "TimingState",
+        "description": "The timing tower at session time `time`, valid from valid_from until valid_until."
+      },
+      "TowerRow": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "out_lap",
+              "in_lap",
+              "pit",
+              "garage",
+              "retired",
+              "finished"
+            ],
+            "title": "Status"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval"
+          },
+          "laps_down": {
+            "type": "integer",
+            "title": "Laps Down"
+          },
+          "interval_laps": {
+            "type": "integer",
+            "title": "Interval Laps"
+          },
+          "best_lap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Lap"
+          },
+          "best_timing": {
+            "type": "string",
+            "enum": [
+              "best",
+              "pb",
+              "none"
+            ],
+            "title": "Best Timing"
+          },
+          "last_lap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Lap"
+          },
+          "last_timing": {
+            "type": "string",
+            "enum": [
+              "best",
+              "pb",
+              "none"
+            ],
+            "title": "Last Timing"
+          },
+          "sectors": {
+            "items": {
+              "$ref": "#/components/schemas/TowerSector"
+            },
+            "type": "array",
+            "title": "Sectors"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "tyre_age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tyre Age"
+          },
+          "pit_stops": {
+            "type": "integer",
+            "title": "Pit Stops"
+          },
+          "eliminated": {
+            "type": "boolean",
+            "title": "Eliminated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position",
+          "driver",
+          "status",
+          "laps",
+          "gap",
+          "interval",
+          "laps_down",
+          "interval_laps",
+          "best_lap",
+          "best_timing",
+          "last_lap",
+          "last_timing",
+          "sectors",
+          "compound",
+          "tyre_age",
+          "pit_stops",
+          "eliminated"
+        ],
+        "title": "TowerRow"
+      },
+      "TowerSector": {
+        "properties": {
+          "time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          },
+          "timing": {
+            "type": "string",
+            "enum": [
+              "best",
+              "pb",
+              "none"
+            ],
+            "title": "Timing"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "timing",
+          "current"
+        ],
+        "title": "TowerSector"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -1548,7 +2706,11 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       },
       "Weather": {
