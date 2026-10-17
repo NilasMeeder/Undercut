@@ -100,7 +100,8 @@ cd frontend && npm run typecheck && npm run lint && npm run format
 backend/app/main.py        FastAPI-app en routes (dun: valideren, data-laag aanroepen, afronden)
 backend/app/schedule.py    seizoensschema via FastF1 + resolve_session(year, round, code)
 backend/app/sources/       één module per databron; tracinginsights.py haalt ruwe JSON op en cachet die gzipped,
-                           tracinginsights_git.py haalt een hele sessie in één keer op (bulk, zie "Replay")
+                           tracinginsights_git.py haalt een hele sessie in één keer op (bulk, zie "Replay"),
+                           jolpica.py de startgrid
 backend/app/sessions.py    bronnen → schemas, met lru_caches (laps, drivers, circuit, LapTrace per lap)
 backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mini_sectors
 backend/app/replay.py      pure replay-logica: positiespoor (build_track), timing tower op t (timing_state),
@@ -144,7 +145,7 @@ zonder cache geen laps of telemetrie meer laden. Het schema werkt nog wel, dat k
 | **TracingInsights** (`github.com/TracingInsights/<jaar>`) | 2018–2026, per sessie: `session_laptimes.json`, `drivers.json`, `corners.json`, `rcm.json`, `weather.json`, `team_radio.json`, en per driver `<DRV>/<lap>_tel.json` | **Primaire bron.** Gratis (Apache 2.0) via `raw.githubusercontent.com`. Gemaakt met FastF1, al kolom-georiënteerd met distance, x/y/z, acc_x/y/z en DriverAhead. Nieuwe sessies na 15 okt 2026 komen er mogelijk niet meer bij. Zie hun `DATA_REFERENCE.md`. |
 | **OpenF1** (`api.openf1.org/v1`) | Laps, sectoren, car_data, location, stints, pit, weer, race control, team radio | **Fallback** voor sessies die nog niet in TracingInsights staan. Historisch (2023+) gratis zonder key, max 3 req/s en 30 req/min. Live alleen betaald. |
 | FastF1 | Schema (`get_event_schedule`), en alles als er een F1 TV-token of een fix komt | Nu alleen voor het schema. De bron-laag zo bouwen dat FastF1 later weer kan aansluiten. |
-| Jolpica (Ergast-opvolger) | Uitslagen, standen | Gratis |
+| Jolpica (Ergast-opvolger, `api.jolpi.ca/ergast/f1`) | Uitslagen, standen, startgrid | Gratis. Nu gebruikt voor de startgrid in replay. |
 
 Gevolg: de backend krijgt een **data-source laag** (`app/sources/`) waarin elke bron dezelfde interne vorm
 levert. Volgorde: lokale opslag → TracingInsights → OpenF1. Een opgehaalde sessie wordt meteen lokaal
@@ -172,7 +173,9 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   Rekenwerk in `replay.timing_state`, ~1 ms. Valkuilen in de data: een DNS-driver heeft een spooklap
   zonder tijden (eindtijd gekopieerd van de leider): `replay.driven()` filtert die. Q-out-laps lopen vanaf
   het einde van de vorige in-lap, inclusief garagetijd: de garage is pit-in tot pit-out (> 60 s).
-  TracingInsights heeft geen startgrid: vóór de eerste S1-passage staat de volgorde van die passage.
+  TracingInsights heeft geen startgrid; die komt van Jolpica (`sources/jolpica.py`, race en sprint,
+  gecachet in `.cache/jolpica/`). Vóór de eerste S1-passage staat de grid (pitstraat-start achteraan);
+  zonder Jolpica de volgorde van die eerste passage.
 - **Positiespoor** (`/positions`): x, y en lap-voortgang van elke auto op een raster van 4 Hz over de
   hele sessie. Daarvoor is de telemetrie van **elke lap** nodig (Monza R: 973 bestanden, ~116 MB JSON).
   Bulk-download via een **git partial clone** per seizoen (`--bare --depth=1 --filter=blob:none`, ~6 MB

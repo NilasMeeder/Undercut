@@ -296,6 +296,8 @@ class TimingIndex:
     points: dict[str, tuple[list[float], list[int]]] = field(default_factory=dict)
     """Race, per driver: times and numbers of the timing points passed (3 per lap: S1, S2, line)."""
     point_time: dict[str, dict[int, float]] = field(default_factory=dict)
+    grid: dict[str, int] = field(default_factory=dict)
+    """Race: starting position per driver (Jolpica), the order before the first timing point."""
 
 
 def segments(laps: list[Lap]) -> list[Segment]:
@@ -314,7 +316,12 @@ def segments(laps: list[Lap]) -> list[Segment]:
     )
 
 
-def build_index(laps: list[Lap], kind: SessionKind, status: list[StatusPeriod]) -> TimingIndex:
+def build_index(
+    laps: list[Lap],
+    kind: SessionKind,
+    status: list[StatusPeriod],
+    grid: dict[str, int] | None = None,
+) -> TimingIndex:
     by_driver: dict[str, list[Lap]] = defaultdict(list)
     for lap in laps:
         by_driver[lap.driver].append(lap)
@@ -366,6 +373,7 @@ def build_index(laps: list[Lap], kind: SessionKind, status: list[StatusPeriod]) 
         events=events,
         timing=timing,
         completions=completions,
+        grid=grid or {},
     )
     if kind == "race":
         _index_race(index)
@@ -522,13 +530,18 @@ def _race_rows(index: TimingIndex, t: float, overall: dict[str, float]) -> list[
         row.status = status
         rows.append(row)
 
-    # Before the first timing point everyone is still in grid order; the archive has no grid, so
-    # use the order in which they passed the first point.
+    # Before the first timing point everyone is still in grid order. Without a grid (the archive
+    # has none), use the order in which they passed the first point.
     first = {d: index.points[d][0][0] if index.points[d][0] else math.inf for d in index.laps}
+
+    def start_order(driver: str) -> float:
+        if index.grid:
+            return index.grid.get(driver, math.inf)
+        return first[driver]
 
     def key(row: TowerRow) -> tuple[bool, int, float]:
         point, at = _latest_point(index, row.driver, t)
-        return (row.status == "retired", -point, at if point else first[row.driver])
+        return (row.status == "retired", -point, at if point else start_order(row.driver))
 
     rows.sort(key=key)
     leader = rows[0].driver if rows else None

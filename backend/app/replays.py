@@ -25,6 +25,7 @@ from app.schemas import (
     SessionTimeline,
     TimingState,
 )
+from app.sources import jolpica
 from app.sources import tracinginsights as ti
 
 log = logging.getLogger(__name__)
@@ -77,11 +78,25 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
     )
 
 
+def _starting_grid(year: int, round_number: int, code: str) -> dict[str, int]:
+    """Race and sprint grids; without one the tower falls back to the first passage."""
+    if code not in ("R", "S"):
+        return {}
+    try:
+        return jolpica.starting_grid(year, round_number, sprint=code == "S")
+    except ti.SourceNotAvailable as error:
+        log.warning("%s", error)
+        return {}
+
+
 @lru_cache(maxsize=8)
 def get_timing_index(year: int, round_number: int, code: str) -> replay.TimingIndex:
     timeline = get_timeline(year, round_number, code)
     return replay.build_index(
-        sessions.get_laps(year, round_number, code), timeline.kind, timeline.track_status
+        sessions.get_laps(year, round_number, code),
+        timeline.kind,
+        timeline.track_status,
+        _starting_grid(year, round_number, code),
     )
 
 

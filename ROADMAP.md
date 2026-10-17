@@ -141,7 +141,7 @@ alle panelen meeloopt.
 - [x] Race control en track status volgen de klok
 - [x] Datavolume: telemetrie van een hele sessie in bulk (git partial clone), positiespoor één keer
       bouwen en lokaal opslaan, laadstatus met voortgang
-- [ ] Startgrid (TracingInsights heeft hem niet; Jolpica wel) voor de volgorde vóór de eerste passage
+- [x] Startgrid van Jolpica voor de volgorde vóór de eerste passage (race en sprint)
 - [x] Weer volgt de klok (kolom "Clock" met de waarde op t, witte streep in de sparklines)
 - [x] Gele sectoren uit race control op de kaart (met alle auto's) en de Track line, per marshal-sector
 - [ ] Auto's na de finish nog een uitlooplap tonen (de data stopt nu op de lijn)

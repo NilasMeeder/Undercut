@@ -6,6 +6,7 @@ import pytest
 
 from app import replay, sessions
 from app.schemas import Lap, RaceControlMessage
+from app.sources import jolpica
 
 
 def make_lap(driver: str, number: int, **fields: Any) -> Lap:
@@ -194,6 +195,32 @@ def race() -> replay.TimingIndex:
 
 def rows(index: replay.TimingIndex, t: float) -> dict[str, Any]:
     return {r.driver: r for r in replay.timing_state(index, t).rows}
+
+
+def test_race_order_before_the_first_timing_point_is_the_grid() -> None:
+    laps = [
+        race_lap("VER", 1, 0.0, 30.0, 30.0, 30.0),
+        race_lap("NOR", 1, 0.0, 30.5, 30.0, 30.0),
+        race_lap("PIA", 1, 0.0, 31.0, 30.0, 30.0),
+    ]
+    by_passage = replay.build_index(laps, "race", [])
+    assert [r.driver for r in replay.timing_state(by_passage, 5.0).rows] == ["VER", "NOR", "PIA"]
+    grid = {"PIA": 1, "NOR": 2, "VER": jolpica.PIT_LANE_START}
+    on_grid = replay.build_index(laps, "race", [], grid)
+    assert [r.driver for r in replay.timing_state(on_grid, 5.0).rows] == ["PIA", "NOR", "VER"]
+    # After the first sector line the order is on track again.
+    assert [r.driver for r in replay.timing_state(on_grid, 31.5).rows] == ["VER", "NOR", "PIA"]
+
+
+def test_parse_grid() -> None:
+    def result(code: str, grid: str) -> dict:
+        return {"Driver": {"code": code}, "grid": grid}
+
+    results = [result("VER", "1"), result("HUL", "0")]
+    data = {"MRData": {"RaceTable": {"Races": [{"Results": results}]}}}
+    assert jolpica.parse_grid(data, sprint=False) == {"VER": 1, "HUL": jolpica.PIT_LANE_START}
+    assert jolpica.parse_grid(data, sprint=True) == {}
+    assert jolpica.parse_grid({"MRData": {"RaceTable": {"Races": []}}}, sprint=False) == {}
 
 
 def test_race_order_and_gaps_at_the_line(race: replay.TimingIndex) -> None:
