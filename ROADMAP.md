@@ -7,6 +7,8 @@ volgende fase voordat de vorige echt werkt.
 
 - Fase 0 af (2026-10-17): de Next.js-template is vervangen door `backend/` (FastAPI + FastF1) en
   `frontend/` (Vite + React 19 + Tailwind 4). De kalender per seizoen werkt, met een sessiekiezer.
+- Fase 2 grotendeels af (2026-10-17): docking-dashboard met laptijden, telemetrie, delta en track map,
+  gedeelde cursor/zoom per link-groep. Getest in headless Chrome op Monza 2025 Q.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit- en compare-endpoints op
   TracingInsights-data. Nog open: de OpenF1-fallback en de endpoints voor weer, race control en radio.
 
@@ -75,19 +77,23 @@ officiële gap (±0,02 s). ✅ Monza 2025 Q: NOR +0,077, LEC +0,215 (exact offic
 
 Alles waar elke latere widget op leunt. Pas klaar als het goed voelt, niet als het er alleen staat.
 
-- [ ] Stijlregels in code: kleur-tokens (achtergrond, lijnen, tekst, semantische kleuren), compacte
+- [x] Stijlregels in code: kleur-tokens (achtergrond, lijnen, tekst, semantische kleuren), compacte
       typografie met tabular numerals, paneel-chrome (titelbalk, tabs, tandwiel, sluiten)
-- [ ] Docking-shell met dockview: panelen toevoegen, splitsen, tabs, sluiten; layout bewaren in localStorage
-- [ ] Widget-registry: id, titel, standaardgrootte, config, link-groep. Nieuwe widget = één bestand + entry
-- [ ] Link-groepen: kleurkeuze per paneel, gedeelde selectie (sessie, drivers, laps) per groep
-- [ ] Gedeelde cursor (afstand) en zoom (afstandsbereik), buiten React-render om voor snelheid
-- [ ] Sessie- en lap-selectie: sessiekiezer in de topbalk, laps kiezen vanuit de laptijdentabel
-- [ ] Eerste widgets:
-  - [ ] **Laptijdentabel** per driver: sectoren paars/groen/geel, compound, verwijderde/in/out-laps grijs
-  - [ ] **Telemetrie-stack** (uPlot): speed, throttle, brake, gear, RPM, DRS, met gedeelde cursor en zoom
-  - [ ] **Delta-chart**
-  - [ ] **Track map**: outline, bochten, cursorpositie, mini-sectoren gekleurd per snelste lap
-- [ ] Preset-layout "Quali-duel" die je met één klik krijgt
+- [x] Docking-shell met dockview: panelen toevoegen, splitsen, tabs, sluiten; layout bewaren in localStorage
+- [x] Widget-registry: id, titel, standaardgrootte, config, link-groep. Nieuwe widget = één bestand + entry
+- [x] Link-groepen: kleurkeuze per paneel (klik op het vierkantje in de tab), gedeelde selectie (sessie, drivers, laps) per groep
+- [x] Gedeelde cursor (afstand) en zoom (afstandsbereik), buiten React-render om voor snelheid
+- [x] Sessie- en lap-selectie: sessiekiezer in de topbalk, laps kiezen vanuit de laptijdentabel
+- [x] Eerste widgets:
+  - [x] **Laptijdentabel** per driver: sectoren paars/groen/geel, compound, verwijderde/in/out-laps grijs
+  - [x] **Telemetrie-stack** (uPlot): speed, throttle, brake, gear, RPM, DRS, met gedeelde cursor en zoom
+  - [x] **Delta-chart**
+  - [x] **Track map**: outline, bochten, cursorpositie, mini-sectoren gekleurd per snelste lap
+- [x] Preset-layout "Quali-duel" die je met één klik krijgt
+- [ ] Paneel-instellingen (tandwiel): kanalen aan/uit, aantal mini-sectoren, step
+- [ ] (i)-uitleg per widget (zie UX-principes)
+- [ ] Popout naar een tweede venster en het wisselen van link-groep in de browser testen (gebouwd, nog niet getest)
+- [ ] Code splitting: de bundle is >500 kB (dockview + uPlot), Vite waarschuwt
 
 **Klaar als:** je een Q3-duel kunt analyseren in een zelf ingedeeld scherm, en de cursor soepel over
 alle panelen meeloopt.

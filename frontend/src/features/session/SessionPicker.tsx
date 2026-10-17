@@ -3,13 +3,11 @@ import { cn } from '@/lib/utils';
 import { useSelection } from '@/store/selection';
 
 const FIRST_SEASON = 2018;
-const seasons = Array.from(
-  { length: new Date().getFullYear() - FIRST_SEASON + 1 },
-  (_, i) => new Date().getFullYear() - i
-);
+const thisYear = new Date().getFullYear();
+const seasons = Array.from({ length: thisYear - FIRST_SEASON + 1 }, (_, i) => thisYear - i);
 
 const selectClass =
-  'h-8 rounded-md border border-input bg-card px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-6 border border-line-strong bg-panel px-1 text-[11px] text-text focus-visible:outline-none focus-visible:border-dim';
 
 export function SessionPicker() {
   const { year, round, session, setYear, setRound, setSession } = useSelection();
@@ -17,7 +15,7 @@ export function SessionPicker() {
   const event = data?.events.find((e) => e.round === round);
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-1">
       <select
         aria-label="Season"
         className={selectClass}
@@ -30,26 +28,24 @@ export function SessionPicker() {
           </option>
         ))}
       </select>
-
       <select
         aria-label="Event"
-        className={cn(selectClass, 'min-w-56')}
+        className={cn(selectClass, 'w-52')}
         value={round ?? ''}
         disabled={!data}
         onChange={(e) => setRound(Number(e.target.value))}
       >
         <option value="" disabled>
-          {isLoading ? 'Loading events…' : error ? 'Failed to load events' : 'Select event'}
+          {isLoading ? 'Loading…' : error ? 'Failed to load events' : 'Event'}
         </option>
         {data?.events.map((e) => (
           <option key={e.round} value={e.round}>
-            R{e.round} · {e.name}
+            {String(e.round).padStart(2, '0')} {e.name}
           </option>
         ))}
       </select>
-
       {event ? (
-        <div className="flex gap-1" role="group" aria-label="Session">
+        <div className="flex" role="group" aria-label="Session">
           {event.sessions.map((s) => (
             <button
               key={s.code}
@@ -57,10 +53,8 @@ export function SessionPicker() {
               title={s.name}
               onClick={() => setSession(s.code)}
               className={cn(
-                'h-8 rounded-md px-2.5 font-mono text-xs font-semibold transition-colors',
-                session === s.code
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                'h-6 border border-l-0 border-line-strong px-2 text-[11px] font-semibold first:border-l',
+                session === s.code ? 'bg-text text-bg' : 'bg-panel text-dim hover:text-text'
               )}
             >
               {s.code}

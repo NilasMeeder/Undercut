@@ -13,9 +13,14 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 en (grotendeels) fase 1 zijn af: de API levert sessies, laps, telemetrie, circuit en lap-vergelijking
-(delta + mini-sectoren). De frontend heeft alleen nog de sessiekiezer. Volgende stap: fase 2 (de basis:
-stijl, docking, link-groepen, cursor en de eerste widgets).
+Fase 0, 1 en het grootste deel van 2 zijn af: een docking-dashboard (dockview) met de widgets Laps,
+Telemetry, Delta en Track map, link-groepen en een gedeelde cursor/zoom. Wat nog open staat, staat in
+ROADMAP.md bij fase 2; daarna volgt fase 3 (analyse-widgets).
+
+**Visueel testen:** de Chrome-extensie is vaak niet verbonden. Gebruik dan headless Chrome via
+`playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
+`localStorage['f1dash-selection'] = {"state":{"year":2025,"round":16,"session":"Q"},"version":0}`.
+Monza 2025 Q is de vaste testsessie: VER 1:18.792, NOR +0.077, LEC +0.215.
 
 ## Architectuur
 
@@ -71,9 +76,12 @@ backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mi
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
 frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), schema.d.ts (gegenereerd)
-frontend/src/store/        Zustand stores (selection.ts: jaar/ronde/sessie, persisted)
-frontend/src/features/     feature-componenten (session/...)
-frontend/src/components/ui shadcn-primitives
+frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus)
+frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen)
+frontend/src/widgets/      één map per widget + registry.ts; useGroupComparison.ts deelt de compare-data
+frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), data/bits.tsx (badges, swatches)
+frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, lijnstijlen)
+frontend/src/features/     topbalk: SessionPicker, GroupBar, useDefaultSelection
 ```
 
 Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt

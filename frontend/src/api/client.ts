@@ -1,9 +1,16 @@
 import type { components } from './schema';
 
-export type SeasonEvents = components['schemas']['SeasonEvents'];
-export type EventInfo = components['schemas']['EventInfo'];
-export type SessionInfo = components['schemas']['SessionInfo'];
+type Schemas = components['schemas'];
+export type SeasonEvents = Schemas['SeasonEvents'];
+export type EventInfo = Schemas['EventInfo'];
+export type SessionInfo = Schemas['SessionInfo'];
 export type SessionCode = SessionInfo['code'];
+export type SessionDetail = Schemas['SessionDetail'];
+export type DriverInfo = Schemas['DriverInfo'];
+export type Lap = Schemas['Lap'];
+export type Comparison = Schemas['Comparison'];
+export type ComparedLap = Schemas['ComparedLap'];
+export type Circuit = Schemas['Circuit'];
 
 export class ApiError extends Error {
   readonly status: number;
@@ -17,8 +24,9 @@ export class ApiError extends Error {
 export async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`/api${path}`);
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new ApiError(response.status, body?.detail ?? response.statusText);
+    const body = (await response.json().catch(() => null)) as { detail?: unknown } | null;
+    const detail = typeof body?.detail === 'string' ? body.detail : response.statusText;
+    throw new ApiError(response.status, detail);
   }
   return response.json() as Promise<T>;
 }

@@ -16,10 +16,12 @@
     "@tanstack/react-query": "^5.104.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dockview-react": "^8.6.0",
     "lucide-react": "^1.59.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwind-merge": "^3.7.0",
+    "uplot": "^1.6.32",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

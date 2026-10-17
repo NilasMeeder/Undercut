@@ -24,3 +24,17 @@ export const useSelection = create<SelectionState>()(
     { name: 'f1dash-selection' }
   )
 );
+
+export type SessionKey = { year: number; round: number; session: SessionCode };
+
+/** The selected session, or null while the picker is incomplete. */
+export function useSessionKey(): SessionKey | null {
+  const year = useSelection((s) => s.year);
+  const round = useSelection((s) => s.round);
+  const session = useSelection((s) => s.session);
+  return round != null && session != null ? { year, round, session } : null;
+}
+
+export function sessionPath({ year, round, session }: SessionKey): string {
+  return `/sessions/${year}/${round}/${session}`;
+}

@@ -94,16 +94,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "FP1",
-                "FP2",
-                "FP3",
-                "SQ",
-                "SS",
-                "S",
-                "Q",
-                "R"
-              ],
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
               "type": "string",
               "title": "Session"
             }
@@ -161,16 +152,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "FP1",
-                "FP2",
-                "FP3",
-                "SQ",
-                "SS",
-                "S",
-                "Q",
-                "R"
-              ],
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
               "type": "string",
               "title": "Session"
             }
@@ -232,16 +214,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "FP1",
-                "FP2",
-                "FP3",
-                "SQ",
-                "SS",
-                "S",
-                "Q",
-                "R"
-              ],
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
               "type": "string",
               "title": "Session"
             }
@@ -299,16 +272,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "FP1",
-                "FP2",
-                "FP3",
-                "SQ",
-                "SS",
-                "S",
-                "Q",
-                "R"
-              ],
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
               "type": "string",
               "title": "Session"
             }
@@ -389,16 +353,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "FP1",
-                "FP2",
-                "FP3",
-                "SQ",
-                "SS",
-                "S",
-                "Q",
-                "R"
-              ],
+              "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
               "type": "string",
               "title": "Session"
             }
@@ -692,11 +647,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance",
-          "laps",
-          "mini_sectors"
-        ],
+        "required": ["distance", "laps", "mini_sectors"],
         "title": "Comparison"
       },
       "Corner": {
@@ -723,13 +674,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "label",
-          "distance",
-          "x",
-          "y",
-          "angle"
-        ],
+        "required": ["label", "distance", "x", "y", "angle"],
         "title": "Corner"
       },
       "DriverInfo": {
@@ -771,15 +716,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "code",
-          "number",
-          "first_name",
-          "last_name",
-          "team",
-          "color",
-          "headshot_url"
-        ],
+        "required": ["code", "number", "first_name", "last_name", "team", "color", "headshot_url"],
         "title": "DriverInfo"
       },
       "EventInfo": {
@@ -818,15 +755,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "round",
-          "name",
-          "country",
-          "location",
-          "format",
-          "date",
-          "sessions"
-        ],
+        "required": ["round", "name", "country", "location", "format", "date", "sessions"],
         "title": "EventInfo"
       },
       "HTTPValidationError": {
@@ -1117,11 +1046,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "boundaries",
-          "times",
-          "fastest"
-        ],
+        "required": ["boundaries", "times", "fastest"],
         "title": "MiniSectors"
       },
       "SeasonEvents": {
@@ -1139,10 +1064,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "year",
-          "events"
-        ],
+        "required": ["year", "events"],
         "title": "SeasonEvents"
       },
       "SessionDetail": {
@@ -1157,16 +1079,7 @@
           },
           "code": {
             "type": "string",
-            "enum": [
-              "FP1",
-              "FP2",
-              "FP3",
-              "SQ",
-              "SS",
-              "S",
-              "Q",
-              "R"
-            ],
+            "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
             "title": "Code"
           },
           "event_name": {
@@ -1190,31 +1103,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "year",
-          "round",
-          "code",
-          "event_name",
-          "session_name",
-          "has_drs",
-          "drivers"
-        ],
+        "required": ["year", "round", "code", "event_name", "session_name", "has_drs", "drivers"],
         "title": "SessionDetail"
       },
       "SessionInfo": {
         "properties": {
           "code": {
             "type": "string",
-            "enum": [
-              "FP1",
-              "FP2",
-              "FP3",
-              "SQ",
-              "SS",
-              "S",
-              "Q",
-              "R"
-            ],
+            "enum": ["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"],
             "title": "Code"
           },
           "name": {
@@ -1235,11 +1131,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "code",
-          "name",
-          "start_utc"
-        ],
+        "required": ["code", "name", "start_utc"],
         "title": "SessionInfo"
       },
       "Telemetry": {
@@ -1381,11 +1273,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError"
       }
     }
