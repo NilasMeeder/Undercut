@@ -7,6 +7,8 @@ and <DRV>/<lap>_tel.json. Missing values are the string "None".
 
 import gzip
 import json
+import os
+import threading
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -27,6 +29,16 @@ class SourceNotAvailable(Exception):
 _http = requests.Session()
 _http.headers["User-Agent"] = "f1dash (hobby project)"
 
+# Endpoints run in a thread pool, and one click can fire two requests for the same lap. A lock per
+# file makes the second wait for the first download instead of fetching and writing it again.
+_locks: dict[Path, threading.Lock] = {}
+_locks_guard = threading.Lock()
+
+
+def _lock_for(path: Path) -> threading.Lock:
+    with _locks_guard:
+        return _locks.setdefault(path, threading.Lock())
+
 
 def _cache_path(year: int, event: str, session: str, file: str) -> Path:
     return TRACINGINSIGHTS_CACHE_DIR / str(year) / event / session / f"{file}.gz"
@@ -34,10 +46,15 @@ def _cache_path(year: int, event: str, session: str, file: str) -> Path:
 
 def fetch_json(year: int, event: str, session: str, file: str) -> Any:
     path = _cache_path(year, event, session, file)
-    if path.exists():
-        with gzip.open(path, "rt", encoding="utf-8") as f:
-            return json.load(f)
+    if not path.exists():
+        with _lock_for(path):
+            if not path.exists():
+                return _download(year, event, session, file, path)
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return json.load(f)
 
+
+def _download(year: int, event: str, session: str, file: str, path: Path) -> Any:
     url = f"{TRACINGINSIGHTS_BASE_URL}/{year}/main/{quote(event)}/{quote(session)}/{quote(file)}"
     response = _http.get(url, timeout=HTTP_TIMEOUT_SECONDS)
     if response.status_code == 404:
@@ -46,7 +63,7 @@ def fetch_json(year: int, event: str, session: str, file: str) -> Any:
     data = response.json()
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     with gzip.open(tmp, "wt", encoding="utf-8") as f:
         json.dump(data, f, separators=(",", ":"))
     tmp.replace(path)
