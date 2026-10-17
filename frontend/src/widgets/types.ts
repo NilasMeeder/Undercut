@@ -28,6 +28,8 @@ export type WidgetDef<C extends object> = {
   help: WidgetHelp;
   defaults: C;
   settings: Setting<C>[];
+  /** The panel moves with the session clock (replay, live); may depend on its settings. */
+  followsClock?: boolean | ((config: C) => boolean);
   component: FunctionComponent<WidgetProps<C>>;
 };
 

@@ -43,5 +43,6 @@ export const gapsWidget = defineWidget<GapsConfig>({
       ],
     },
   ],
+  followsClock: true,
   component: lazy(() => import('./GapsWidget').then((m) => ({ default: m.GapsWidget }))),
 });

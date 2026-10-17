@@ -31,5 +31,6 @@ export const positionsWidget = defineWidget<PositionsConfig>({
       ],
     },
   ],
+  followsClock: true,
   component: lazy(() => import('./PositionsWidget').then((m) => ({ default: m.PositionsWidget }))),
 });

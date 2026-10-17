@@ -26,5 +26,6 @@ export const stintsWidget = defineWidget<StintsConfig>({
     { key: 'deg', label: 'Degradation in the bars', kind: 'toggle' },
     { key: 'stops', label: 'Pit stop losses', kind: 'toggle' },
   ],
+  followsClock: true,
   component: lazy(() => import('./StintsWidget').then((m) => ({ default: m.StintsWidget }))),
 });

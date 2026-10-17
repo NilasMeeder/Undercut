@@ -4,11 +4,13 @@ import type { Marker, SessionTimeline } from '@/api/client';
 import { useMarkers } from '@/api/markers';
 import { usePositionsStatus, usePreparePositions, useTimeline } from '@/api/queries';
 import { HeaderMenu, headerButton } from '@/dashboard/HeaderMenu';
+import { followsClock } from '@/dashboard/layout';
 import { COLORS, TRACK_STATUS_COLORS } from '@/lib/colors';
 import { lapAt, markerLabel, markerLap } from '@/lib/markers';
 import { formatClock, TRACK_STATUS_LABEL } from '@/lib/replay';
 import { cn } from '@/lib/utils';
 import { clock, SPEEDS, useClockControls, useClockTime } from '@/store/clock';
+import { useDashboards } from '@/store/dashboards';
 import { markNew } from '@/store/markerEditor';
 
 /** A moment counts as "now" this long after it, so its note can be read while playing. */
@@ -293,6 +295,35 @@ function LiveControl() {
   );
 }
 
+/**
+ * Playing on a dashboard where no panel follows the clock (the analysis presets) shows nothing
+ * moving, so say so, with a way to the Replay dashboard (an existing tab, or a new one).
+ */
+function NothingFollows() {
+  const tabs = useDashboards((s) => s.tabs);
+  const active = useDashboards((s) => s.active);
+  const tab = tabs.find((t) => t.id === active);
+  if (!tab || followsClock(tab)) return null;
+  const openReplay = () => {
+    const { activate, add } = useDashboards.getState();
+    const replay = tabs.find((t) => t.preset === 'replay' && followsClock(t));
+    if (replay) activate(replay.id);
+    else add('Replay', 'replay');
+  };
+  return (
+    <span className="flex shrink-0 items-center gap-1.5 text-faint">
+      No panel here follows the clock
+      <button
+        type="button"
+        onClick={openReplay}
+        className="border border-line-strong px-1.5 text-text hover:bg-raised"
+      >
+        Open Replay
+      </button>
+    </span>
+  );
+}
+
 /** The session clock at the bottom of the screen: play, speed, where we are, scrub. */
 export function ClockBar() {
   const timeline = useTimeline();
@@ -352,6 +383,7 @@ export function ClockBar() {
         <Flag className="h-3 w-3" />
       </button>
       <Readout timeline={timeline.data} marks={marks} />
+      {playing ? <NothingFollows /> : null}
       <Scrubber timeline={timeline.data} marks={marks} />
       <LiveControl />
       <PositionsState />

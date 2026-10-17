@@ -1,7 +1,8 @@
 import type { DockviewApi, SerializedDockview } from 'dockview-react';
+import type { DashboardTab } from '@/store/dashboards';
 import type { GroupId } from '@/store/groups';
 import { WIDGETS_BY_ID } from '@/widgets/registry';
-import type { WidgetConfig } from '@/widgets/types';
+import { resolveConfig, type WidgetConfig } from '@/widgets/types';
 
 /** Stored per panel in the layout JSON. `config` only holds what differs from the widget defaults. */
 export type PanelParams = { group: GroupId; config?: WidgetConfig };
@@ -175,4 +176,19 @@ export function validLayout(layout: unknown): SerializedDockview | null {
   const known =
     panels.length > 0 && panels.every((p) => WIDGETS_BY_ID.has(p.contentComponent ?? ''));
   return known ? (layout as SerializedDockview) : null;
+}
+
+/** Presets with a panel that moves with the session clock, for a tab that has no layout yet. */
+const CLOCK_PRESETS: ReadonlySet<PresetId> = new Set(['overview', 'replay', 'strategy']);
+
+/** Whether any panel of a dashboard tab moves with the session clock. */
+export function followsClock(tab: DashboardTab): boolean {
+  const layout = validLayout(tab.layout);
+  if (!layout) return CLOCK_PRESETS.has(tab.preset);
+  return Object.values(layout.panels).some((panel) => {
+    const widget = WIDGETS_BY_ID.get(panel.contentComponent ?? '');
+    const follows = widget?.followsClock;
+    if (!widget || typeof follows !== 'function') return follows === true;
+    return follows(resolveConfig(widget, (panel.params as PanelParams | undefined)?.config));
+  });
 }

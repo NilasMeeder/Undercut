@@ -457,7 +457,11 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   Home/End. Markeren: `m` (afstand), `⇧M` (moment).
 - Widgets zijn losse componenten in `frontend/src/widgets/<Naam>/` met een registry
   (`widgets/registry.ts`). Nieuwe widget = component + `widget.ts` met `defineWidget({ id, title,
-  description, help, defaults, settings, component: lazy(...) })` + entry in de registry.
+  description, help, defaults, settings, component: lazy(...) })` + entry in de registry. Volgt hij
+  de sessieklok, zet dan `followsClock` (of een functie van de config): afspelen op een dashboard
+  zonder zo'n paneel toont in de klokbalk "No panel here follows the clock" met "Open Replay".
+- Dropdowns in titelbalken (`HeaderMenu`) gaan via een portal naar de body met `position: fixed`,
+  anders knipt dockview ze af en liggen de panelen eronder erover; ze scrollen als ze te lang zijn.
 - **Paneel-instellingen** zijn declaratief: het type van het config-veld bepaalt de control (boolean =
   aan/uit, array = meerdere aan/uit, anders één keuze). Ze staan in de panel-params (`config`, alleen
   wat afwijkt van de defaults) en dus in de layout. `resolveConfig` valt terug op de default als een

@@ -42,5 +42,6 @@ export const paceWidget = defineWidget<PaceConfig>({
     { key: 'fits', label: 'Degradation lines', kind: 'toggle' },
     { key: 'table', label: 'Stint table', kind: 'toggle' },
   ],
+  followsClock: true,
   component: lazy(() => import('./PaceWidget').then((m) => ({ default: m.PaceWidget }))),
 });

@@ -67,6 +67,7 @@ export const raceControlWidget = defineWidget<RaceControlConfig>({
       ],
     },
   ],
+  followsClock: true,
   component: lazy(() =>
     import('./RaceControlWidget').then((m) => ({ default: m.RaceControlWidget }))
   ),

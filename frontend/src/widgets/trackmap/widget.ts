@@ -55,5 +55,6 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     { key: 'markers', label: 'Markers', kind: 'toggle' },
     { key: 'ghosts', label: 'Pit stop ghosts (all cars)', kind: 'toggle' },
   ],
+  followsClock: (config) => config.cars === 'all',
   component: lazy(() => import('./TrackMapWidget').then((m) => ({ default: m.TrackMapWidget }))),
 });

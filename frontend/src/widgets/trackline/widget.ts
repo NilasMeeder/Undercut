@@ -31,5 +31,6 @@ export const trackLineWidget = defineWidget<TrackLineConfig>({
     { key: 'markers', label: 'Markers', kind: 'toggle' },
     { key: 'ghosts', label: 'Pit stop ghosts', kind: 'toggle' },
   ],
+  followsClock: true,
   component: lazy(() => import('./TrackLineWidget').then((m) => ({ default: m.TrackLineWidget }))),
 });

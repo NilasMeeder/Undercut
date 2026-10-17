@@ -18,5 +18,6 @@ export const weatherWidget = defineWidget<Record<string, never>>({
   },
   defaults: {},
   settings: [],
+  followsClock: true,
   component: lazy(() => import('./WeatherWidget').then((m) => ({ default: m.WeatherWidget }))),
 });

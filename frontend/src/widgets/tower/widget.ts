@@ -41,5 +41,6 @@ export const towerWidget = defineWidget<TowerConfig>({
       ],
     },
   ],
+  followsClock: true,
   component: lazy(() => import('./TowerWidget').then((m) => ({ default: m.TowerWidget }))),
 });

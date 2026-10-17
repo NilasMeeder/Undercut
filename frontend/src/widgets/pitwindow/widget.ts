@@ -46,5 +46,6 @@ export const pitWindowWidget = defineWidget<PitWindowConfig>({
     },
     { key: 'fuel', label: 'Fuel correction', kind: 'choice', options: FUEL_OPTIONS },
   ],
+  followsClock: true,
   component: lazy(() => import('./PitWindowWidget').then((m) => ({ default: m.PitWindowWidget }))),
 });
