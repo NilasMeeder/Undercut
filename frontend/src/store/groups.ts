@@ -61,6 +61,16 @@ export function useGroupLaps(group: GroupId): LapRef[] {
   return useGroups((s) => s.laps[group]);
 }
 
+/** Select/deselect laps of a group from a table: click a row to toggle its lap. */
+export function useLapSelection(group: GroupId) {
+  const selected = useGroupLaps(group);
+  const toggleLap = useGroups((s) => s.toggleLap);
+  return {
+    isSelected: (lap: LapRef) => selected.some((s) => sameLap(s, lap)),
+    toggle: (lap: LapRef) => toggleLap(group, { driver: lap.driver, lap: lap.lap }),
+  };
+}
+
 // Lap selections belong to a session: clear them when the session changes.
 useSelection.subscribe((state, prev) => {
   if (state.year !== prev.year || state.round !== prev.round || state.session !== prev.session) {

@@ -6,7 +6,8 @@ import type { LapRef } from '@/store/groups';
 export type TimingClass = 'best' | 'pb' | 'none';
 
 type Field = 'lap_time' | 'sector_1' | 'sector_2' | 'sector_3';
-const FIELDS: Field[] = ['lap_time', 'sector_1', 'sector_2', 'sector_3'];
+export const SECTORS = ['sector_1', 'sector_2', 'sector_3'] as const;
+const FIELDS: Field[] = ['lap_time', ...SECTORS];
 
 /** A lap counts for bests when it was not deleted by the stewards. */
 export function countsForBests(lap: Lap): boolean {

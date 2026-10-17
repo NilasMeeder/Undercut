@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { DriverInfo, Lap } from '@/api/client';
 import { useLaps, useSessionDetail } from '@/api/queries';
-import { PanelMessage, TyreBadge } from '@/components/data/bits';
+import { DriverCell, PanelMessage, TyreBadge } from '@/components/data/bits';
+import { rowStyle, td, th } from '@/lib/table';
 import { cn } from '@/lib/utils';
 import { formatGap, formatLapTime, formatSector } from '@/lib/format';
 import { bestLaps, classify, computeBests, TIMING_TEXT, type Bests } from '@/lib/timing';
-import { GROUP_COLORS, sameLap, useGroupLaps, useGroups, type GroupId } from '@/store/groups';
+import { useLapSelection, type GroupId } from '@/store/groups';
 import type { WidgetProps } from '../types';
 
 type View = 'classification' | 'laps';
@@ -62,37 +63,6 @@ export function LapsWidget({ group }: WidgetProps<Record<string, never>>) {
         )}
       </div>
     </div>
-  );
-}
-
-const th = 'sticky top-0 bg-panel px-1.5 py-0.5 text-[10px] font-medium uppercase text-faint';
-const td = 'px-1.5 py-[1px] text-right';
-
-function useLapSelection(group: GroupId) {
-  const selected = useGroupLaps(group);
-  const toggleLap = useGroups((s) => s.toggleLap);
-  return {
-    isSelected: (lap: Lap) => selected.some((s) => sameLap(s, lap)),
-    toggle: (lap: Lap) => toggleLap(group, { driver: lap.driver, lap: lap.lap }),
-  };
-}
-
-function rowStyle(selected: boolean, group: GroupId): React.CSSProperties {
-  return {
-    boxShadow: selected ? `inset 2px 0 0 ${GROUP_COLORS[group]}` : undefined,
-  };
-}
-
-function DriverCell({ code, drivers }: { code: string; drivers: DriverInfo[] }) {
-  const color = drivers.find((d) => d.code === code)?.color;
-  return (
-    <td className="px-1.5 py-[1px] text-left font-semibold">
-      <span
-        className="mr-1.5 inline-block h-2.5 w-[3px] align-[-1px]"
-        style={{ background: color }}
-      />
-      {code}
-    </td>
   );
 }
 

@@ -1,3 +1,4 @@
+import type { DriverInfo } from '@/api/client';
 import { TYRE_COLORS } from '@/lib/colors';
 import { GROUP_COLORS, type GroupId } from '@/store/groups';
 
@@ -57,5 +58,19 @@ export function LineSwatch({ color, dash }: { color: string; dash?: number[] }) 
         strokeDasharray={dash?.join(' ')}
       />
     </svg>
+  );
+}
+
+/** Driver code with a team-colour bar, as the first cell of a timing-table row. */
+export function DriverCell({ code, drivers }: { code: string; drivers: DriverInfo[] }) {
+  const color = drivers.find((d) => d.code === code)?.color;
+  return (
+    <td className="px-1.5 py-[1px] text-left font-semibold">
+      <span
+        className="mr-1.5 inline-block h-2.5 w-[3px] align-[-1px]"
+        style={{ background: color }}
+      />
+      {code}
+    </td>
   );
 }
