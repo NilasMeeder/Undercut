@@ -1,8 +1,10 @@
+import { useLiveSession } from '@/api/live';
 import { Dashboard } from '@/dashboard/Dashboard';
 import { ClockBar } from '@/features/clock/ClockBar';
 import { useSessionClock } from '@/features/clock/useSessionClock';
 import { CommandPalette } from '@/features/commands/CommandPalette';
 import { DashboardTabs, LayoutMenu } from '@/features/dashboards/DashboardTabs';
+import { LiveBadge } from '@/features/live/LiveBadge';
 import { MarkerEditor } from '@/features/markers/MarkerEditor';
 import { useViewFromUrl } from '@/features/views/hooks';
 import { ViewsMenu } from '@/features/views/ViewsMenu';
@@ -15,6 +17,7 @@ export default function App() {
   const session = useSessionKey();
   useDefaultSelection();
   useSessionClock();
+  useLiveSession();
   useViewFromUrl();
 
   return (
@@ -23,6 +26,7 @@ export default function App() {
         <span className="text-[11px] font-semibold tracking-[0.15em] text-dim">PITWALL</span>
         <SessionPicker />
         <GroupBar />
+        <LiveBadge />
         <div className="ml-auto" />
         {session ? <CommandPalette /> : null}
         {session ? <DashboardTabs /> : null}

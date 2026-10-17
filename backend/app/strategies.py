@@ -1,13 +1,12 @@
 """Strategy data per session (see strategy.py for the logic), memoised per cutoff."""
 
-from functools import lru_cache
-
 from app import replays, sessions, strategy
+from app.generations import session_cache
 from app.schemas import Degradation, PitWindow, RaceHistory, TrackStatus
 from app.sources import tracinginsights as ti
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_history(year: int, round_number: int, code: str) -> RaceHistory:
     timeline = replays.get_timeline(year, round_number, code)
     return strategy.history(
@@ -19,7 +18,7 @@ def get_history(year: int, round_number: int, code: str) -> RaceHistory:
     )
 
 
-@lru_cache(maxsize=256)
+@session_cache(maxsize=256)
 def get_paces(
     year: int, round_number: int, code: str, fuel: float, until: float | None
 ) -> strategy.Paces:

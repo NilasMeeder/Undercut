@@ -36,6 +36,8 @@ TRACK_STEP = 0.25
 """Seconds between samples of the position track (4 Hz, about the telemetry's own rate)."""
 MAX_SAMPLE_GAP = 2.0
 """Samples further apart than this have no data in between: the car is not on track."""
+LIVE_RUNNING_FOR = 180.0
+"""Live, a car whose last passage is this recent is still running (its next one is not in yet)."""
 GARAGE_SECONDS = 60.0
 """A pit stop longer than this went into the garage: the car is hidden until it comes out."""
 
@@ -298,6 +300,8 @@ class TimingIndex:
     point_time: dict[str, dict[int, float]] = field(default_factory=dict)
     grid: dict[str, int] = field(default_factory=dict)
     """Race: starting position per driver (Jolpica), the order before the first timing point."""
+    live: bool = False
+    """The session is still being recorded: the last laps are not the end."""
 
 
 def segments(laps: list[Lap]) -> list[Segment]:
@@ -321,7 +325,10 @@ def build_index(
     kind: SessionKind,
     status: list[StatusPeriod],
     grid: dict[str, int] | None = None,
+    total_laps: int | None = None,
+    live: bool = False,
 ) -> TimingIndex:
+    """`total_laps`: the race distance when it is more than the laps so far (live)."""
     by_driver: dict[str, list[Lap]] = defaultdict(list)
     for lap in laps:
         by_driver[lap.driver].append(lap)
@@ -374,9 +381,10 @@ def build_index(
         timing=timing,
         completions=completions,
         grid=grid or {},
+        live=live,
     )
     if kind == "race":
-        _index_race(index)
+        _index_race(index, total_laps)
     return index
 
 
@@ -388,7 +396,7 @@ def driven(lap: Lap) -> bool:
     )
 
 
-def _index_race(index: TimingIndex) -> None:
+def _index_race(index: TimingIndex, total_laps: int | None) -> None:
     for driver, own in index.laps.items():
         crossings = sorted(
             (t, (lap.lap - 1) * 3 + k)
@@ -406,7 +414,8 @@ def _index_race(index: TimingIndex) -> None:
                 best = number
         index.points[driver] = (times, numbers)
         index.point_time[driver] = dict(zip(numbers, times, strict=True))
-    index.total_laps = max((lap.lap for own in index.laps.values() for lap in own), default=None)
+    done = max((lap.lap for own in index.laps.values() for lap in own), default=None)
+    index.total_laps = max(done, total_laps or done) if done is not None else total_laps
     winners = [
         lap.end_time
         for own in index.laps.values()
@@ -523,7 +532,9 @@ def _race_rows(index: TimingIndex, t: float, overall: dict[str, float]) -> list[
         final_end = max(ends, default=-math.inf)
         finished = index.finish_time is not None and final_end >= index.finish_time
         status: CarStatus = "running"
-        if t >= final_end:
+        if index.live and not finished and t - final_end < LIVE_RUNNING_FOR:
+            status = "pit" if _pit_window(own, t) else "running"
+        elif t >= final_end:
             status = "finished" if finished else "retired"
         elif _pit_window(own, t):
             status = "pit"

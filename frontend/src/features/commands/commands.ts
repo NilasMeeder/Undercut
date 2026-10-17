@@ -174,9 +174,9 @@ export function buildCommands({ api, group, laps, views, saveView }: CommandCont
     {
       id: 'clock-end',
       section: 'Clock',
-      title: 'Go to the end of the session (everything visible)',
+      title: 'Go to the end of the session (live: back to live)',
       key: 'End',
-      run: () => clock.seek(Infinity),
+      run: () => (clock.controls().live ? clock.goLive() : clock.seek(Infinity)),
     },
     {
       id: 'view-save',

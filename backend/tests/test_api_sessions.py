@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import replays, schedule, sessions, strategies
+from app.live import recordings
 from app.main import app
 from app.schemas import EventInfo, SessionInfo
 from app.sources import tracinginsights as ti
@@ -120,7 +121,7 @@ CACHES = (
     sessions.get_weather,
     replays.get_timeline,
     replays.get_timing_index,
-    replays.positions_gzip,
+    replays._stored_positions_gzip,
     strategies.get_history,
     strategies.get_paces,
 )
@@ -140,6 +141,7 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[TestClie
     monkeypatch.setattr(ti, "fetch_json", fake_fetch)
     monkeypatch.setattr(ti, "prefetch", fake_prefetch)
     monkeypatch.setattr(replays, "REPLAY_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(recordings, "LIVE_DIR", tmp_path / "live")
     replays._jobs.clear()
     monkeypatch.setattr(schedule, "resolve_session", lambda y, r, c: (EVENT, EVENT.sessions[0]))
     for cached in CACHES:

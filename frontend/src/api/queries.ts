@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clock } from '@/store/clock';
-import { sessionPath, useSessionKey } from '@/store/selection';
+import { useLiveInfo } from '@/store/live';
+import { sessionPath, useSessionKey, type SessionKey } from '@/store/selection';
 import type { LapRef } from '@/store/groups';
 import {
   apiGet,
@@ -128,6 +129,8 @@ const TIMING_MIN_INTERVAL = 100;
  */
 export function useTimingState(): { data: TimingState | undefined; error: Error | null } {
   const key = useSessionKey();
+  // Live: new laps change the tower everywhere, also inside the window of the last answer.
+  const version = useLiveInfo()?.version;
   const path = key ? sessionPath(key) : null;
   // Keyed by session, so a new session never shows the previous one's tower.
   const [result, setResult] = useState<{
@@ -185,7 +188,7 @@ export function useTimingState(): { data: TimingState | undefined; error: Error 
       unsubscribe();
       clearTimeout(timer);
     };
-  }, [path]);
+  }, [path, version]);
 
   return result.path === path
     ? { data: result.data, error: result.error }
@@ -213,7 +216,10 @@ export function usePreparePositions() {
   }, [key, client]);
 }
 
-/** Car positions on a time grid, as typed arrays (NaN = not on track). */
+export const positionsKey = (key: SessionKey | null) => ['session', key, 'positions'];
+
+/** Car positions on a time grid, as typed arrays (NaN = not on track). Live, the arrays have
+ * room to grow: only the first `count` points are data. */
 export type PositionTrack = {
   start: number;
   step: number;
@@ -254,11 +260,55 @@ export function useReplayPositions() {
   }, [state, prepare]);
 
   const positions = useQuery({
-    queryKey: ['session', key, 'positions'],
-    queryFn: () => apiGet<ReplayPositions>(`${sessionPath(key!)}/positions`),
+    queryKey: positionsKey(key),
+    queryFn: () => apiGet<ReplayPositions>(`${sessionPath(key!)}/positions`).then(toTrack),
     enabled: key != null && state === 'ready',
     staleTime: Infinity,
-    select: toTrack,
+    // Live, the track grows in place (appendPositions); typed arrays are not compared.
+    structuralSharing: false,
   });
   return { status: status.data, track: positions.data, error: status.error ?? positions.error };
+}
+
+/** New points of a live track (server-sent, see api/live.ts), from grid point `first` on. */
+export type PositionsChunk = {
+  first: number;
+  count: number;
+  cars: {
+    driver: string;
+    x: (number | null)[];
+    y: (number | null)[];
+    progress: (number | null)[];
+  }[];
+};
+
+function grown(values: Float32Array, size: number): Float32Array {
+  if (values.length >= size) return values;
+  const next = new Float32Array(Math.max(size, Math.ceil(values.length * 1.5), 1024)).fill(NaN);
+  next.set(values);
+  return next;
+}
+
+/** Append a chunk to the track in place; false when points are missing in between (refetch). */
+export function appendPositions(track: PositionTrack, chunk: PositionsChunk): boolean {
+  if (chunk.first > track.count) return false;
+  for (const car of chunk.cars) {
+    let own = track.cars.find((c) => c.driver === car.driver);
+    if (!own) {
+      const empty = () => new Float32Array(chunk.count).fill(NaN);
+      own = { driver: car.driver, x: empty(), y: empty(), progress: empty() };
+      track.cars.push(own);
+    }
+    own.x = grown(own.x, chunk.count);
+    own.y = grown(own.y, chunk.count);
+    own.progress = grown(own.progress, chunk.count);
+    for (let i = 0; i < car.x.length; i++) {
+      const at = chunk.first + i;
+      own.x[at] = car.x[i] ?? NaN;
+      own.y[at] = car.y[i] ?? NaN;
+      own.progress[at] = car.progress[i] ?? NaN;
+    }
+  }
+  track.count = Math.max(track.count, chunk.count);
+  return true;
 }

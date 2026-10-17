@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 
 from app import analysis, schedule
+from app.generations import session_cache
 from app.schemas import (
     Circuit,
     Corner,
@@ -46,11 +47,18 @@ def folders(year: int, round_number: int, code: str) -> tuple[str, str]:
     return event.name, session.name
 
 
+def scheduled_laps(year: int, round_number: int, code: str) -> int | None:
+    """The race distance in laps while a session is live (the laps so far do not tell)."""
+    event, session = folders(year, round_number, code)
+    meta = ti.live_file(year, event, session, "live.json") or {}
+    return meta.get("total_laps")
+
+
 def has_drs(year: int) -> bool:
     return year < DRS_REMOVED_FROM
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_detail(year: int, round_number: int, code: str) -> SessionDetail:
     event, session = folders(year, round_number, code)
     drivers = [
@@ -80,7 +88,7 @@ def _as_bool(value: Any) -> bool:
     return value is True or value == "True"
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_laps(year: int, round_number: int, code: str) -> list[Lap]:
     event, session = folders(year, round_number, code)
     cols = ti.session_laps(year, event, session)
@@ -156,7 +164,7 @@ def resolve_lap(year: int, round_number: int, code: str, driver: str, lap: int |
     return int(lap)
 
 
-@lru_cache(maxsize=256)
+@session_cache(maxsize=256)
 def get_trace(year: int, round_number: int, code: str, driver: str, lap: int) -> analysis.LapTrace:
     event, session = folders(year, round_number, code)
     tel = ti.lap_telemetry(year, event, session, driver, lap)
@@ -179,7 +187,7 @@ def lap_time(year: int, round_number: int, code: str, driver: str, lap: int) -> 
     return None
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_circuit(year: int, round_number: int, code: str) -> Circuit:
     event, session = folders(year, round_number, code)
     data = ti.corners(year, event, session)
@@ -253,7 +261,7 @@ def _utc(value: str) -> datetime:
     return datetime.fromisoformat(value[:26]).replace(tzinfo=UTC)
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_t0(year: int, round_number: int, code: str) -> datetime | None:
     """UTC at session time 0. Every lap has its start in both clocks (lST and lSD); the difference
     is the same for every lap of a session, so the median only guards against a stray value."""
@@ -269,7 +277,7 @@ def get_t0(year: int, round_number: int, code: str) -> datetime | None:
     return datetime.fromtimestamp(float(np.median(offsets)), tz=UTC)
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_race_control(year: int, round_number: int, code: str) -> list[RaceControlMessage]:
     event, session = folders(year, round_number, code)
     cols = ti.race_control(year, event, session)
@@ -298,7 +306,7 @@ def get_race_control(year: int, round_number: int, code: str) -> list[RaceContro
     return messages
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_weather(year: int, round_number: int, code: str) -> Weather:
     event, session = folders(year, round_number, code)
     cols = ti.weather(year, event, session)

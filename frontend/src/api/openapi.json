@@ -1245,6 +1245,93 @@
         }
       }
     },
+    "/api/live": {
+      "get": {
+        "summary": "Live Sessions",
+        "description": "Recorded sessions, live ones first.",
+        "operationId": "live_sessions_api_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LiveSessionInfo"
+                  },
+                  "type": "array",
+                  "title": "Response Live Sessions Api Live Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/live/{year}/{round}/{session}/events": {
+      "get": {
+        "summary": "Live Events",
+        "description": "Server-sent events: a `status` event (LiveSessionInfo) whenever the data horizon or the\nversion moves. A new version means new laps: refetch the session's data.",
+        "operationId": "live_events_api_live__year___round___session__events_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/markers": {
       "get": {
         "summary": "Session Markers",
@@ -2801,6 +2888,100 @@
           "pit_out_time"
         ],
         "title": "Lap"
+      },
+      "LiveSessionInfo": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
+            "title": "Code"
+          },
+          "event_name": {
+            "type": "string",
+            "title": "Event Name"
+          },
+          "session_name": {
+            "type": "string",
+            "title": "Session Name"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "live",
+              "recorded"
+            ],
+            "title": "State"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "round",
+          "code",
+          "event_name",
+          "session_name",
+          "state",
+          "horizon",
+          "version",
+          "status",
+          "error"
+        ],
+        "title": "LiveSessionInfo",
+        "description": "A session recorded from the live timing feed (app/live), live or done."
       },
       "Marker": {
         "properties": {

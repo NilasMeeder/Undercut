@@ -69,3 +69,4 @@ export function apiSend<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
+export type LiveSessionInfo = Schemas['LiveSessionInfo'];

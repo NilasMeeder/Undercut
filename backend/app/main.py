@@ -1,5 +1,7 @@
+import asyncio
 import gzip
-from collections.abc import Callable
+import json
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import date
 from typing import Annotated
@@ -7,8 +9,10 @@ from typing import Annotated
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import StreamingResponse
 
 from app import analysis, replays, schedule, sessions, store, strategies, strategy
+from app.live import service as live
 from app.schemas import (
     Circuit,
     ComparedLap,
@@ -17,6 +21,7 @@ from app.schemas import (
     CornerSegment,
     Degradation,
     Lap,
+    LiveSessionInfo,
     Marker,
     MarkerIn,
     MiniSectors,
@@ -47,7 +52,9 @@ MAX_COMPARED_LAPS = 8
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     schedule.init_cache()
+    live.service.start()
     yield
+    live.service.stop()
 
 
 app = FastAPI(title="F1 Pitwall API", lifespan=lifespan)
@@ -312,6 +319,74 @@ def compare_laps(
         )
 
     return _guard(load)
+
+
+# Live: sessions recorded from the live timing feed (app/live), converted as they grow.
+
+LIVE_TICK = 0.5
+"""Seconds between two checks of a live session for new data (events/)."""
+
+
+def _live_info(session: live.LiveSession) -> LiveSessionInfo:
+    return LiveSessionInfo(
+        year=session.year,
+        round=session.round,
+        code=session.code,  # type: ignore[arg-type]
+        event_name=session.event,
+        session_name=session.session,
+        state="live" if session.is_active() else "recorded",
+        horizon=None if session.horizon is None else round(session.horizon, 3),
+        version=session.version,
+        status=session.status,
+        error=session.error,
+    )
+
+
+@app.get("/api/live")
+def live_sessions() -> list[LiveSessionInfo]:
+    """Recorded sessions, live ones first."""
+    infos = [_live_info(s) for s in live.service.sessions.values()]
+    return sorted(infos, key=lambda i: (i.state != "live", -i.year, -i.round))
+
+
+@app.get(
+    "/api/live/{year}/{round}/{session}/events",
+    response_class=StreamingResponse,
+    responses={200: {"content": {"text/event-stream": {}}}},
+)
+async def live_events(year: int, round: int, session: SessionCode, request: Request):
+    """Server-sent events: a `status` event (LiveSessionInfo) whenever the data horizon or the
+    version moves (a new version means new laps: refetch the session's data), and a `positions`
+    event with the new points of the position track: {first, count, cars} as in /positions, from
+    grid point `first` on. Points from before the connection come from /positions."""
+    current = live.service.get((year, round, session))
+    if current is None:
+        raise HTTPException(404, "No live recording of this session")
+
+    async def events() -> AsyncIterator[str]:
+        sent = None
+        track = current.track
+        points = track.count
+        while not await request.is_disconnected():
+            info = _live_info(current)
+            mark = (info.version, info.horizon, info.state, info.status)
+            if mark != sent:
+                sent = mark
+                yield f"event: status\ndata: {json.dumps(info.model_dump())}\n\n"
+            if current.track is not track:  # the recording started over
+                track, points = current.track, 0
+            if track.count > points:
+                chunk = {
+                    "first": points,
+                    "count": track.count,
+                    "cars": track.snapshot(current.codes, points),
+                }
+                points = track.count
+                yield f"event: positions\ndata: {json.dumps(chunk, separators=(',', ':'))}\n\n"
+            await asyncio.sleep(LIVE_TICK)
+
+    headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    return StreamingResponse(events(), media_type="text/event-stream", headers=headers)
 
 
 # User data: markers per session and saved views, in a local SQLite file (app/store.py).

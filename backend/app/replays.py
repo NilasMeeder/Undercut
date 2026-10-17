@@ -11,13 +11,14 @@ import logging
 import math
 import threading
 from dataclasses import dataclass
-from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 
 from app import replay, sessions
 from app.config import REPLAY_CACHE_DIR
+from app.generations import session_cache
+from app.live import recordings
 from app.schemas import (
     RaceControlMessage,
     ReplayState,
@@ -45,7 +46,7 @@ def _race_control(year: int, round_number: int, code: str) -> list[RaceControlMe
         return []
 
 
-@lru_cache(maxsize=16)
+@session_cache(maxsize=16)
 def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
     laps = sessions.get_laps(year, round_number, code)
     starts = [lap.start_time for lap in laps if lap.start_time is not None]
@@ -58,7 +59,8 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
     lap_starts: list[float] = []
     total_laps = None
     if kind == "race":
-        total_laps = max(lap.lap for lap in laps)
+        done = max(lap.lap for lap in laps)
+        total_laps = max(done, sessions.scheduled_laps(year, round_number, code) or done)
         first: dict[int, float] = {}
         for lap in laps:
             if lap.start_time is not None:
@@ -89,7 +91,7 @@ def starting_grid(year: int, round_number: int, code: str) -> dict[str, int]:
         return {}
 
 
-@lru_cache(maxsize=8)
+@session_cache(maxsize=8)
 def get_timing_index(year: int, round_number: int, code: str) -> replay.TimingIndex:
     timeline = get_timeline(year, round_number, code)
     return replay.build_index(
@@ -97,6 +99,8 @@ def get_timing_index(year: int, round_number: int, code: str) -> replay.TimingIn
         timeline.kind,
         timeline.track_status,
         starting_grid(year, round_number, code),
+        timeline.total_laps,
+        live=_live(year, round_number, code) is not None,
     )
 
 
@@ -121,10 +125,28 @@ _jobs_guard = threading.Lock()
 
 def _track_path(year: int, round_number: int, code: str) -> Path:
     event, session = sessions.folders(year, round_number, code)
-    return REPLAY_CACHE_DIR / str(year) / event / session / f"track-v{TRACK_VERSION}.npz"
+    name = f"track-v{TRACK_VERSION}.npz"
+    if recordings.has_recording(year, event, session):
+        # Recorded live: its own track (the archive's, if any, has another time origin).
+        return recordings.converted_dir(year, event, session) / name
+    return REPLAY_CACHE_DIR / str(year) / event / session / name
+
+
+def _live(year: int, round_number: int, code: str):  # -> LiveSession | None
+    """The session while it is live: its track grows in memory (app/live)."""
+    from app.live.service import service  # the live service imports this module
+
+    live = service.get((year, round_number, code))
+    return live if live is not None and not live.finished else None
 
 
 def status(year: int, round_number: int, code: str) -> ReplayStatus:
+    if (live := _live(year, round_number, code)) is not None:
+        if live.track.count > 0:
+            return ReplayStatus(state="ready", progress=1.0, phase=None, error=None)
+        return ReplayStatus(
+            state="loading", progress=0.0, phase="Waiting for positions", error=None
+        )
     if _track_path(year, round_number, code).exists():
         return ReplayStatus(state="ready", progress=1.0, phase=None, error=None)
     job = _jobs.get((year, round_number, code))
@@ -136,12 +158,27 @@ def status(year: int, round_number: int, code: str) -> ReplayStatus:
 def prepare(year: int, round_number: int, code: str) -> ReplayStatus:
     """Start building the position track unless it exists or is being built."""
     key = (year, round_number, code)
+    event, session = sessions.folders(*key)
+    target = _rebuild_live if recordings.has_recording(year, event, session) else _build
     with _jobs_guard:
         current = status(*key)
         if current.state in ("missing", "error"):
             job = _jobs[key] = _Job()
-            threading.Thread(target=_build, args=(key, job), daemon=True).start()
+            threading.Thread(target=target, args=(key, job), daemon=True).start()
     return status(*key)
+
+
+def _rebuild_live(key: Key, job: _Job) -> None:
+    """A recorded session without its track (removed, or a newer TRACK_VERSION): from the feed."""
+    from app.live.service import service
+
+    try:
+        job.phase = "Reading the recording"
+        service.rebuild_track(key)
+        job.state, job.progress, job.phase = "ready", 1.0, None
+    except Exception as error:
+        log.exception("Rebuilding the live track for %s failed", key)
+        job.state, job.phase, job.error = "error", None, str(error) or type(error).__name__
 
 
 def _tel_file(driver: str, lap: int) -> str:
@@ -185,14 +222,14 @@ def _build(key: Key, job: _Job) -> None:
                 )
             )
         track = replay.build_track(samples, replay.garage_windows(laps))
-        _save(_track_path(*key), track)
+        save_track(_track_path(*key), track)
         job.state, job.progress, job.phase = "ready", 1.0, None
     except Exception as error:
         log.exception("Building the position track for %s failed", key)
         job.state, job.phase, job.error = "error", None, str(error) or type(error).__name__
 
 
-def _save(path: Path, track: replay.Track) -> None:
+def save_track(path: Path, track: replay.Track) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.stem}.tmp.npz")
     np.savez_compressed(
@@ -214,9 +251,28 @@ def _laps(values: np.ndarray) -> list[float | None]:
     return [None if math.isnan(v) else round(v, 4) for v in values.tolist()]
 
 
-@lru_cache(maxsize=4)
 def positions_gzip(year: int, round_number: int, code: str) -> bytes:
-    """The ReplayPositions response as gzipped JSON, made once: it is ~6 MB raw, ~2 MB gzipped."""
+    """The ReplayPositions response as gzipped JSON: it is ~6 MB raw, ~2 MB gzipped."""
+    if (live := _live(year, round_number, code)) is not None:
+        return gzip.compress(json.dumps(live_positions(live), separators=(",", ":")).encode(), 6)
+    return _stored_positions_gzip(year, round_number, code)
+
+
+def live_positions(live, first: int = 0) -> dict:  # live: LiveSession
+    """The live track so far (from grid point `first`), as the positions response."""
+    track = live.track
+    return {
+        "start": float(track.start or 0.0),
+        "step": track.step,
+        "count": track.count,
+        "lap_length": round(live.outline.length, 1) if live.outline else 0.0,
+        "cars": track.snapshot(live.codes, first),
+    }
+
+
+@session_cache(maxsize=4)
+def _stored_positions_gzip(year: int, round_number: int, code: str) -> bytes:
+    """Made once per stored track."""
     path = _track_path(year, round_number, code)
     if not path.exists():
         raise LookupError("The position track is not prepared yet")

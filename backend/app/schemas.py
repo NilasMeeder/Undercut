@@ -622,3 +622,25 @@ class PitWindow(BaseModel):
     duels: list[Duel]
     notes: list[str]
     """Assumptions the numbers rest on, e.g. a compound nobody has run yet."""
+
+
+LiveState = Literal["live", "recorded"]
+
+
+class LiveSessionInfo(BaseModel):
+    """A session recorded from the live timing feed (app/live), live or done."""
+
+    year: int
+    round: int
+    code: SessionCode
+    event_name: str
+    session_name: str
+    state: LiveState
+    """live: the recording is still being written to."""
+    horizon: float | None
+    """Session time (s) of the newest data."""
+    version: int
+    """Goes up with every conversion of the feed: refetch the session's laps and strategy."""
+    status: str | None
+    """F1's session status: Inactive, Started, Aborted, Finished, Finalised, Ends."""
+    error: str | None

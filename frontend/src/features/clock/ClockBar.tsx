@@ -77,7 +77,9 @@ function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marke
   const [range, setRange] = useState<[number, number] | null>(null);
   const handleRef = useRef<HTMLDivElement>(null);
   const playedRef = useRef<HTMLDivElement>(null);
-  const { start, end } = timeline;
+  // The clock's range: live, it runs on to the newest data.
+  const { range: clockRange } = useClockControls();
+  const [start, end] = clockRange ?? [timeline.start, timeline.end];
   const span = end - start || 1;
   const pct = (t: number) => `${(((t - start) / span) * 100).toFixed(3)}%`;
 
@@ -239,6 +241,58 @@ function PositionsState() {
   );
 }
 
+const DELAYS = [0, 2, 5, 10, 15, 20, 30, 45, 60] as const;
+
+/** Live: back to the live edge, and how far behind it to play (to match the TV picture). */
+function LiveControl() {
+  const { live, following, delay } = useClockControls();
+  if (!live) return null;
+  return (
+    <div className="flex shrink-0 items-center">
+      <button
+        type="button"
+        onClick={() => clock.goLive()}
+        title={following ? 'Following the live feed' : 'Back to live (End)'}
+        className={cn(
+          'flex items-center gap-1 border px-1.5 font-semibold',
+          following ? 'border-pit text-pit' : 'border-line-strong text-dim hover:text-text'
+        )}
+      >
+        <span className={cn('h-1.5 w-1.5 rounded-full', following ? 'bg-pit' : 'bg-faint')} />
+        LIVE
+      </button>
+      <HeaderMenu
+        icon={<span className="text-[11px] tabular-nums text-dim">−{delay}s</span>}
+        title="Delay behind the live feed, to line up with the TV picture"
+        align="right"
+        side="above"
+        width="w-20"
+      >
+        {(close) => (
+          <div className="py-0.5">
+            {DELAYS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => {
+                  clock.setDelay(d);
+                  close();
+                }}
+                className={cn(
+                  'block w-full px-2 py-0.5 text-right tabular-nums hover:bg-raised',
+                  d === delay ? 'text-text' : 'text-dim'
+                )}
+              >
+                {d === 0 ? 'No delay' : `${d} s`}
+              </button>
+            ))}
+          </div>
+        )}
+      </HeaderMenu>
+    </div>
+  );
+}
+
 /** The session clock at the bottom of the screen: play, speed, where we are, scrub. */
 export function ClockBar() {
   const timeline = useTimeline();
@@ -299,6 +353,7 @@ export function ClockBar() {
       </button>
       <Readout timeline={timeline.data} marks={marks} />
       <Scrubber timeline={timeline.data} marks={marks} />
+      <LiveControl />
       <PositionsState />
     </footer>
   );

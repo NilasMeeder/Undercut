@@ -296,6 +296,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live Sessions
+         * @description Recorded sessions, live ones first.
+         */
+        get: operations["live_sessions_api_live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/live/{year}/{round}/{session}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live Events
+         * @description Server-sent events: a `status` event (LiveSessionInfo) whenever the data horizon or the
+         *     version moves. A new version means new laps: refetch the session's data.
+         */
+        get: operations["live_events_api_live__year___round___session__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/markers": {
         parameters: {
             query?: never;
@@ -712,6 +753,38 @@ export interface components {
             pit_in_time: number | null;
             /** Pit Out Time */
             pit_out_time: number | null;
+        };
+        /**
+         * LiveSessionInfo
+         * @description A session recorded from the live timing feed (app/live), live or done.
+         */
+        LiveSessionInfo: {
+            /** Year */
+            year: number;
+            /** Round */
+            round: number;
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            /** Event Name */
+            event_name: string;
+            /** Session Name */
+            session_name: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "live" | "recorded";
+            /** Horizon */
+            horizon: number | null;
+            /** Version */
+            version: number;
+            /** Status */
+            status: string | null;
+            /** Error */
+            error: string | null;
         };
         /** Marker */
         Marker: {
@@ -1916,6 +1989,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Comparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    live_sessions_api_live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionInfo"][];
+                };
+            };
+        };
+    };
+    live_events_api_live__year___round___session__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
                 };
             };
             /** @description Validation Error */

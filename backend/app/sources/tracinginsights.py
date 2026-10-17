@@ -21,6 +21,7 @@ import requests
 
 from app.config import (
     HTTP_TIMEOUT_SECONDS,
+    LIVE_DIR,
     TRACINGINSIGHTS_BASE_URL,
     TRACINGINSIGHTS_CACHE_DIR,
 )
@@ -51,7 +52,30 @@ def _cache_path(year: int, event: str, session: str, file: str) -> Path:
     return TRACINGINSIGHTS_CACHE_DIR / str(year) / event / session / f"{file}.gz"
 
 
+def _live_path(year: int, event: str, session: str, file: str) -> Path:
+    return LIVE_DIR / str(year) / event / session / "converted" / f"{file}.gz"
+
+
+READ_LIVE = True
+"""Off for the live simulator, which turns the archive itself into a feed."""
+
+
+def live_file(year: int, event: str, session: str, file: str) -> Any | None:
+    """A file only a live recording has (live.json), or None; never downloads."""
+    path = _live_path(year, event, session, file)
+    if not READ_LIVE:
+        return None
+    if not path.exists():
+        return None
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def fetch_json(year: int, event: str, session: str, file: str) -> Any:
+    # A live recording (app/live) is converted to the same files; it wins over the archive, which
+    # has no session in progress and may never publish sessions recorded live.
+    if (live := live_file(year, event, session, file)) is not None:
+        return live
     path = _cache_path(year, event, session, file)
     if not path.exists():
         with _lock_for(path):
@@ -68,11 +92,11 @@ def _download(year: int, event: str, session: str, file: str, path: Path) -> Any
         raise SourceNotAvailable(f"{year} {event} {session}: {file} not in TracingInsights")
     response.raise_for_status()
     data = response.json()
-    _write(path, json.dumps(data, separators=(",", ":")).encode())
+    write_gzip(path, json.dumps(data, separators=(",", ":")).encode())
     return data
 
 
-def _write(path: Path, raw: bytes) -> None:
+def write_gzip(path: Path, raw: bytes) -> None:
     """Write gzipped via a temp file, so a reader never sees half a file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
@@ -87,7 +111,7 @@ def is_cached(year: int, event: str, session: str, file: str) -> bool:
 
 def store(year: int, event: str, session: str, file: str, raw: bytes) -> None:
     """Cache a file obtained in bulk (see prefetch); `raw` is the JSON as served."""
-    _write(_cache_path(year, event, session, file), raw)
+    write_gzip(_cache_path(year, event, session, file), raw)
 
 
 Progress = Callable[[float], None]

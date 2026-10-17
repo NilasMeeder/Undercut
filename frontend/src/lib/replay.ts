@@ -3,12 +3,17 @@ import type { Circuit, TrackStatus } from '@/api/client';
 
 export type CarPosition = { x: number; y: number; progress: number };
 
+/** Seconds a car stays at the last point of the track when the clock is past it. */
+const LIVE_HOLD = 3;
+
 /**
  * A car at session time t, interpolated between the 4 Hz samples of the position track. Null when
  * the car is not on track (garage, retired, before its first lap).
  */
 export function carAt(track: PositionTrack, car: number, t: number): CarPosition | null {
-  const f = (t - track.start) / track.step;
+  let f = (t - track.start) / track.step;
+  // Live, the clock can be a moment ahead of the newest point: hold it there briefly.
+  if (f >= track.count - 1 && f < track.count - 1 + LIVE_HOLD / track.step) f = track.count - 1;
   const i = Math.floor(f);
   if (i < 0 || i >= track.count) return null;
   const { x, y, progress } = track.cars[car];
