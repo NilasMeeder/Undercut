@@ -15,6 +15,13 @@ export type CornerSegment = Schemas['CornerSegment'];
 export type CornerLap = Schemas['CornerLap'];
 export type RaceControlMessage = Schemas['RaceControlMessage'];
 export type Weather = Schemas['Weather'];
+export type SessionTimeline = Schemas['SessionTimeline'];
+export type TrackStatus = Schemas['StatusPeriod']['status'];
+export type TimingState = Schemas['TimingState'];
+export type TowerRow = Schemas['TowerRow'];
+export type TowerSector = Schemas['TowerSector'];
+export type ReplayStatus = Schemas['ReplayStatus'];
+export type ReplayPositions = Schemas['ReplayPositions'];
 
 export class ApiError extends Error {
   readonly status: number;
@@ -25,8 +32,8 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`/api${path}`);
+export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`/api${path}`, init);
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { detail?: unknown } | null;
     const detail = typeof body?.detail === 'string' ? body.detail : response.statusText;
@@ -34,3 +41,5 @@ export async function apiGet<T>(path: string): Promise<T> {
   }
   return response.json() as Promise<T>;
 }
+
+export const apiPost = <T>(path: string) => apiGet<T>(path, { method: 'POST' });

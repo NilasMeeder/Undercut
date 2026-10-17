@@ -13,6 +13,10 @@ volgende fase voordat de vorige echt werkt.
 - Fase 3 af (2026-10-17): Bests, Speed traps, Run timeline, Corners ("where is the time", met
   verklarende zinnen), Race control en Weather; ⌘K-palette en sneltoetsen; dashboard-tabs, drie
   presets en export/import van layouts.
+- Fase 4 af (2026-10-17): sessieklok met klokbalk (afspelen, snelheid, scrubben, track status en laps
+  op de balk), Timing tower op t, Track map met alle auto's, Track line, race control volgt de klok,
+  preset "Replay". Telemetrie van een hele sessie in één git fetch (race ~8 s), positiespoor op disk.
+  Getest in headless Chrome op Monza 2025 Q, R en FP2 (verse download).
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
@@ -124,13 +128,19 @@ alle panelen meeloopt.
 
 ## Fase 4 — Replay
 
-- [ ] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets, op sessietijd (s).
+- [x] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets, op sessietijd (s).
       Race control (UTC) omrekenen met t0 = `lSD − lST` uit `session_laptimes.json` (zie CLAUDE.md
       "Tijdassen")
-- [ ] Backend: toestand op tijd t (posities, gaps, laatste laps, tyres, track status)
-- [ ] **Timing tower** op tijd t (gap, interval, sectoren, laatste lap, banden)
-- [ ] Track map met alle auto's; **Track Line** (de baan als rechte lijn met auto's erop)
-- [ ] Race control en track status volgen de klok
+- [x] Backend: toestand op tijd t (posities, gaps, laatste laps, tyres, track status)
+- [x] **Timing tower** op tijd t (gap, interval, sectoren, laatste lap, banden)
+- [x] Track map met alle auto's; **Track Line** (de baan als rechte lijn met auto's erop)
+- [x] Race control en track status volgen de klok
+- [x] Datavolume: telemetrie van een hele sessie in bulk (git partial clone), positiespoor één keer
+      bouwen en lokaal opslaan, laadstatus met voortgang
+- [ ] Startgrid (TracingInsights heeft hem niet; Jolpica wel) voor de volgorde vóór de eerste passage
+- [ ] Weer volgt de klok (waarden op t, markering in de sparklines)
+- [ ] Gele sectoren uit race control op de kaart en de Track line
+- [ ] Auto's na de finish nog een uitlooplap tonen (de data stopt nu op de lijn)
 
 ## Fase 5 — Markeringen en opgeslagen views
 

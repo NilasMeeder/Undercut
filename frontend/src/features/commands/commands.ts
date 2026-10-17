@@ -3,6 +3,7 @@ import type { Lap } from '@/api/client';
 import { addWidget, applyPreset, PRESETS } from '@/dashboard/layout';
 import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
+import { clock } from '@/store/clock';
 import { cursorBus } from '@/store/cursor';
 import { useGroups, type GroupId, type LapRef } from '@/store/groups';
 import { WIDGETS } from '@/widgets/registry';
@@ -11,8 +12,10 @@ export type Command = {
   id: string;
   section: string;
   title: string;
-  /** Single-key shortcut, as typed (shown in the palette). */
+  /** Single-key shortcut, as KeyboardEvent.key. */
   key?: string;
+  /** How the palette shows the key, when not the key itself (Space, arrows). */
+  keyLabel?: string;
   run: () => void;
 };
 
@@ -103,6 +106,58 @@ export function buildCommands({ api, group, laps }: CommandContext): Command[] {
       title: 'Reset zoom',
       key: 'z',
       run: () => cursorBus.setZoom(group, null),
+    },
+    {
+      id: 'clock-toggle',
+      section: 'Clock',
+      title: 'Play or pause the session',
+      key: ' ',
+      keyLabel: 'Space',
+      run: () => clock.toggle(),
+    },
+    {
+      id: 'clock-back',
+      section: 'Clock',
+      title: 'Back 10 seconds',
+      key: 'ArrowLeft',
+      keyLabel: '←',
+      run: () => clock.seek(clock.time() - 10),
+    },
+    {
+      id: 'clock-forward',
+      section: 'Clock',
+      title: 'Forward 10 seconds',
+      key: 'ArrowRight',
+      keyLabel: '→',
+      run: () => clock.seek(clock.time() + 10),
+    },
+    {
+      id: 'clock-slower',
+      section: 'Clock',
+      title: 'Play slower',
+      key: '-',
+      run: () => clock.stepSpeed(-1),
+    },
+    {
+      id: 'clock-faster',
+      section: 'Clock',
+      title: 'Play faster',
+      key: '=',
+      run: () => clock.stepSpeed(1),
+    },
+    {
+      id: 'clock-start',
+      section: 'Clock',
+      title: 'Go to the start of the session',
+      key: 'Home',
+      run: () => clock.seek(-Infinity),
+    },
+    {
+      id: 'clock-end',
+      section: 'Clock',
+      title: 'Go to the end of the session (everything visible)',
+      key: 'End',
+      run: () => clock.seek(Infinity),
     },
     ...bestLaps(laps).map((lap) => ({
       id: `compare-${lap.driver}`,

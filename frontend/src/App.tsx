@@ -1,4 +1,6 @@
 import { Dashboard } from '@/dashboard/Dashboard';
+import { ClockBar } from '@/features/clock/ClockBar';
+import { useSessionClock } from '@/features/clock/useSessionClock';
 import { CommandPalette } from '@/features/commands/CommandPalette';
 import { DashboardTabs, LayoutMenu } from '@/features/dashboards/DashboardTabs';
 import { GroupBar } from '@/features/session/GroupBar';
@@ -9,6 +11,7 @@ import { useSessionKey } from '@/store/selection';
 export default function App() {
   const session = useSessionKey();
   useDefaultSelection();
+  useSessionClock();
 
   return (
     <div className="flex h-full flex-col">
@@ -30,6 +33,7 @@ export default function App() {
           </div>
         )}
       </main>
+      {session ? <ClockBar /> : null}
     </div>
   );
 }

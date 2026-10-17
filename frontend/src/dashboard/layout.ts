@@ -9,12 +9,18 @@ export type PanelParams = { group: GroupId; config?: WidgetConfig };
 let counter = 0;
 const newId = (widget: string) => `${widget}-${Date.now().toString(36)}-${counter++}`;
 
-export function addWidget(api: DockviewApi, widget: string, group: GroupId, position?: Position) {
+export function addWidget(
+  api: DockviewApi,
+  widget: string,
+  group: GroupId,
+  position?: Position,
+  config?: WidgetConfig
+) {
   return api.addPanel<PanelParams>({
     id: newId(widget),
     component: widget,
     title: WIDGETS_BY_ID.get(widget)?.title ?? widget,
-    params: { group },
+    params: config ? { group, config } : { group },
     position,
   });
 }
@@ -76,6 +82,27 @@ function overview(api: DockviewApi) {
   traps.group.api.setSize({ width: 380 });
 }
 
+/** Preset: watch the session back with the clock bar; tower, map with all cars, track line. */
+function replay(api: DockviewApi) {
+  const tower = addWidget(api, 'tower', 'blue');
+  const map = addWidget(
+    api,
+    'trackmap',
+    'blue',
+    { referencePanel: tower, direction: 'right' },
+    {
+      cars: 'all',
+    }
+  );
+  const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
+  addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
+  feed.api.setActive();
+  const line = addWidget(api, 'trackline', 'blue', { referencePanel: map, direction: 'below' });
+  tower.group.api.setSize({ width: 560 });
+  feed.group.api.setSize({ width: 360 });
+  line.group.api.setSize({ height: 120 });
+}
+
 export const PRESETS = [
   {
     id: 'quali-duel',
@@ -94,6 +121,12 @@ export const PRESETS = [
     title: 'Session overview',
     description: 'Run timeline, bests, speed traps, race control, weather',
     apply: overview,
+  },
+  {
+    id: 'replay',
+    title: 'Replay',
+    description: 'Timing tower, every car on the map and the track line, with the clock',
+    apply: replay,
   },
 ] as const;
 

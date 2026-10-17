@@ -7,6 +7,7 @@ export type RaceControlConfig = {
   kinds: MessageKind[];
   scope: 'all' | 'group';
   order: 'newest' | 'oldest';
+  follow: boolean;
 };
 
 export const raceControlWidget = defineWidget<RaceControlConfig>({
@@ -21,13 +22,21 @@ export const raceControlWidget = defineWidget<RaceControlConfig>({
       'Yellow flags in a sector explain slow sector times on laps around that moment.',
       'A deleted lap time no longer counts for the classification; it is struck through in Laps.',
       '“Noted” and “under investigation” can turn into penalties later in the feed.',
+      'Following the session clock, the feed only shows what had been sent by then. The clock ' +
+        'stands at the end of the session until you play or scrub, so you see everything.',
     ],
     controls:
       'Click a deleted-lap message to compare that lap. “Only this group” keeps track-wide messages ' +
       'and those about drivers selected in this link group.',
   },
-  defaults: { kinds: ['flags', 'deleted', 'stewards', 'other'], scope: 'all', order: 'newest' },
+  defaults: {
+    kinds: ['flags', 'deleted', 'stewards', 'other'],
+    scope: 'all',
+    order: 'newest',
+    follow: true,
+  },
   settings: [
+    { key: 'follow', label: 'Follow the session clock', kind: 'toggle' },
     {
       key: 'kinds',
       label: 'Show',

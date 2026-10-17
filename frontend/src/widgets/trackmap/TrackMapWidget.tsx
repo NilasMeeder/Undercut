@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useRef } from 'react';
-import type { Circuit, Comparison } from '@/api/client';
-import { useCircuit } from '@/api/queries';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { Circuit, Comparison, DriverInfo } from '@/api/client';
+import {
+  useCircuit,
+  useReplayPositions,
+  useSessionDetail,
+  type PositionTrack,
+} from '@/api/queries';
 import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
+import { carAt } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom } from '@/store/cursor';
-import type { GroupId } from '@/store/groups';
+import { useGroupLaps, type GroupId } from '@/store/groups';
+import { useClockDraw } from '../hooks';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
 import type { TrackMapConfig } from './widget';
@@ -39,6 +46,8 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
 
   if (circuit.error) return <PanelMessage>{circuit.error.message}</PanelMessage>;
   if (!circuit.data) return <PanelMessage>Loading circuit…</PanelMessage>;
+  if (config.cars === 'all')
+    return <ReplayMap group={group} circuit={circuit.data} showCorners={config.corners} />;
   return (
     <TrackMap
       group={group}
@@ -50,21 +59,61 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
   );
 }
 
+/** Every car at the session clock. */
+function ReplayMap({
+  group,
+  circuit,
+  showCorners,
+}: {
+  group: GroupId;
+  circuit: Circuit;
+  showCorners: boolean;
+}) {
+  const { status, track, error } = useReplayPositions();
+  const detail = useSessionDetail();
+  const loading =
+    error?.message ??
+    (status?.state === 'error'
+      ? `Positions failed: ${status.error}`
+      : track
+        ? null
+        : `${status?.phase ?? 'Preparing positions'}… ${Math.round((status?.progress ?? 0) * 100)}%`);
+  return (
+    <TrackMap
+      group={group}
+      circuit={circuit}
+      comparison={undefined}
+      styles={[]}
+      showCorners={showCorners}
+      note={loading}
+      cars={track && detail.data ? { track, drivers: detail.data.drivers } : undefined}
+    />
+  );
+}
+
 function TrackMap({
   group,
   circuit,
   comparison,
   styles,
   showCorners,
+  note,
+  cars,
 }: {
   group: GroupId;
   circuit: Circuit;
   comparison: Comparison | undefined;
   styles: LapStyle[];
   showCorners: boolean;
+  note?: string | null;
+  cars?: { track: PositionTrack; drivers: DriverInfo[] };
 }) {
   const zoom = useZoom(group);
   const dotsRef = useRef<SVGGElement>(null);
+  const carsRef = useRef<SVGGElement>(null);
+  const emptyRef = useRef<HTMLDivElement>(null);
+  const selected = useGroupLaps(group);
+  const highlight = useMemo(() => new Set(selected.map((l) => l.driver)), [selected]);
 
   const geometry = useMemo(() => {
     const outline = circuit.track_x.map((x, i) => project(x, circuit.track_y[i], circuit.rotation));
@@ -141,12 +190,39 @@ function TrackMap({
     return cursorBus.subscribeCursor(group, update);
   }, [comparison, lap, group]);
 
+  // Every car at the session clock, moved imperatively on each tick.
+  const drawCars = useCallback(
+    (t: number) => {
+      const g = carsRef.current;
+      if (!g || !cars) return;
+      let shown = 0;
+      Array.from(g.children).forEach((node, i) => {
+        const at = carAt(cars.track, i, t);
+        node.setAttribute('visibility', at ? 'visible' : 'hidden');
+        if (!at) return;
+        shown++;
+        const [x, y] = project(at.x, at.y, circuit.rotation);
+        node.setAttribute('transform', `translate(${x.toFixed(0)},${y.toFixed(0)})`);
+      });
+      if (emptyRef.current) emptyRef.current.hidden = shown > 0;
+    },
+    [cars, circuit.rotation]
+  );
+  useClockDraw(cars ? drawCars : null);
+
   const u = geometry.unit;
+  const color = (code: string) =>
+    cars?.drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
   return (
     <div className="relative h-full">
-      {lap ? (
+      {lap || note ? (
         <div className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">
-          Mini-sectors: fastest lap colours the track
+          {note ?? 'Mini-sectors: fastest lap colours the track'}
+        </div>
+      ) : null}
+      {cars ? (
+        <div ref={emptyRef} hidden className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">
+          No cars on track at the session clock
         </div>
       ) : null}
       <svg viewBox={geometry.viewBox} className="h-full w-full" preserveAspectRatio="xMidYMid meet">
@@ -190,6 +266,30 @@ function TrackMap({
             {c.label}
           </text>
         ))}
+        <g ref={carsRef}>
+          {cars?.track.cars.map((car) => {
+            const strong = highlight.has(car.driver);
+            return (
+              <g key={car.driver} visibility="hidden">
+                <circle
+                  r={u * (strong ? 1.6 : 1.3)}
+                  fill={color(car.driver)}
+                  stroke={strong ? COLORS.text : COLORS.bg}
+                  strokeWidth={u * 0.4}
+                />
+                <text
+                  x={u * 2}
+                  fill={strong ? COLORS.text : COLORS.textDim}
+                  fontSize={u * 2.4}
+                  fontWeight={strong ? 700 : 500}
+                  dominantBaseline="central"
+                >
+                  {car.driver}
+                </text>
+              </g>
+            );
+          })}
+        </g>
         <g ref={dotsRef}>
           {styles.map((s, n) => (
             <circle

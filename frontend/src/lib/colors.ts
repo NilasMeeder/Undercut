@@ -33,3 +33,14 @@ export const TYRE_COLORS: Record<string, string> = {
 
 /** Dash patterns for repeated colours (teammates, or two laps of one driver). */
 export const DASHES: (number[] | undefined)[] = [undefined, [6, 4], [2, 3], [10, 3, 2, 3]];
+
+/** Track status on the clock bar and timing tower: flag colours, green stays unmarked. */
+export const TRACK_STATUS_COLORS: Record<string, string> = {
+  green: COLORS.pb,
+  yellow: COLORS.slow,
+  sc: COLORS.slow,
+  vsc: COLORS.slow,
+  vsc_ending: COLORS.slow,
+  red: COLORS.pit,
+  chequered: COLORS.textFaint,
+};

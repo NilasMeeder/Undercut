@@ -13,10 +13,12 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 3 zijn af: een docking-dashboard (dockview) met tien widgets (Laps, Telemetry, Delta, Track
-map, Bests, Speed traps, Run timeline, Corners, Race control, Weather), link-groepen, gedeelde
-cursor/zoom, instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, en
-dashboard-tabs met presets. Volgende stap: fase 4 (replay), zie ROADMAP.md.
+Fase 0 t/m 4 zijn af: een docking-dashboard (dockview) met twaalf widgets (Laps, Telemetry, Delta, Track
+map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower, Track line),
+link-groepen, gedeelde cursor/zoom, instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met
+sneltoetsen, dashboard-tabs met presets, en replay: een sessieklok onderin (afspelen, snelheid,
+scrubben) waar de tower, de kaart met alle auto's, de Track line en race control op lopen. Zie
+"Replay" hieronder. Volgende stap: fase 5 (markeringen), zie ROADMAP.md.
 
 **Visueel testen:** de Chrome-extensie is vaak niet verbonden. Gebruik dan headless Chrome via
 `playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
@@ -29,6 +31,12 @@ Valkuilen bij het headless testen:
   `hasText` matcht ook beschrijvingen ("Corners" zit in de beschrijving van Track map).
 - `getByRole('tab')` vindt ook de dockview-tabs; de dashboard-tabs zitten in `[aria-label=Dashboards]`.
 - Popout: `ctx.waitForEvent('page')` rond de klik op "Open in a separate window".
+- Replay: zet ook `localStorage['f1dash-dashboards'] =
+  {"state":{"tabs":[{"id":"t1","name":"Replay","layout":null,"preset":"replay"}],"active":"t1"},"version":0}`
+  en wacht op de tekst `LAP` (race) of `Q1`/`Q2`/`Q3`. De klok staat bij het laden op het einde; klik
+  op de scrubber (`footer [title="Click or drag to move the session clock"]`) op een fractie van de
+  breedte, of druk op Space. Monza 2025 R (ronde 16) is de vaste replay-sessie: op lap 17 leidt VER
+  met +4.366 voor NOR, en de eindstand op de baan is VER, NOR +19.207, PIA +21.351.
 
 ## Architectuur
 
@@ -78,24 +86,30 @@ cd frontend && npm run typecheck && npm run lint && npm run format
 ```
 backend/app/main.py        FastAPI-app en routes (dun: valideren, data-laag aanroepen, afronden)
 backend/app/schedule.py    seizoensschema via FastF1 + resolve_session(year, round, code)
-backend/app/sources/       één module per databron; tracinginsights.py haalt ruwe JSON op en cachet die gzipped
+backend/app/sources/       één module per databron; tracinginsights.py haalt ruwe JSON op en cachet die gzipped,
+                           tracinginsights_git.py haalt een hele sessie in één keer op (bulk, zie "Replay")
 backend/app/sessions.py    bronnen → schemas, met lru_caches (laps, drivers, circuit, LapTrace per lap)
 backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mini_sectors
+backend/app/replay.py      pure replay-logica: positiespoor (build_track), timing tower op t (timing_state),
+                           track status uit race control
+backend/app/replays.py     replay per sessie: tijdlijn, timing-index, de bouwjob van het positiespoor (.npz)
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
 frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), schema.d.ts (gegenereerd)
 frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus,
-                           bevriezen), dashboards.ts (tabs met elk een layout)
+                           bevriezen), dashboards.ts (tabs met elk een layout), clock.ts (sessieklok)
 frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen),
                            HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
 frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
                            + de component; registry.ts somt ze op; types.ts (defineWidget, resolveConfig);
-                           useGroupComparison.ts deelt de compare-data
+                           useGroupComparison.ts deelt de compare-data; hooks.ts (useClockDraw, useElementSize)
 frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), data/bits.tsx (badges, swatches)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
-                           lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts
+                           lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts,
+                           replay.ts (auto op t interpoleren, klokformaat)
 frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
-                           sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import)
+                           sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import),
+                           clock/ (ClockBar onderin, useSessionClock)
 ```
 
 Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt
@@ -123,6 +137,38 @@ en daarna geeft `session.laps` een `DataNotLoadedError`.
 
 **2026-regels:** DRS bestaat niet meer (active aero + overtake mode). In de 2026-data is `drs` leeg
 (`null`), en er is geen kanaal voor wingstand of energie-inzet. Het DRS-kanaal dus alleen tonen als er data is.
+
+## Replay (fase 4)
+
+**Eén tijdas:** sessietijd in seconden (zie "Tijdassen"). De sessieklok (`store/clock.ts`) is globaal en
+loopt buiten React om, net als de cursorbus: `clock.subscribe` tikt elke frame tijdens het afspelen
+(kaarten tekenen imperatief via `useClockDraw`), `useClockTime(ms)` re-rendert tabellen gedoseerd.
+Bij het laden van een sessie staat de klok op het **einde**, zodat widgets die de klok volgen (race
+control) in analyse-modus gewoon alles tonen. Live (fase 7) wordt een andere bron voor dezelfde klok.
+
+Drie soorten replay-data, bewust gescheiden naar kosten:
+- **Tijdlijn** (`/timeline`): bereik, t0 (UTC), laps van de leider, Q-delen, track status. Klein, direct.
+- **Timing tower** (`/timing?t=`): uit de lapdata alleen, dus direct beschikbaar. Volgorde en gaps in een
+  race per timingpunt (S1, S2, finish: 3 per lap), zoals de officiële tower; Q/FP op beste lap per Q-deel.
+  Paars/groen zoals het op dat moment was. Elk antwoord heeft `valid_from`/`valid_until` (vorige en
+  volgende gebeurtenis), dus de frontend vraagt alleen opnieuw als de klok dat venster verlaat (max 10/s).
+  Rekenwerk in `replay.timing_state`, ~1 ms. Valkuilen in de data: een DNS-driver heeft een spooklap
+  zonder tijden (eindtijd gekopieerd van de leider): `replay.driven()` filtert die. Q-out-laps lopen vanaf
+  het einde van de vorige in-lap, inclusief garagetijd: de garage is pit-in tot pit-out (> 60 s).
+  TracingInsights heeft geen startgrid: vóór de eerste S1-passage staat de volgorde van die passage.
+- **Positiespoor** (`/positions`): x, y en lap-voortgang van elke auto op een raster van 4 Hz over de
+  hele sessie. Daarvoor is de telemetrie van **elke lap** nodig (Monza R: 973 bestanden, ~116 MB JSON).
+  Bulk-download via een **git partial clone** per seizoen (`--bare --depth=1 --filter=blob:none`, ~6 MB
+  boom, eenmalig ~8 s), daarna de blobs van één sessiemap in **één `git fetch`** (race ~4 s) en
+  `cat-file --batch`; de bestanden gaan de gewone gzip-cache in en het opgehaalde pack wordt weer
+  verwijderd. Valt terug op HTTP met 8 tegelijk (~45 s voor een race) als git ontbreekt of faalt.
+  Daarna bouwt `replay.build_track` het spoor (~1,5 s) en `replays.py` slaat het op als
+  `.cache/replay/<jaar>/<event>/<sessie>/track-v1.npz` (verhoog `TRACK_VERSION` bij een andere opbouw).
+  De respons is ~6 MB JSON, één keer gegzipt (~2 MB) en zo gecachet. Voortgang:
+  `POST .../positions/prepare` start de job, `GET .../positions/status` pollt (`progress` 0–1, `phase`).
+  Een replay-widget die mount start de voorbereiding zelf; de klokbalk toont de voortgang.
+  Lap-voortgang: lap 1 (vanaf de grid of pit-exit) en out-laps worden vanaf de finishlijn terug gemeten,
+  andere laps als `distance / lapafstand`. Garagetijd en gaten > 2 s zijn `null` (auto niet getoond).
 
 ## Domeinkennis & FastF1-valkuilen
 
@@ -212,8 +258,9 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
 - **Gedeelde cursor** per groep (afstand in meters). Hover in een telemetrie-chart → alle charts en de
   track map in die groep tonen dezelfde positie. Cursor-updates gaan via een subscribe, niet via
   React-renders (anders hapert het).
-- **Sessieklok** (vanaf fase 4): replay en live leveren allebei "tijd t". Widgets vragen de toestand op t
-  en weten niet welke bron erachter zit.
+- **Sessieklok**: replay en (later) live leveren allebei "tijd t". Widgets vragen de toestand op t en
+  weten niet welke bron erachter zit. Zie "Replay". Sneltoetsen: Space, ← → (10 s), - = (snelheid),
+  Home/End.
 - Widgets zijn losse componenten in `frontend/src/widgets/<Naam>/` met een registry
   (`widgets/registry.ts`). Nieuwe widget = component + `widget.ts` met `defineWidget({ id, title,
   description, help, defaults, settings, component: lazy(...) })` + entry in de registry.

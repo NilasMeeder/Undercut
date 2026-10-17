@@ -13,12 +13,15 @@ export function HeaderMenu({
   icon,
   title,
   align = 'right',
+  side = 'below',
   width = 'w-64',
   children,
 }: {
   icon: ReactNode;
   title: string;
   align?: 'left' | 'right';
+  /** 'above' for buttons at the bottom of the screen. */
+  side?: 'below' | 'above';
   width?: string;
   children: (close: () => void) => ReactNode;
 }) {
@@ -55,7 +58,8 @@ export function HeaderMenu({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
             className={cn(
-              'absolute top-6 z-50 border border-line-strong bg-header text-[11px]',
+              'absolute z-50 border border-line-strong bg-header text-[11px]',
+              side === 'below' ? 'top-6' : 'bottom-6',
               width,
               align === 'right' ? 'right-0' : 'left-0'
             )}

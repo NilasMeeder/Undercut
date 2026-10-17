@@ -141,7 +141,7 @@ function Palette({
                 <span className="flex-1 text-text">{c.title}</span>
                 {c.key ? (
                   <kbd className="border border-line-strong px-1 font-mono text-[10px] text-dim">
-                    {c.key}
+                    {c.keyLabel ?? c.key}
                   </kbd>
                 ) : null}
               </button>

@@ -1,12 +1,12 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type TrackMapConfig = { miniSectors: number; corners: boolean };
+export type TrackMapConfig = { cars: 'laps' | 'all'; miniSectors: number; corners: boolean };
 
 export const trackMapWidget = defineWidget<TrackMapConfig>({
   id: 'trackmap',
   title: 'Track map',
-  description: 'Circuit with corners, cursor position and mini-sector winners',
+  description: 'Circuit with mini-sector winners and the cursor, or every car at the clock',
   help: {
     summary:
       'The circuit split into equal mini-sectors. Each one is drawn in the colour of the selected ' +
@@ -15,10 +15,21 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
       'Runs of one colour show where a driver is consistently quicker, for example all the slow corners.',
       'Mini-sectors shorter than ~50 m mostly show noise: telemetry is only sampled at ~4 Hz.',
       'A zoomed range in the charts is highlighted in white on the map.',
+      'With “Cars: all” the map shows every car at the session clock instead (replay). The first ' +
+        'time, the telemetry of every lap is downloaded once (about 10 s for a race).',
     ],
   },
-  defaults: { miniSectors: 25, corners: true },
+  defaults: { cars: 'laps', miniSectors: 25, corners: true },
   settings: [
+    {
+      key: 'cars',
+      label: 'Cars',
+      kind: 'choice',
+      options: [
+        { value: 'laps', label: 'Compared laps at the cursor' },
+        { value: 'all', label: 'All cars at the session clock' },
+      ],
+    },
     {
       key: 'miniSectors',
       label: 'Mini-sectors',
