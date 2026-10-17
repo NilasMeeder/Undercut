@@ -124,7 +124,8 @@ function CornerTable({
   );
 
   const scale = Math.max(...rows.map((r) => Math.abs(r.dt)), 0.001);
-  const total = rows.reduce((sum, r) => sum + r.dt, 0);
+  // The lap delta at the line, not the sum of rounded segment times.
+  const total = lap.delta.at(-1) ?? rows.reduce((sum, r) => sum + r.dt, 0);
 
   return (
     <div className="min-h-0 flex-1 overflow-auto">

@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useMemo, useSyncExternalStore } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   DockviewReact,
   type DockviewApi,
@@ -17,7 +17,8 @@ import { WIDGETS, WIDGETS_BY_ID } from '@/widgets/registry';
 import { resolveConfig } from '@/widgets/types';
 import { useDashboardApi } from './api';
 import { HeaderMenu, headerButton } from './HeaderMenu';
-import { addWidget, applyQualiDuel, restoreLayout, saveLayout, type PanelParams } from './layout';
+import { useDashboards, type DashboardTab } from '@/store/dashboards';
+import { addWidget, applyPreset, validLayout, type PanelParams } from './layout';
 import { HelpContent, SettingsContent } from './PanelMenus';
 
 const theme: DockviewTheme = {
@@ -202,7 +203,7 @@ function EmptyDashboard({ containerApi }: { containerApi: DockviewApi }) {
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => applyQualiDuel(containerApi)}
+          onClick={() => applyPreset(containerApi, 'quali-duel')}
           className="border border-line-strong px-2 py-1 text-dim hover:text-text"
         >
           Load Quali duel layout
@@ -213,18 +214,45 @@ function EmptyDashboard({ containerApi }: { containerApi: DockviewApi }) {
   );
 }
 
+/** Show a tab: its saved layout if it still loads, otherwise its preset. */
+function loadTab(api: DockviewApi, tab: DashboardTab | undefined) {
+  const layout = validLayout(tab?.layout);
+  if (layout) {
+    try {
+      api.fromJSON(layout);
+      if (api.panels.length > 0) return;
+    } catch {
+      // A layout from an older version that dockview rejects: fall back to the preset.
+    }
+  }
+  applyPreset(api, tab?.preset ?? 'quali-duel');
+}
+
 export function Dashboard() {
+  const api = useDashboardApi((s) => s.api);
   const setApi = useDashboardApi((s) => s.setApi);
+  const active = useDashboards((s) => s.active);
 
   const onReady = useCallback(
     (event: DockviewReadyEvent) => {
       const { api } = event;
-      if (!restoreLayout(api)) applyQualiDuel(api);
-      api.onDidLayoutChange(() => saveLayout(api));
+      // Every change is saved into whichever tab is active at that moment.
+      api.onDidLayoutChange(() => {
+        const { active, saveLayout } = useDashboards.getState();
+        saveLayout(active, api.toJSON());
+      });
       setApi(api);
     },
     [setApi]
   );
+
+  useEffect(() => {
+    if (api)
+      loadTab(
+        api,
+        useDashboards.getState().tabs.find((t) => t.id === active)
+      );
+  }, [api, active]);
 
   return (
     <DockviewReact

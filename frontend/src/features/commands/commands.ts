@@ -1,6 +1,6 @@
 import type { DockviewApi } from 'dockview-react';
 import type { Lap } from '@/api/client';
-import { addWidget, applyQualiDuel } from '@/dashboard/layout';
+import { addWidget, applyPreset, PRESETS } from '@/dashboard/layout';
 import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
 import { cursorBus } from '@/store/cursor';
@@ -123,12 +123,12 @@ export function buildCommands({ api, group, laps }: CommandContext): Command[] {
           addWidget(api, w.id, group, active ? { referenceGroup: active } : undefined);
         },
       })),
-      {
-        id: 'preset-quali-duel',
+      ...PRESETS.map((p) => ({
+        id: `preset-${p.id}`,
         section: 'Layout',
-        title: 'Quali duel layout',
-        run: () => applyQualiDuel(api),
-      }
+        title: `${p.title} layout (replaces this dashboard)`,
+        run: () => applyPreset(api, p.id),
+      }))
     );
   }
   return commands;
