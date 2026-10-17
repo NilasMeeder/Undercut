@@ -7,6 +7,8 @@ volgende fase voordat de vorige echt werkt.
 
 - Fase 0 af (2026-10-17): de Next.js-template is vervangen door `backend/` (FastAPI + FastF1) en
   `frontend/` (Vite + React 19 + Tailwind 4). De kalender per seizoen werkt, met een sessiekiezer.
+- Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit- en compare-endpoints op
+  TracingInsights-data. Nog open: de OpenF1-fallback en de endpoints voor weer, race control en radio.
 
 ## Wat er ontbreekt (grote lijnen)
 
@@ -37,24 +39,26 @@ volgende fase voordat de vorige echt werkt.
 
 ## Fase 1 — Data-API (historisch)
 
-- [ ] Data-source laag: TracingInsights primair, OpenF1 als fallback, FastF1 later weer aan te sluiten
+- [x] Data-source laag: TracingInsights primair, OpenF1 als fallback, FastF1 later weer aan te sluiten
       (zie CLAUDE.md "Databronnen"; F1 heeft het live-timing-archief sinds 15 okt 2026 achter een login gezet)
-- [ ] Eigen opslag van verwerkte sessies (parquet), zodat een sessie maar één keer van een externe bron
-      komt. Dat beschermt tegen blokkades en rate limits.
+- [x] Eigen opslag: ruwe bronbestanden gzipped in `backend/.cache/tracinginsights/`, zodat elk bestand maar één
+      keer van internet komt
 - [x] `GET /api/seasons/{year}/events`: schema met rondes en sessies
-- [ ] `GET /api/sessions/{year}/{event}/{session}`: meta, drivers (code, team, kleur), weer-samenvatting
-- [ ] `GET .../laps`: alle laps met laptijd, S1/S2/S3, compound, tyre life, stint, flags (deleted, pit, SC)
-- [ ] `GET .../telemetry?driver=VER&lap=12`: kolom-JSON op afstand (speed, throttle, brake, gear, rpm, drs, x, y)
-- [ ] `GET .../compare?laps=VER:12,NOR:fastest`: telemetrie van N laps op gemeenschappelijk afstandsgrid
-      + delta t.o.v. de eerste
-- [ ] `GET .../minisectors?laps=...&n=25`: tijd per mini-sector per lap + winnaar per sector
-- [ ] `GET .../circuit`: track-outline, rotatie, bochten
-- [ ] Sessie-LRU in geheugen + verwerkte cache op disk
-- [ ] Laadstatus: endpoint of SSE dat meldt "bezig met laden" (eerste load duurt lang)
-- [ ] Tests voor resampling, delta, mini-sectoren (met een kleine fixture-sessie)
+- [x] `GET /api/sessions/{year}/{round}/{session}`: meta, drivers (code, team, kleur)
+- [x] `GET .../laps`: alle laps met laptijd, S1/S2/S3, compound, tyre life, stint, flags (deleted, pit, SC)
+- [x] `GET .../telemetry?driver=VER&lap=12`: kolom-JSON op afstand (speed, throttle, brake, gear, rpm, drs, x, y)
+- [x] `GET .../compare?laps=VER:12,NOR:fastest`: telemetrie van N laps op gemeenschappelijk afstandsgrid
+      + delta t.o.v. de eerste + mini-sectoren (`&mini_sectors=25`)
+- [x] ~~`GET .../minisectors`~~ zit in `/compare`
+- [x] `GET .../circuit`: track-outline, rotatie, bochten
+- [x] Sessie-LRU in geheugen + cache op disk
+- [ ] Laadstatus: minder urgent, want TracingInsights laadt in <1 s per bestand (eerst in de UI zien of het nodig is)
+- [x] Tests voor resampling, delta, mini-sectoren en de API met een nep-archief (27 tests)
+- [ ] OpenF1-fallback voor sessies die (nog) niet in TracingInsights staan
+- [ ] Weer, race control en team radio endpoints (de data staat al in TracingInsights)
 
 **Klaar als:** je met curl twee snelste kwalificatielaps kunt vergelijken en de delta klopt met de
-officiële gap (±0,02 s).
+officiële gap (±0,02 s). ✅ Monza 2025 Q: NOR +0,077, LEC +0,215 (exact officieel).
 
 ## Fase 2 — Kern-analyse UI (vaste layout)
 

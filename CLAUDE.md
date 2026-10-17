@@ -12,8 +12,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 is af: backend met `/api/health` en `/api/seasons/{year}/events`, frontend met sessiekiezer en
-kalender. Volgende stap is fase 1 (data-API) in `ROADMAP.md`.
+Fase 0 en (grotendeels) fase 1 zijn af: de API levert sessies, laps, telemetrie, circuit en lap-vergelijking
+(delta + mini-sectoren). De frontend heeft alleen nog de sessiekiezer. Volgende stap: fase 2 (analyse-UI).
 
 ## Architectuur
 
@@ -61,8 +61,11 @@ cd frontend && npm run typecheck && npm run lint && npm run format
 ## Structuur
 
 ```
-backend/app/main.py        FastAPI-app en routes
-backend/app/f1data.py      alles wat FastF1 aanraakt (laden, cache, omzetten naar schemas)
+backend/app/main.py        FastAPI-app en routes (dun: valideren, data-laag aanroepen, afronden)
+backend/app/schedule.py    seizoensschema via FastF1 + resolve_session(year, round, code)
+backend/app/sources/       één module per databron; tracinginsights.py haalt ruwe JSON op en cachet die gzipped
+backend/app/sessions.py    bronnen → schemas, met lru_caches (laps, drivers, circuit, LapTrace per lap)
+backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mini_sectors
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
 frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), schema.d.ts (gegenereerd)
@@ -103,8 +106,8 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
 
 - **Cache altijd aan**: `fastf1.Cache.enable_cache("backend/.cache/fastf1")`. Een sessie voor het eerst
   laden duurt 10–60 s; daarna seconden. De frontend moet dus een duidelijke laadstatus tonen.
-- **Eigen cache bovenop FastF1**: verwerkte resultaten (resampled telemetrie, mini-sectoren) per sessie
-  opslaan (parquet of pickle in `backend/.cache/processed/`) zodat herberekenen niet nodig is.
+- **Eigen cache**: ruwe bronbestanden staan gzipped in `backend/.cache/<bron>/`. Berekeningen (compare,
+  mini-sectoren) zijn snel genoeg (<10 ms) om niet op te slaan; alleen in geheugen via `lru_cache`.
 - **Sessie in geheugen houden**: geladen `Session`-objecten in een LRU-cache (een paar sessies), niet
   per request opnieuw `session.load()`.
 - **Rate limits**: FastF1 heeft ingebouwde limieten op de bron-API's. Geen loops die tientallen
@@ -122,8 +125,10 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
 - **Timedelta/NaT**: FastF1 gebruikt pandas `Timedelta`. Converteer in de backend naar seconden
   (`float`, ms-precisie) en NaT naar `null`. Nooit timedelta-strings naar de frontend sturen.
 - **Delta-tijd zelf berekenen**: `fastf1.utils.delta_time` is onnauwkeurig (staat ook zo in de docs).
-  Methode: beide laps resamplen op een gemeenschappelijk afstandsgrid (bv. elke 5 m), tijd interpoleren,
-  delta = t_b(d) − t_a(d).
+  Methode (`analysis.compare`): elke lap uitrekken naar de lengte van de referentielap (de rijlijnen
+  verschillen een paar meter), resamplen op een grid van 5 m, tijd interpoleren, delta = t_b(d) − t_a(d).
+  Daardoor is de delta aan de finish exact het verschil in laptijd. Gear/brake/drs niet interpoleren
+  maar de laatste sample nemen.
 - **Mini-sectoren**: lap opdelen op afstand (standaard 25 gelijke stukken, configureerbaar), per driver
   de tijd per stuk via interpolatie op het afstandsgrid. Fastest = paars, PB = groen, rest = geel.
 - **Track map**: X/Y uit positiedata; rotatie via `session.get_circuit_info().rotation`.
@@ -142,8 +147,8 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
 
 ## API-conventies
 
-- Alles onder `/api/...`. Identificatie van een sessie: `{year}/{event}/{session}` waarbij `event` de
-  ronde of naam is en `session` een van `FP1 FP2 FP3 SQ S Q R`.
+- Alles onder `/api/...`. Een sessie: `/api/sessions/{year}/{round}/{session}` met `session` een van
+  `FP1 FP2 FP3 SQ SS S Q R`. Laps als `DRV:nummer` of `DRV:fastest` (snelste getimede, niet-verwijderde lap).
 - **Kolom-georiënteerde JSON** voor telemetrie: `{ "distance": [...], "speed": [...], ... }`,
   niet een array van objecten. Scheelt veel bytes en past direct op uPlot's dataformaat.
 - Eenheden: afstand in meters, tijd in seconden (float), snelheid in km/h. In veldnamen geen eenheden,
