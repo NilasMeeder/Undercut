@@ -10,14 +10,25 @@ volgende fase voordat de vorige echt werkt.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit- en compare-endpoints op
   TracingInsights-data. Nog open: de OpenF1-fallback en de endpoints voor weer, race control en radio.
 
-## Wat er ontbreekt (grote lijnen)
+## Visie
 
-1. Een backend die FastF1-data laadt, cachet en omzet naar compacte JSON.
-2. Rekenlogica: resampling op afstand, delta-tijd, mini-sectoren, stint/tyre-analyse.
-3. Snelle telemetrie-charts met gesynchroniseerde cursor.
-4. Selectie-UX: sessie kiezen → drivers → laps, snel en met toetsenbord.
-5. Widget-systeem met versleepbare/resizebare layout, opslaan en presets.
-6. (Later) live/replay.
+Een analysetool in pitwall-stijl (referentie: Red Bull RaceX, zie CLAUDE.md "Stijl"), met **veel features
+in een rustige basis**. Vier modi op dezelfde onderdelen:
+
+| Modus | Wat | Bron |
+|---|---|---|
+| **Analyse** | Na de sessie: laps vergelijken, telemetrie, mini-sectoren, bests | archief |
+| **Replay** | Een oude sessie afspelen met een tijdslider; alles beweegt mee alsof het live is | archief |
+| **Strategie** | Stints, pitverlies-ghosts op de kaart, undercut | archief (later ook live) |
+| **Live** | Tijdens een sessie | F1 TV-token + FastF1 live client (OpenF1 live is betaald) |
+
+Kernbeslissingen:
+- **Eén sessieklok** voor replay en live: widgets lezen "de toestand op tijd t" en weten niet of t uit het
+  archief of uit een live stream komt. Live is daarna "alleen" een andere bron.
+- **Docking-indeling (dockview)**: panelen met tabs, splitsen door te slepen, uitklappen naar een tweede scherm.
+- **Link-groepen**: elk paneel heeft een kleur; panelen met dezelfde kleur volgen dezelfde driver/lap.
+- **Markeringen**: een afstandsbereik of moment markeren met notitie en tags, zichtbaar in alle widgets.
+- Volgorde: **basis eerst** (stijl, docking, cursor, link-groepen), dan widgets, dan replay, en live als laatste.
 
 ---
 
@@ -60,45 +71,65 @@ volgende fase voordat de vorige echt werkt.
 **Klaar als:** je met curl twee snelste kwalificatielaps kunt vergelijken en de delta klopt met de
 officiële gap (±0,02 s). ✅ Monza 2025 Q: NOR +0,077, LEC +0,215 (exact officieel).
 
-## Fase 2 — Kern-analyse UI (vaste layout)
+## Fase 2 — De basis
 
-Nog geen widget-systeem, gewoon een vaste pagina die werkt.
+Alles waar elke latere widget op leunt. Pas klaar als het goed voelt, niet als het er alleen staat.
 
-- [ ] Sessiekiezer: jaar → event → sessie (zoekbaar, laatst gebruikte onthouden)
-- [ ] Driver/lap-selectie: drivers aanvinken, per driver "fastest" of een specifieke lap
-- [ ] **Laptijdtabel**: alle laps per driver, sectoren paars/groen/geel, compound-badge, gefilterde laps grijs
-- [ ] **Telemetrie-stack** (uPlot): speed, throttle, brake, gear, RPM en DRS onder elkaar op afstand,
-      één gedeelde cursor
-- [ ] **Delta-chart** boven de stack
-- [ ] **Track map**: outline, cursorpositie, bochtnummers
-- [ ] **Mini-sector map**: track gekleurd per snelste driver
-- [ ] Zoom op afstandsbereik (bv. één bocht), synchroon over alle charts
-- [ ] Overlay vorige laps van dezelfde driver (lap X vs lap Y)
+- [ ] Stijlregels in code: kleur-tokens (achtergrond, lijnen, tekst, semantische kleuren), compacte
+      typografie met tabular numerals, paneel-chrome (titelbalk, tabs, tandwiel, sluiten)
+- [ ] Docking-shell met dockview: panelen toevoegen, splitsen, tabs, sluiten; layout bewaren in localStorage
+- [ ] Widget-registry: id, titel, standaardgrootte, config, link-groep. Nieuwe widget = één bestand + entry
+- [ ] Link-groepen: kleurkeuze per paneel, gedeelde selectie (sessie, drivers, laps) per groep
+- [ ] Gedeelde cursor (afstand) en zoom (afstandsbereik), buiten React-render om voor snelheid
+- [ ] Sessie- en lap-selectie: sessiekiezer in de topbalk, laps kiezen vanuit de laptijdentabel
+- [ ] Eerste widgets:
+  - [ ] **Laptijdentabel** per driver: sectoren paars/groen/geel, compound, verwijderde/in/out-laps grijs
+  - [ ] **Telemetrie-stack** (uPlot): speed, throttle, brake, gear, RPM, DRS, met gedeelde cursor en zoom
+  - [ ] **Delta-chart**
+  - [ ] **Track map**: outline, bochten, cursorpositie, mini-sectoren gekleurd per snelste lap
+- [ ] Preset-layout "Quali-duel" die je met één klik krijgt
 
-**Klaar als:** je een Q3-duel kunt analyseren zonder FastF1 in een notebook te openen.
+**Klaar als:** je een Q3-duel kunt analyseren in een zelf ingedeeld scherm, en de cursor soepel over
+alle panelen meeloopt.
 
-## Fase 3 — Widget-dashboard
+## Fase 3 — Analyse-widgets
 
-- [ ] Widget registry + react-grid-layout
-- [ ] Alle widgets uit fase 2 omzetten naar losse widgets
-- [ ] Widget-config per instantie (bv. welke kanalen, aantal mini-sectoren, welke drivers)
-- [ ] Widgets die "globale selectie volgen" of een eigen vaste selectie hebben
-- [ ] Layouts opslaan/laden (localStorage), export/import als JSON
-- [ ] Presets: *Quali-analyse*, *Race pace*, *Strategie*
-- [ ] Meerdere dashboard-tabs
-- [ ] Sneltoetsen: lap vooruit/achteruit, driver wisselen, cursor bevriezen
+- [ ] **Bests**: beste S1/S2/S3/lap per driver met % achterstand en **theoretische beste lap**
+- [ ] **Run timeline**: kolom per driver, vakje per lap (paars/groen/geel/in pit/out)
+- [ ] Mini-sector-tabel en "where is the time": bochten met het grootste verschil
+- [ ] Speed traps (I1, I2, finish, trap)
+- [ ] Race control-feed en weer-widget (backend-endpoints toevoegen)
+- [ ] Overlay van eerdere laps van dezelfde driver
+- [ ] Command palette (⌘K) en sneltoetsen (lap vooruit/achteruit, driver wisselen, cursor bevriezen)
+- [ ] Meer presets en meerdere dashboard-tabs; layout export/import als JSON
 
-## Fase 4 — Race-analyse widgets
+## Fase 4 — Replay
 
-- [ ] Racetempo: laptijden per lap per driver (outliers/SC weggefilterd), rolling average
-- [ ] Bandenstrategie: stints als horizontale balken met compound-kleuren
-- [ ] Tyre degradation: laptijd vs tyre life per compound, met fit
-- [ ] Gap-chart: gap tot leider/tot een gekozen driver per lap
-- [ ] Posities per lap
-- [ ] Pitstops: tijd in de pitlane, gewonnen/verloren posities
-- [ ] Race control messages + track status-tijdlijn (SC/VSC/rood als banden over charts)
-- [ ] Weer-widget: lucht/baantemperatuur, regen, wind over de sessie
-- [ ] Speed trap / top speeds-vergelijking
+- [ ] Sessieklok (afspelen, pauzeren, snelheid, scrubben) als bron voor alle widgets
+- [ ] Backend: toestand op tijd t (posities, gaps, laatste laps, tyres, track status)
+- [ ] **Timing tower** op tijd t (gap, interval, sectoren, laatste lap, banden)
+- [ ] Track map met alle auto's; **Track Line** (de baan als rechte lijn met auto's erop)
+- [ ] Race control en track status volgen de klok
+
+## Fase 5 — Markeringen en opgeslagen views
+
+- [ ] Afstandsbereik of moment markeren met notitie en tags ("lift & coast", "lock-up")
+- [ ] Markeringen zichtbaar in charts, track map en Track Line
+- [ ] Opgeslagen views: selectie + layout als bladwijzer
+- [ ] Opslag in een lokaal SQLite-bestand in `backend/` (geen databaseserver)
+
+## Fase 6 — Strategie en race-analyse
+
+- [ ] Bandenstrategie (stints als balken), tyre degradation met fit, brandstofcorrectie
+- [ ] Racetempo, gap-chart, posities per lap
+- [ ] Pitverlies-ghosts op de track map ("als je nu pit kom je hier uit")
+- [ ] Undercut/overcut-calculator
+
+## Fase 7 — Live
+
+- [ ] F1 TV-token koppelen (zie backlog voor de voorwaarden)
+- [ ] FastF1 live client → backend → websocket → dezelfde sessieklok als replay
+- [ ] Opnemen tijdens live, zodat de sessie daarna als replay beschikbaar is
 
 ## Later / backlog
 
@@ -110,24 +141,12 @@ Nog geen widget-systeem, gewoon een vaste pagina die werkt.
       - de extensie na het inloggen weer uitzetten
       - het is alleen nodig voor sessies die nog niet in TracingInsights staan
 
-## Fase 5 — Replay & live (optioneel, groot)
-
-- [ ] Replay-modus: tijdslider, alle auto's op de track map, timing tower op dat moment
-- [ ] Live data onderzoeken: FastF1 `livetiming` (opnemen en terugspelen) of OpenF1. Eerst checken wat
-      er op dat moment nog gratis en zonder login kan; daar is de laatste jaren veel aan veranderd.
-- [ ] Websocket van backend naar frontend voor live updates
-
 ## Ideeën (later, misschien)
 
-- Lap-simulatie / ideal lap: de som van de beste mini-sectoren per driver, "theoretische beste lap"
 - Remwegen en corner-fases automatisch detecteren uit speed/throttle/brake (braking point, apex, exit)
 - Energie-inzet in 2026 inschatten uit speed-traces op straights (er is geen officieel kanaal)
-- Undercut/overcut-calculator op basis van pitlane-verlies en tyre deg
-- Racetempo-model: brandstofcorrectie (~0,03 s/lap per kg) zodat stints eerlijk te vergelijken zijn
 - Team radio afspelen op de tijdlijn (OpenF1 heeft opnames)
-- Command palette (⌘K): "VER vs NOR Q3 fastest" typen en het dashboard staat klaar
 - Corner-analyse: min-speed, remwegen, apex-snelheid per bocht vergeleken
-- "Where is the time": automatisch de 3 bochten met het grootste verschil markeren
 - Gear-map / throttle-map op de track
 - Long-run vs short-run detectie in vrije trainingen
 - Seizoensoverzicht: quali-gaps tussen teammates over een heel jaar

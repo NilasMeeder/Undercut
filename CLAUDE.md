@@ -4,16 +4,18 @@ Hobbyproject: een geavanceerd F1-analysedashboard in de stijl van een pitwall. L
 mini-sectoren, telemetrie (speed/throttle/brake/gear/RPM/DRS) van meerdere drivers of laps over elkaar,
 en een zelf in te delen dashboard met widgets.
 
-**Prioriteit: snelheid en bruikbaarheid > uiterlijk.** Wel strak en leesbaar: alleen een donker thema met
-neutrale grijstinten, geen F1-rood of branding. Kleur alleen voor data (teamkleuren, sectoren, banden).
-Geen tijd steken in animaties of marketing-UI.
+**Prioriteit: snelheid en bruikbaarheid > uiterlijk.** Het moet eruitzien als echte pitwall-software,
+niet als een AI-dashboard. Zie "Stijl" hieronder. Veel features mag, maar op een goede basis.
+
+Vier modi op dezelfde onderdelen: analyse, replay, strategie en live. Zie `ROADMAP.md` "Visie".
 
 Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af is.
 
 ## Huidige status
 
 Fase 0 en (grotendeels) fase 1 zijn af: de API levert sessies, laps, telemetrie, circuit en lap-vergelijking
-(delta + mini-sectoren). De frontend heeft alleen nog de sessiekiezer. Volgende stap: fase 2 (analyse-UI).
+(delta + mini-sectoren). De frontend heeft alleen nog de sessiekiezer. Volgende stap: fase 2 (de basis:
+stijl, docking, link-groepen, cursor en de eerste widgets).
 
 ## Architectuur
 
@@ -40,9 +42,9 @@ frontend/   Vite + React + TypeScript        → SPA op :5173, praat met /api (p
 | Styling | Tailwind + shadcn/ui | Bestaande `components/ui` hergebruiken |
 | Telemetrie-charts | uPlot | Tienduizenden punten zonder haperen, cursor-sync tussen charts |
 | Overige charts | uPlot of ECharts | Alleen ECharts als uPlot echt tekortschiet (bv. strategie-balken) |
-| Widget-grid | react-grid-layout | Slepen/resizen, layouts serialiseerbaar naar JSON |
+| Docking | dockview (`dockview-react`) | Panelen met tabs, splitsen door te slepen, uitklappen naar een tweede venster, layout als JSON |
 | Server state | TanStack Query | Caching/dedup van API-calls per sessie |
-| Client state | Zustand | Geselecteerde sessie/drivers/laps, gedeelde cursor, layouts |
+| Client state | Zustand | Sessie, link-groepen (selectie per groep), cursor/zoom, sessieklok |
 
 ## Commando's
 
@@ -133,8 +135,24 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   de tijd per stuk via interpolatie op het afstandsgrid. Fastest = paars, PB = groen, rest = geel.
 - **Track map**: X/Y uit positiedata; rotatie via `session.get_circuit_info().rotation`.
   Corner-nummers ook uit `get_circuit_info().corners`.
-- **Teamkleuren**: `fastf1.plotting.get_team_color()` / `get_driver_color()` met de sessie erbij.
-  Twee drivers van hetzelfde team: tweede driver gestippeld of lichtere tint.
+- **Teamkleuren** komen uit `drivers.json` (`tc`) → `DriverInfo.color`. Twee drivers van hetzelfde team:
+  de tweede gestippeld.
+
+## Stijl (referentie: Red Bull RaceX op de pitwall)
+
+Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
+- Geen kaarten met schaduw, geen grote afgeronde hoeken (max 2px), geen kleurverlopen, glas-effecten,
+  emoji, hero-teksten of "welkom"-schermen. Geen lege ruimte als decoratie.
+- Bijna zwarte achtergrond, panelen gescheiden door 1px-lijnen. Paneel = titelbalk (~24px) met tabs,
+  tandwiel en sluiten, daaronder direct de inhoud.
+- **Getallen**: monospace of `tabular-nums`, rechts uitgelijnd, vaste precisie (1:18.792, 26.262, +0.077).
+  Tijden altijd als `m:ss.mmm` en gaps als `+s.mmm`.
+- **Kleur alleen met betekenis**: paars = overall beste, groen = persoonlijk beste, geel = langzamer of
+  in/out-lap, rood = in de pit, stop of probleem. Teamkleuren alleen voor de lijnen en labels van een driver.
+  Al het andere is wit of grijs.
+- Banden als letter in een gekleurd rondje (S rood, M geel, H wit, I groen, W blauw).
+- Kleine letters (11–12px in tabellen), korte labels in hoofdletters voor kolomkoppen.
+- Interactie: hover laat de waarde zien, klik selecteert, en alles is met het toetsenbord te bedienen.
 
 ## UX-principes
 
@@ -159,15 +177,19 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
 
 ## Frontend-conventies
 
-- **Eén gedeelde "cursor"** in Zustand (afstand in meters). Hover in een telemetrie-chart → alle charts
-  en de track map tonen dezelfde positie. Dit is de kern van het pitwall-gevoel.
+- **Link-groepen**: elk paneel hoort bij een groep (kleur). Een groep heeft een eigen selectie (laps,
+  drivers) en een eigen cursor/zoom. Panelen in dezelfde groep volgen elkaar, andere groepen niet.
+- **Gedeelde cursor** per groep (afstand in meters). Hover in een telemetrie-chart → alle charts en de
+  track map in die groep tonen dezelfde positie. Cursor-updates gaan via een subscribe, niet via
+  React-renders (anders hapert het).
+- **Sessieklok** (vanaf fase 4): replay en live leveren allebei "tijd t". Widgets vragen de toestand op t
+  en weten niet welke bron erachter zit.
 - Widgets zijn losse componenten in `frontend/src/widgets/<Naam>/` met een registry
-  (`widgets/registry.ts`): id, titel, default grootte, config-schema. Nieuwe widget = nieuw bestand +
-  registry-entry, niets anders.
-- Widgets lezen de geselecteerde sessie/drivers/laps uit de store; ze halen hun eigen data via
-  TanStack Query hooks in `src/api/`.
-- Dashboard-layouts opslaan in localStorage als JSON (later export/import naar bestand).
-- Alleen donker thema (geen light mode), neutrale zinc-tinten in `src/index.css`. Kleuren voor sectoren: paars `#a855f7`, groen `#22c55e`, geel `#eab308`.
+  (`widgets/registry.ts`): id, titel, config. Nieuwe widget = nieuw bestand + registry-entry.
+- Widgets halen hun data via TanStack Query hooks in `src/api/`, zodat dezelfde data niet twee keer
+  wordt opgehaald als twee panelen hem gebruiken.
+- De dockview-layout staat in localStorage als JSON (later export/import naar bestand).
+- Alleen donker thema (geen light mode). Alle kleuren als tokens in `src/index.css`, nooit hardcoded.
 - Performance: telemetrie-arrays nooit in React state die vaak re-rendert; uPlot direct updaten.
 
 ## Code-stijl
