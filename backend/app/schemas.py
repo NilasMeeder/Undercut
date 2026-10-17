@@ -214,6 +214,15 @@ class Corner(BaseModel):
     angle: float
 
 
+class MarshalSector(BaseModel):
+    """A marshal sector (yellow flags are per marshal sector) as a lap-distance range (m)."""
+
+    number: int
+    start: float
+    end: float
+    """Smaller than start for the sector over the start/finish line."""
+
+
 class Circuit(BaseModel):
     name: str | None
     rotation: float
@@ -225,6 +234,7 @@ class Circuit(BaseModel):
     lap_length: float
     """Metres, on the scale of track_distance."""
     corners: list[Corner]
+    marshal_sectors: list[MarshalSector]
     pit_loss: float | None
     pit_loss_sc: float | None
     pit_loss_vsc: float | None
@@ -248,6 +258,15 @@ class Segment(BaseModel):
     end: float
 
 
+class SectorFlag(BaseModel):
+    """A yellow flag in one marshal sector, from race control."""
+
+    sector: int
+    start: float
+    end: float
+    flag: Literal["yellow", "double_yellow"]
+
+
 class SessionTimeline(BaseModel):
     """What the session clock needs: its range, the laps and the track status over time."""
 
@@ -263,6 +282,7 @@ class SessionTimeline(BaseModel):
     """Session time at which the leader started each lap (races and sprints only)."""
     segments: list[Segment]
     track_status: list[StatusPeriod]
+    sector_flags: list[SectorFlag]
 
 
 ReplayState = Literal["missing", "loading", "ready", "error"]

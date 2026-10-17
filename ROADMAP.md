@@ -142,8 +142,8 @@ alle panelen meeloopt.
 - [x] Datavolume: telemetrie van een hele sessie in bulk (git partial clone), positiespoor één keer
       bouwen en lokaal opslaan, laadstatus met voortgang
 - [ ] Startgrid (TracingInsights heeft hem niet; Jolpica wel) voor de volgorde vóór de eerste passage
-- [ ] Weer volgt de klok (waarden op t, markering in de sparklines)
-- [ ] Gele sectoren uit race control op de kaart en de Track line
+- [x] Weer volgt de klok (kolom "Clock" met de waarde op t, witte streep in de sparklines)
+- [x] Gele sectoren uit race control op de kaart (met alle auto's) en de Track line, per marshal-sector
 - [ ] Auto's na de finish nog een uitlooplap tonen (de data stopt nu op de lijn)
 
 ## Fase 5 — Markeringen en opgeslagen views

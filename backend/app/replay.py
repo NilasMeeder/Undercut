@@ -4,7 +4,8 @@
   from the telemetry of every lap. Built once per session and stored (see replays.py).
 - TimingIndex / timing_state: the timing tower at t from the lap data alone (sector and line
   crossings), the way the official tower works. Needs no telemetry, so it is there instantly.
-- track_status_periods: SC, VSC, red flag … over time, from race control.
+- track_status_periods: SC, VSC, red flag … over time, from race control; sector_flag_periods the
+  yellow flags per marshal sector.
 """
 
 import math
@@ -19,6 +20,7 @@ from app.schemas import (
     CarStatus,
     Lap,
     RaceControlMessage,
+    SectorFlag,
     Segment,
     StatusPeriod,
     TimingClass,
@@ -210,6 +212,45 @@ def track_status_periods(
             status, since = new, at
     periods.append(StatusPeriod(start=since, end=end, status=status))
     return periods
+
+
+_SECTOR_FLAGS = {"YELLOW": "yellow", "DOUBLE YELLOW": "double_yellow"}
+_TRACK_RESETS = {"GREEN", "CLEAR", "RED", "CHEQUERED"}
+"""Track-wide flags that end every sector flag."""
+
+
+def sector_flag_periods(
+    messages: list[RaceControlMessage], start: float, end: float
+) -> list[SectorFlag]:
+    """Yellow and double yellow flags per marshal sector, until cleared (or end)."""
+    timed = sorted(
+        (m for m in messages if m.session_time is not None and m.category == "Flag"),
+        key=lambda m: m.session_time or 0.0,
+    )
+    active: dict[int, tuple[str, float]] = {}
+    periods: list[SectorFlag] = []
+
+    def close(sector: int, at: float) -> None:
+        flag, since = active.pop(sector)
+        if min(at, end) > max(since, start):
+            periods.append(
+                SectorFlag(sector=sector, start=max(since, start), end=min(at, end), flag=flag)
+            )
+
+    for m in timed:
+        at = m.session_time or 0.0
+        if m.scope == "Sector" and m.sector is not None:
+            flag = _SECTOR_FLAGS.get(m.flag or "")
+            if m.sector in active and active[m.sector][0] != flag:
+                close(m.sector, at)
+            if flag and m.sector not in active:
+                active[m.sector] = (flag, at)
+        elif m.scope == "Track" and m.flag in _TRACK_RESETS:
+            for sector in list(active):
+                close(sector, at)
+    for sector in list(active):
+        close(sector, end)
+    return sorted(periods, key=lambda p: (p.start, p.sector))
 
 
 def status_at(periods: list[StatusPeriod], t: float) -> TrackStatus:

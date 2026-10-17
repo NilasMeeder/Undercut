@@ -16,6 +16,7 @@ from app.schemas import (
     Corner,
     DriverInfo,
     Lap,
+    MarshalSector,
     RaceControlMessage,
     SessionDetail,
     Weather,
@@ -212,6 +213,9 @@ def get_circuit(year: int, round_number: int, code: str) -> Circuit:
         track_distance, lap_length = trace.distance, trace.length
     return Circuit(
         name=data.get("CircuitName"),
+        marshal_sectors=marshal_sectors(
+            data.get("MarshalSectorNumber") or [], data.get("MarshalSectorDistance") or []
+        ),
         rotation=float(data.get("Rotation") or 0.0),
         track_x=track_x,
         track_y=track_y,
@@ -222,6 +226,15 @@ def get_circuit(year: int, round_number: int, code: str) -> Circuit:
         pit_loss_sc=data.get("PitLossSC"),
         pit_loss_vsc=data.get("PitLossVSC"),
     )
+
+
+def marshal_sectors(numbers: list[int], starts: list[float]) -> list[MarshalSector]:
+    """Each marshal sector runs to the start of the next one along the lap (the last wraps)."""
+    ordered = sorted(zip(starts, numbers, strict=False))
+    return [
+        MarshalSector(number=int(number), start=round(start, 1), end=round(nxt, 1))
+        for (start, number), (nxt, _) in zip(ordered, ordered[1:] + ordered[:1], strict=True)
+    ]
 
 
 def _optional_int(value: Any) -> int | None:

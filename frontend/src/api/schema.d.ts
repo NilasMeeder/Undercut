@@ -368,6 +368,8 @@ export interface components {
             lap_length: number;
             /** Corners */
             corners: components["schemas"]["Corner"][];
+            /** Marshal Sectors */
+            marshal_sectors: components["schemas"]["MarshalSector"][];
             /** Pit Loss */
             pit_loss: number | null;
             /** Pit Loss Sc */
@@ -635,6 +637,18 @@ export interface components {
             /** Tags */
             tags?: string[];
         };
+        /**
+         * MarshalSector
+         * @description A marshal sector (yellow flags are per marshal sector) as a lap-distance range (m).
+         */
+        MarshalSector: {
+            /** Number */
+            number: number;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+        };
         /** MiniSectors */
         MiniSectors: {
             /** Boundaries */
@@ -709,6 +723,23 @@ export interface components {
             events: components["schemas"]["EventInfo"][];
         };
         /**
+         * SectorFlag
+         * @description A yellow flag in one marshal sector, from race control.
+         */
+        SectorFlag: {
+            /** Sector */
+            sector: number;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /**
+             * Flag
+             * @enum {string}
+             */
+            flag: "yellow" | "double_yellow";
+        };
+        /**
          * Segment
          * @description A qualifying part (Q1, Q2, Q3) in session time.
          */
@@ -776,6 +807,8 @@ export interface components {
             segments: components["schemas"]["Segment"][];
             /** Track Status */
             track_status: components["schemas"]["StatusPeriod"][];
+            /** Sector Flags */
+            sector_flags: components["schemas"]["SectorFlag"][];
         };
         /** StatusPeriod */
         StatusPeriod: {

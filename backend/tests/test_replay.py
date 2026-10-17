@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from app import replay
+from app import replay, sessions
 from app.schemas import Lap, RaceControlMessage
 
 
@@ -92,7 +92,14 @@ def test_garage_windows_only_for_long_stops() -> None:
 # --- Track status --------------------------------------------------------------------------------
 
 
-def message(at: float, category: str, text: str, flag: str | None = None, scope: str | None = None):
+def message(
+    at: float,
+    category: str,
+    text: str,
+    flag: str | None = None,
+    scope: str | None = None,
+    sector: int | None = None,
+):
     return RaceControlMessage(
         utc=datetime(2025, 1, 1, tzinfo=UTC),
         session_time=at,
@@ -100,7 +107,7 @@ def message(at: float, category: str, text: str, flag: str | None = None, scope:
         message=text,
         flag=flag,
         scope=scope,
-        sector=None,
+        sector=sector,
         driver=None,
         lap=None,
     )
@@ -128,6 +135,40 @@ def test_track_status_periods() -> None:
         (900.0, 1000.0, "chequered"),
     ]
     assert replay.status_at(periods, 250.0) == "sc"
+
+
+def test_sector_flag_periods() -> None:
+    def sector(at: float, flag: str, number: int):
+        return message(at, "Flag", f"{flag} IN TRACK SECTOR {number}", flag, "Sector", number)
+
+    messages = [
+        sector(50.0, "YELLOW", 7),  # before the range: starts at the range start
+        sector(200.0, "YELLOW", 8),
+        sector(210.0, "YELLOW", 8),  # repeated: still one period
+        sector(250.0, "DOUBLE YELLOW", 8),  # upgraded: a new period
+        sector(300.0, "CLEAR", 8),
+        sector(320.0, "CLEAR", 9),  # never yellow
+        sector(400.0, "YELLOW", 3),
+        message(500.0, "Flag", "RED FLAG", "RED", "Track"),  # ends every sector flag
+        sector(900.0, "YELLOW", 1),  # still yellow at the end
+    ]
+    periods = replay.sector_flag_periods(messages, 100.0, 1000.0)
+    assert [(p.sector, p.start, p.end, p.flag) for p in periods] == [
+        (7, 100.0, 500.0, "yellow"),
+        (8, 200.0, 250.0, "yellow"),
+        (8, 250.0, 300.0, "double_yellow"),
+        (3, 400.0, 500.0, "yellow"),
+        (1, 900.0, 1000.0, "yellow"),
+    ]
+
+
+def test_marshal_sectors_run_to_the_next_one() -> None:
+    sectors = sessions.marshal_sectors([1, 2, 3], [5704.0, 452.0, 749.0])
+    assert [(s.number, s.start, s.end) for s in sectors] == [
+        (2, 452.0, 749.0),
+        (3, 749.0, 5704.0),
+        (1, 5704.0, 452.0),  # over the line
+    ]
 
 
 # --- Timing tower: race --------------------------------------------------------------------------

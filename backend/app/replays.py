@@ -63,6 +63,7 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
             if lap.start_time is not None:
                 first[lap.lap] = min(lap.start_time, first.get(lap.lap, math.inf))
         lap_starts = [first[n] for n in sorted(first)]
+    messages = _race_control(year, round_number, code)
     return SessionTimeline(
         start=start,
         end=end,
@@ -71,9 +72,8 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
         total_laps=total_laps,
         lap_starts=lap_starts,
         segments=replay.segments(laps) if kind == "quali" else [],
-        track_status=replay.track_status_periods(
-            _race_control(year, round_number, code), start, end
-        ),
+        track_status=replay.track_status_periods(messages, start, end),
+        sector_flags=replay.sector_flag_periods(messages, start, end),
     )
 
 

@@ -6,6 +6,7 @@ import { COLORS } from '@/lib/colors';
 import { td, th } from '@/lib/table';
 import { lapStyles } from '@/lib/timing';
 import { cn } from '@/lib/utils';
+import { useClockTime } from '@/store/clock';
 import { useGroupLaps, type LapRef } from '@/store/groups';
 import type { WidgetProps } from '../types';
 
@@ -37,10 +38,13 @@ function Sparkline({
   times,
   values,
   marks,
+  now,
 }: {
   times: number[];
   values: number[];
   marks: { t: number; color: string }[];
+  /** The session clock: a white tick. */
+  now: number;
 }) {
   const w = 120;
   const h = 14;
@@ -58,6 +62,9 @@ function Sparkline({
         .map((m, i) => (
           <line key={i} x1={x(m.t)} x2={x(m.t)} y1={0} y2={h} stroke={m.color} strokeWidth="1" />
         ))}
+      {now >= t0 && now < t1 ? (
+        <line x1={x(now)} x2={x(now)} y1={0} y2={h} stroke={COLORS.text} strokeWidth="1" />
+      ) : null}
     </svg>
   );
 }
@@ -73,6 +80,7 @@ export function WeatherWidget({ group }: WidgetProps<Record<string, never>>) {
   const laps = useLaps();
   const detail = useSessionDetail();
   const refs = useGroupLaps(group);
+  const now = useClockTime(1000);
 
   const marks = useMemo(() => {
     const styles = lapStyles(refs, detail.data?.drivers);
@@ -107,6 +115,9 @@ export function WeatherWidget({ group }: WidgetProps<Record<string, never>>) {
             <th className={cn(th, 'text-right')}>End</th>
             <th className={cn(th, 'text-right')}>Min</th>
             <th className={cn(th, 'text-right')}>Max</th>
+            <th className={cn(th, 'text-right')} title="At the session clock">
+              Clock
+            </th>
             <th className={cn(th, 'text-left')}>Trend</th>
             <th className={cn(th, 'text-right')} title="When the reference lap started">
               Ref lap
@@ -125,8 +136,9 @@ export function WeatherWidget({ group }: WidgetProps<Record<string, never>>) {
                 <td className={td}>{f(row.values[row.values.length - 1])}</td>
                 <td className={cn(td, 'text-dim')}>{f(Math.min(...row.values))}</td>
                 <td className={cn(td, 'text-dim')}>{f(Math.max(...row.values))}</td>
+                <td className={td}>{f(interpolate(w.time, row.values, now))}</td>
                 <td className="px-1.5 py-[1px]">
-                  <Sparkline times={w.time} values={row.values} marks={marks} />
+                  <Sparkline times={w.time} values={row.values} marks={marks} now={now} />
                 </td>
                 <td className={td}>
                   {refStart == null ? '' : f(interpolate(w.time, row.values, refStart))}
@@ -136,13 +148,13 @@ export function WeatherWidget({ group }: WidgetProps<Record<string, never>>) {
           })}
           <tr>
             <td className="px-1.5 py-[1px] text-left text-dim">Wind from</td>
-            <td colSpan={6} className="px-1.5 text-left">
+            <td colSpan={7} className="px-1.5 text-left">
               {compass(wind)} <span className="text-faint">{wind}° on average</span>
             </td>
           </tr>
           <tr>
             <td className="px-1.5 py-[1px] text-left text-dim">Rain</td>
-            <td colSpan={6} className={cn('px-1.5 text-left', rainFrom >= 0 && 'text-slow')}>
+            <td colSpan={7} className={cn('px-1.5 text-left', rainFrom >= 0 && 'text-slow')}>
               {rainFrom < 0
                 ? 'None'
                 : `From ${Math.round((w.time[rainFrom] - w.time[0]) / 60)} min after the first reading`}

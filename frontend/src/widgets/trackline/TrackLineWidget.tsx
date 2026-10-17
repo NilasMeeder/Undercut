@@ -12,6 +12,7 @@ import { carAt } from '@/lib/replay';
 import { useGroupLaps, type GroupId } from '@/store/groups';
 import { useClockDraw, useElementSize } from '../hooks';
 import { PositionsMessage } from '../PositionsMessage';
+import { useSectorFlags } from '../useSectorFlags';
 import type { WidgetProps } from '../types';
 import type { TrackLineConfig } from './widget';
 
@@ -143,6 +144,11 @@ function TrackLine({
           stroke={COLORS.lineStrong}
           strokeWidth={3}
         />
+        <SectorFlags
+          lapLength={track.lapLength}
+          x={(d) => PAD + (d / track.lapLength) * length}
+          y={mid}
+        />
         {[PAD, PAD + length].map((x) => (
           <line key={x} x1={x} x2={x} y1={mid - 8} y2={mid + 8} stroke={COLORS.textDim} />
         ))}
@@ -198,5 +204,37 @@ function TrackLine({
         </g>
       </svg>
     </div>
+  );
+}
+
+/** Yellow flags at the session clock: the marshal sector in yellow on the line. */
+function SectorFlags({
+  lapLength,
+  x,
+  y,
+}: {
+  lapLength: number;
+  x: (distance: number) => number;
+  y: number;
+}) {
+  const flags = useSectorFlags(lapLength);
+  return (
+    <>
+      {flags.flatMap((f) =>
+        f.ranges.map(([start, end]) => (
+          <line
+            key={`${f.sector}-${start}`}
+            x1={x(start)}
+            x2={x(end)}
+            y1={y}
+            y2={y}
+            stroke={COLORS.slow}
+            strokeWidth={f.double ? 6 : 4}
+          >
+            <title>{`${f.double ? 'Double yellow' : 'Yellow'} in sector ${f.sector}`}</title>
+          </line>
+        ))
+      )}
+    </>
   );
 }

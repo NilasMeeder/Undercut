@@ -15,6 +15,7 @@ import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom } from '@/store/cursor';
 import { useGroupLaps, type GroupId } from '@/store/groups';
 import { useClockDraw } from '../hooks';
+import { useSectorFlags } from '../useSectorFlags';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
 import type { TrackMapConfig } from './widget';
@@ -290,6 +291,7 @@ function TrackMap({
             </text>
           </g>
         ))}
+        {cars ? <SectorFlags along={geometry.along} unit={u} /> : null}
         {lap?.sectors.map((s, i) => (
           <path
             key={i}
@@ -361,6 +363,40 @@ function TrackMap({
         </g>
       </svg>
     </div>
+  );
+}
+
+/** Yellow flags at the session clock: the marshal sector drawn in yellow along the track. */
+function SectorFlags({
+  along,
+  unit,
+}: {
+  along: { points: Point[]; distance: number[] };
+  unit: number;
+}) {
+  const flags = useSectorFlags();
+  return (
+    <>
+      {flags.flatMap((f) =>
+        f.ranges.map(([start, end]) => {
+          const from = indexAt(along.distance, start);
+          const to = Math.max(indexAt(along.distance, end), from + 1);
+          return (
+            <path
+              key={`${f.sector}-${start}`}
+              d={toPath(along.points.slice(from, to + 1))}
+              fill="none"
+              stroke={COLORS.slow}
+              strokeWidth={unit * (f.double ? 2.6 : 1.6)}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <title>{`${f.double ? 'Double yellow' : 'Yellow'} in sector ${f.sector}`}</title>
+            </path>
+          );
+        })
+      )}
+    </>
   );
 }
 

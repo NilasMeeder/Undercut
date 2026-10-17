@@ -1448,6 +1448,13 @@
             "type": "array",
             "title": "Corners"
           },
+          "marshal_sectors": {
+            "items": {
+              "$ref": "#/components/schemas/MarshalSector"
+            },
+            "type": "array",
+            "title": "Marshal Sectors"
+          },
           "pit_loss": {
             "anyOf": [
               {
@@ -1491,6 +1498,7 @@
           "track_distance",
           "lap_length",
           "corners",
+          "marshal_sectors",
           "pit_loss",
           "pit_loss_sc",
           "pit_loss_vsc"
@@ -2376,6 +2384,30 @@
         "title": "MarkerIn",
         "description": "A marked point or range: lap distance (m) or session time (s). `end` null = a point."
       },
+      "MarshalSector": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "start",
+          "end"
+        ],
+        "title": "MarshalSector",
+        "description": "A marshal sector (yellow flags are per marshal sector) as a lap-distance range (m)."
+      },
       "MiniSectors": {
         "properties": {
           "boundaries": {
@@ -2614,6 +2646,39 @@
         ],
         "title": "SeasonEvents"
       },
+      "SectorFlag": {
+        "properties": {
+          "sector": {
+            "type": "integer",
+            "title": "Sector"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "flag": {
+            "type": "string",
+            "enum": [
+              "yellow",
+              "double_yellow"
+            ],
+            "title": "Flag"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sector",
+          "start",
+          "end",
+          "flag"
+        ],
+        "title": "SectorFlag",
+        "description": "A yellow flag in one marshal sector, from race control."
+      },
       "Segment": {
         "properties": {
           "name": {
@@ -2797,6 +2862,13 @@
             },
             "type": "array",
             "title": "Track Status"
+          },
+          "sector_flags": {
+            "items": {
+              "$ref": "#/components/schemas/SectorFlag"
+            },
+            "type": "array",
+            "title": "Sector Flags"
           }
         },
         "type": "object",
@@ -2808,7 +2880,8 @@
           "total_laps",
           "lap_starts",
           "segments",
-          "track_status"
+          "track_status",
+          "sector_flags"
         ],
         "title": "SessionTimeline",
         "description": "What the session clock needs: its range, the laps and the track status over time."

@@ -186,6 +186,10 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   Een replay-widget die mount start de voorbereiding zelf; de klokbalk toont de voortgang.
   Lap-voortgang: lap 1 (vanaf de grid of pit-exit) en out-laps worden vanaf de finishlijn terug gemeten,
   andere laps als `distance / lapafstand`. Garagetijd en gaten > 2 s zijn `null` (auto niet getoond).
+- **Gele sectoren**: `corners.json` heeft marshal-sectoren met hun startafstand (`Circuit.marshal_sectors`,
+  elk tot de volgende; de laatste loopt over de finish). `replay.sector_flag_periods` maakt uit race
+  control (scope `Sector`) perioden per sector tot CLEAR, of tot een baanbrede GREEN/CLEAR/RED/CHEQUERED
+  (`SessionTimeline.sector_flags`). De kaart (met alle auto's) en de Track line kleuren die stukken geel.
 
 ## Markeringen en views (fase 5)
 

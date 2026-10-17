@@ -8,7 +8,8 @@ export const weatherWidget = defineWidget<Record<string, never>>({
   help: {
     summary:
       'Weather station readings over the session (about one per minute): start, end, range and the ' +
-      'trend. The last column is the value when the reference lap of this link group started.',
+      'trend. “Clock” is the value at the session clock (a white tick on the trend), the last ' +
+      'column the value when the reference lap of this link group started.',
     watch: [
       'Track temperature drives grip: laps a few degrees apart are not quite like for like.',
       'The ticks on the trend lines mark when the selected laps were driven.',
