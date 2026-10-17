@@ -1,12 +1,21 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Pause, Play } from 'lucide-react';
-import type { SessionTimeline } from '@/api/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Flag, Pause, Play } from 'lucide-react';
+import type { Marker, SessionTimeline } from '@/api/client';
+import { useMarkers } from '@/api/markers';
 import { usePositionsStatus, usePreparePositions, useTimeline } from '@/api/queries';
 import { HeaderMenu, headerButton } from '@/dashboard/HeaderMenu';
 import { COLORS, TRACK_STATUS_COLORS } from '@/lib/colors';
+import { lapAt, markerLabel, markerLap } from '@/lib/markers';
 import { formatClock, TRACK_STATUS_LABEL } from '@/lib/replay';
 import { cn } from '@/lib/utils';
 import { clock, SPEEDS, useClockControls, useClockTime } from '@/store/clock';
+import { markNew } from '@/store/markerEditor';
+
+/** A moment counts as "now" this long after it, so its note can be read while playing. */
+const MOMENT_SHOWN = 8;
+
+const timeLabel = (m: Marker) =>
+  [markerLap(m), markerLabel(m)].filter(Boolean).join(' · ') || 'Marker';
 
 const timeOfDay = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
@@ -15,15 +24,10 @@ const timeOfDay = new Intl.DateTimeFormat(undefined, {
   hour12: false,
 });
 
-function lapAt(timeline: SessionTimeline, t: number): number {
-  let lap = 0;
-  while (lap < timeline.lap_starts.length && timeline.lap_starts[lap] <= t) lap++;
-  return Math.max(lap, 1);
-}
-
 /** Where the session is: lap or qualifying part, time since the start, time of day. */
-function Readout({ timeline }: { timeline: SessionTimeline }) {
+function Readout({ timeline, marks }: { timeline: SessionTimeline; marks: Marker[] }) {
   const t = useClockTime(200);
+  const now = marks.filter((m) => m.start <= t && t <= (m.end ?? m.start + MOMENT_SHOWN));
   const status = timeline.track_status.find((p) => p.start <= t && t < p.end)?.status ?? 'green';
   const segment = timeline.segments.findLast((s) => s.start <= t);
   const t0 = timeline.t0_utc ? Date.parse(timeline.t0_utc) : null;
@@ -48,6 +52,17 @@ function Readout({ timeline }: { timeline: SessionTimeline }) {
       >
         {status === 'green' ? '' : TRACK_STATUS_LABEL[status]}
       </span>
+      {/* A fixed slot (only with time markers), so the bar does not jump while playing. */}
+      {marks.length > 0 ? (
+        <span className="w-[220px] truncate text-dim" title={now.map(timeLabel).join('\n')}>
+          {now.length > 0 ? (
+            <>
+              <span className="mr-1 text-[10px] uppercase text-faint">Mark</span>
+              {timeLabel(now[0])}
+            </>
+          ) : null}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -56,8 +71,10 @@ function Readout({ timeline }: { timeline: SessionTimeline }) {
  * The session as a bar: track status behind it, a tick per lap (race) or the qualifying parts,
  * the played part, and the clock as a white line. Click or drag to scrub.
  */
-function Scrubber({ timeline }: { timeline: SessionTimeline }) {
+function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marker[] }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Shift + drag marks a time range: from where the drag started to where it is now.
+  const [range, setRange] = useState<[number, number] | null>(null);
   const handleRef = useRef<HTMLDivElement>(null);
   const playedRef = useRef<HTMLDivElement>(null);
   const { start, end } = timeline;
@@ -74,11 +91,13 @@ function Scrubber({ timeline }: { timeline: SessionTimeline }) {
     return clock.subscribe(update);
   });
 
-  const seekTo = (clientX: number) => {
+  const timeAt = (clientX: number) => {
     const box = ref.current?.getBoundingClientRect();
-    if (!box) return;
-    clock.seek(start + ((clientX - box.left) / box.width) * span);
+    if (!box) return start;
+    const t = start + ((clientX - box.left) / box.width) * span;
+    return Math.min(Math.max(t, start), end);
   };
+  const seekTo = (clientX: number) => clock.seek(timeAt(clientX));
 
   const ticks = useMemo(
     () =>
@@ -96,12 +115,23 @@ function Scrubber({ timeline }: { timeline: SessionTimeline }) {
       className="relative h-5 min-w-0 flex-1 cursor-pointer select-none border border-line bg-panel"
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
-        seekTo(e.clientX);
+        if (e.shiftKey) {
+          const t = timeAt(e.clientX);
+          setRange([t, t]);
+        } else seekTo(e.clientX);
       }}
       onPointerMove={(e) => {
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) seekTo(e.clientX);
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+        if (range) setRange([range[0], timeAt(e.clientX)]);
+        else seekTo(e.clientX);
       }}
-      title="Click or drag to move the session clock"
+      onPointerUp={() => {
+        if (!range) return;
+        const [a, b] = [Math.min(...range), Math.max(...range)];
+        setRange(null);
+        markNew({ kind: 'time', start: a, end: b - a > 1 ? b : null });
+      }}
+      title="Click or drag to move the session clock. Shift + drag marks a time range."
     >
       {timeline.track_status
         .filter((p) => p.status !== 'green')
@@ -145,6 +175,28 @@ function Scrubber({ timeline }: { timeline: SessionTimeline }) {
           ) : null}
         </div>
       ))}
+      {marks.map((m) => (
+        <div
+          key={m.id}
+          className="absolute inset-y-0 min-w-[3px] cursor-pointer border-x border-dim bg-marker-fill"
+          style={{ left: pct(m.start), width: pct(start + ((m.end ?? m.start) - m.start)) }}
+          title={`${timeLabel(m)}. Click to go there.`}
+          onPointerDown={(e) => {
+            if (e.shiftKey) return;
+            e.stopPropagation();
+            clock.seek(m.start);
+          }}
+        />
+      ))}
+      {range ? (
+        <div
+          className="absolute inset-y-0 bg-marker-fill"
+          style={{
+            left: pct(Math.min(...range)),
+            width: pct(start + Math.abs(range[1] - range[0])),
+          }}
+        />
+      ) : null}
       <div ref={playedRef} className="absolute bottom-0 left-0 h-[2px] bg-dim" />
       <div ref={handleRef} className="absolute inset-y-[-2px] w-[2px] -translate-x-px bg-text" />
     </div>
@@ -190,6 +242,11 @@ function PositionsState() {
 /** The session clock at the bottom of the screen: play, speed, where we are, scrub. */
 export function ClockBar() {
   const timeline = useTimeline();
+  const markers = useMarkers();
+  const marks = useMemo(
+    () => (markers.data ?? []).filter((m) => m.kind === 'time'),
+    [markers.data]
+  );
   const { playing, speed } = useClockControls();
   if (!timeline.data) return null;
   return (
@@ -231,8 +288,17 @@ export function ClockBar() {
           </div>
         )}
       </HeaderMenu>
-      <Readout timeline={timeline.data} />
-      <Scrubber timeline={timeline.data} />
+      <button
+        type="button"
+        title="Mark this moment (Shift+M). Shift + drag on the bar marks a range."
+        aria-label="Mark this moment"
+        onClick={() => markNew({ kind: 'time', start: clock.time() })}
+        className={headerButton}
+      >
+        <Flag className="h-3 w-3" />
+      </button>
+      <Readout timeline={timeline.data} marks={marks} />
+      <Scrubber timeline={timeline.data} marks={marks} />
       <PositionsState />
     </footer>
   );

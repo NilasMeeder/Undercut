@@ -22,6 +22,8 @@ let controls: ClockControls = { playing: false, speed: 1, range: null };
 const listeners = new Set<() => void>();
 let frame = 0;
 let last = 0;
+/** Where to stand once the next session's range arrives (a saved view of another session). */
+let pending: number | null = null;
 
 function emit() {
   listeners.forEach((fn) => fn());
@@ -89,8 +91,16 @@ export const clock = {
   load(range: [number, number] | null, at?: number) {
     cancelAnimationFrame(frame);
     controls = { ...controls, playing: false, range };
+    if (range && pending != null) {
+      at = pending;
+      pending = null;
+    }
     time = range ? clamp(at ?? range[1]) : 0;
     emit();
+  },
+  /** Seek once the next session has loaded (its range is not known yet). */
+  seekAfterLoad(t: number) {
+    pending = t;
   },
 };
 

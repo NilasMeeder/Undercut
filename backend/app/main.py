@@ -8,7 +8,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app import analysis, replays, schedule, sessions
+from app import analysis, replays, schedule, sessions, store
 from app.schemas import (
     Circuit,
     ComparedLap,
@@ -16,6 +16,8 @@ from app.schemas import (
     CornerLap,
     CornerSegment,
     Lap,
+    Marker,
+    MarkerIn,
     MiniSectors,
     RaceControlMessage,
     ReplayPositions,
@@ -24,8 +26,11 @@ from app.schemas import (
     SessionCode,
     SessionDetail,
     SessionTimeline,
+    TagCount,
     Telemetry,
     TimingState,
+    View,
+    ViewIn,
     Weather,
 )
 from app.sources.tracinginsights import SourceNotAvailable
@@ -50,7 +55,7 @@ def _guard[T](load: Callable[[], T]) -> T:
     """Translate data-layer errors into HTTP errors."""
     try:
         return load()
-    except (KeyError, SourceNotAvailable, LookupError) as error:
+    except (KeyError, SourceNotAvailable, LookupError) as error:  # incl. store.NotFound
         raise HTTPException(404, str(error).strip("'\"")) from error
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
@@ -263,3 +268,52 @@ def compare_laps(
         )
 
     return _guard(load)
+
+
+# User data: markers per session and saved views, in a local SQLite file (app/store.py).
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/markers")
+def session_markers(year: int, round: int, session: SessionCode) -> list[Marker]:
+    return store.list_markers(year, round, session)
+
+
+@app.post("/api/sessions/{year}/{round}/{session}/markers", status_code=201)
+def add_marker(year: int, round: int, session: SessionCode, marker: MarkerIn) -> Marker:
+    return store.add_marker(year, round, session, marker)
+
+
+@app.put("/api/markers/{marker_id}")
+def update_marker(marker_id: int, marker: MarkerIn) -> Marker:
+    return _guard(lambda: store.update_marker(marker_id, marker))
+
+
+@app.delete("/api/markers/{marker_id}", status_code=204)
+def delete_marker(marker_id: int) -> None:
+    _guard(lambda: store.delete_marker(marker_id))
+
+
+@app.get("/api/markers/tags")
+def marker_tags() -> list[TagCount]:
+    """Tags in use over all sessions, most used first (suggestions in the marker editor)."""
+    return store.tag_counts()
+
+
+@app.get("/api/views")
+def views() -> list[View]:
+    return store.list_views()
+
+
+@app.post("/api/views", status_code=201)
+def add_view(view: ViewIn) -> View:
+    return store.add_view(view)
+
+
+@app.put("/api/views/{view_id}")
+def update_view(view_id: int, view: ViewIn) -> View:
+    return _guard(lambda: store.update_view(view_id, view))
+
+
+@app.delete("/api/views/{view_id}", status_code=204)
+def delete_view(view_id: int) -> None:
+    _guard(lambda: store.delete_view(view_id))

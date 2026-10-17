@@ -952,6 +952,391 @@
           }
         }
       }
+    },
+    "/api/sessions/{year}/{round}/{session}/markers": {
+      "get": {
+        "summary": "Session Markers",
+        "operationId": "session_markers_api_sessions__year___round___session__markers_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Marker"
+                  },
+                  "title": "Response Session Markers Api Sessions  Year   Round   Session  Markers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add Marker",
+        "operationId": "add_marker_api_sessions__year___round___session__markers_post",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkerIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Marker"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/markers/{marker_id}": {
+      "put": {
+        "summary": "Update Marker",
+        "operationId": "update_marker_api_markers__marker_id__put",
+        "parameters": [
+          {
+            "name": "marker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Marker Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkerIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Marker"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Marker",
+        "operationId": "delete_marker_api_markers__marker_id__delete",
+        "parameters": [
+          {
+            "name": "marker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Marker Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/markers/tags": {
+      "get": {
+        "summary": "Marker Tags",
+        "description": "Tags in use over all sessions, most used first (suggestions in the marker editor).",
+        "operationId": "marker_tags_api_markers_tags_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagCount"
+                  },
+                  "type": "array",
+                  "title": "Response Marker Tags Api Markers Tags Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/views": {
+      "get": {
+        "summary": "Views",
+        "operationId": "views_api_views_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/View"
+                  },
+                  "type": "array",
+                  "title": "Response Views Api Views Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add View",
+        "operationId": "add_view_api_views_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/views/{view_id}": {
+      "put": {
+        "summary": "Update View",
+        "operationId": "update_view_api_views__view_id__put",
+        "parameters": [
+          {
+            "name": "view_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "View Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViewIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete View",
+        "operationId": "delete_view_api_views__view_id__delete",
+        "parameters": [
+          {
+            "name": "view_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "View Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1045,6 +1430,17 @@
             "type": "array",
             "title": "Track Y"
           },
+          "track_distance": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Track Distance"
+          },
+          "lap_length": {
+            "type": "number",
+            "title": "Lap Length"
+          },
           "corners": {
             "items": {
               "$ref": "#/components/schemas/Corner"
@@ -1092,6 +1488,8 @@
           "rotation",
           "track_x",
           "track_y",
+          "track_distance",
+          "lap_length",
           "corners",
           "pit_loss",
           "pit_loss_sc",
@@ -1788,6 +2186,196 @@
         ],
         "title": "Lap"
       },
+      "Marker": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "distance",
+              "time"
+            ],
+            "title": "Kind"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          },
+          "lap": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Note",
+            "default": ""
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Tags"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "session": {
+            "type": "string",
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
+            "title": "Session"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "start",
+          "end",
+          "driver",
+          "lap",
+          "note",
+          "tags",
+          "id",
+          "year",
+          "round",
+          "session",
+          "created",
+          "updated"
+        ],
+        "title": "Marker"
+      },
+      "MarkerIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "distance",
+              "time"
+            ],
+            "title": "Kind"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          },
+          "lap": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Note",
+            "default": ""
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "start"
+        ],
+        "title": "MarkerIn",
+        "description": "A marked point or range: lap distance (m) or session time (s). `end` null = a point."
+      },
       "MiniSectors": {
         "properties": {
           "boundaries": {
@@ -2257,6 +2845,24 @@
         ],
         "title": "StatusPeriod"
       },
+      "TagCount": {
+        "properties": {
+          "tag": {
+            "type": "string",
+            "title": "Tag"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tag",
+          "count"
+        ],
+        "title": "TagCount"
+      },
       "Telemetry": {
         "properties": {
           "driver": {
@@ -2712,6 +3318,272 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "View": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "session": {
+            "type": "string",
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
+            "title": "Session"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ViewState-Output"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "year",
+          "round",
+          "session",
+          "state",
+          "id",
+          "created",
+          "updated"
+        ],
+        "title": "View"
+      },
+      "ViewIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "session": {
+            "type": "string",
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
+            "title": "Session"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ViewState-Input"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "year",
+          "round",
+          "session",
+          "state"
+        ],
+        "title": "ViewIn"
+      },
+      "ViewLap": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap"
+        ],
+        "title": "ViewLap"
+      },
+      "ViewState-Input": {
+        "properties": {
+          "laps": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/ViewLap"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Laps"
+          },
+          "zoom": {
+            "additionalProperties": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "object",
+            "title": "Zoom"
+          },
+          "clock": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock"
+          },
+          "layout": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Layout"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset"
+          }
+        },
+        "type": "object",
+        "title": "ViewState",
+        "description": "What a saved view restores. The layout is dockview's JSON, opaque to the backend."
+      },
+      "ViewState-Output": {
+        "properties": {
+          "laps": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/ViewLap"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Laps"
+          },
+          "zoom": {
+            "additionalProperties": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "object",
+            "title": "Zoom"
+          },
+          "clock": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock"
+          },
+          "layout": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Layout"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "laps",
+          "zoom",
+          "clock",
+          "layout",
+          "preset"
+        ],
+        "title": "ViewState",
+        "description": "What a saved view restores. The layout is dockview's JSON, opaque to the backend."
       },
       "Weather": {
         "properties": {

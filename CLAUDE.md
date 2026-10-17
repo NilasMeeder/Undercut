@@ -13,15 +13,20 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 4 zijn af: een docking-dashboard (dockview) met twaalf widgets (Laps, Telemetry, Delta, Track
-map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower, Track line),
-link-groepen, gedeelde cursor/zoom, instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met
-sneltoetsen, dashboard-tabs met presets, en replay: een sessieklok onderin (afspelen, snelheid,
-scrubben) waar de tower, de kaart met alle auto's, de Track line en race control op lopen. Zie
-"Replay" hieronder. Volgende stap: fase 5 (markeringen), zie ROADMAP.md.
+Fase 0 t/m 5 zijn af: een docking-dashboard (dockview) met dertien widgets (Laps, Telemetry, Delta,
+Track map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower, Track line,
+Markers), link-groepen, gedeelde cursor/zoom, instellingen (tandwiel) en uitleg (i) per paneel,
+⌘K-palette met sneltoetsen, dashboard-tabs met presets, replay (een sessieklok onderin waar de tower,
+de kaart met alle auto's, de Track line en race control op lopen, zie "Replay"), en markeringen met
+notitie en tags plus opgeslagen views als bladwijzer (zie "Markeringen en views"). Volgende stap:
+fase 6 (strategie), zie ROADMAP.md.
 
-**Visueel testen:** de Chrome-extensie is vaak niet verbonden. Gebruik dan headless Chrome via
-`playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
+**Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
+markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
+`F1DASH_DB=<scratchpad>/test.db uv run uvicorn app.main:app --port 8001` en
+`F1DASH_API=http://localhost:8001 npx vite --port 5174 --strictPort` (de bron-cache in `.cache/` wordt
+gedeeld, dus niets wordt opnieuw gedownload). De Chrome-extensie is vaak niet verbonden. Gebruik dan
+headless Chrome via `playwright-core` in je scratchpad (`chromium.launch({ channel: 'chrome' })`). Zet eerst
 `localStorage['f1dash-selection'] = {"state":{"year":2025,"round":16,"session":"Q"},"version":0}`.
 Monza 2025 Q is de vaste testsessie: VER 1:18.792, NOR +0.077, LEC +0.215.
 Valkuilen bij het headless testen:
@@ -34,9 +39,15 @@ Valkuilen bij het headless testen:
 - Replay: zet ook `localStorage['f1dash-dashboards'] =
   {"state":{"tabs":[{"id":"t1","name":"Replay","layout":null,"preset":"replay"}],"active":"t1"},"version":0}`
   en wacht op de tekst `LAP` (race) of `Q1`/`Q2`/`Q3`. De klok staat bij het laden op het einde; klik
-  op de scrubber (`footer [title="Click or drag to move the session clock"]`) op een fractie van de
+  op de scrubber (`footer [title^="Click or drag to move the session clock"]`) op een fractie van de
   breedte, of druk op Space. Monza 2025 R (ronde 16) is de vaste replay-sessie: op lap 17 leidt VER
   met +4.366 voor NOR, en de eindstand op de baan is VER, NOR +19.207, PIA +21.351.
+  Lees de `boundingBox` van de scrubber pas als "Positions ready" er staat: de voortgangsbalk ernaast
+  verandert de breedte. `LAP 12/53` staat ook in de tower: gebruik `getByText(/^LAP/).first()`.
+- Markeringen: `keyboard.down('Shift')` en dan slepen of klikken in een `.u-over` (de grootste is de
+  speed-chart); de editor heeft het placeholder `What happens here` en Enter slaat op. Een view openen
+  via een link: `page.goto` naar alleen een andere hash herlaadt de pagina niet (dat vangt de
+  `hashchange`-listener af); voor een echte herstart een querystring toevoegen (`/?x=1#view=1`).
 
 ## Architectuur
 
@@ -48,7 +59,9 @@ frontend/   Vite + React + TypeScript        → SPA op :5173, praat met /api (p
 - **Backend** doet al het zware werk: FastF1 laden, cachen, telemetrie resamplen, delta's en
   mini-sectoren berekenen. De frontend rekent zo min mogelijk.
 - **Frontend** is een puur client-side dashboard. Geen SSR nodig (canvas-charts, localStorage-layouts).
-- Geen auth, geen databaseserver. Opslag is embedded (parquet-bestanden, eventueel DuckDB).
+- Geen auth, geen databaseserver. Opslag is embedded: bronbestanden gzipped in `backend/.cache/`
+  (weggooibaar), gebruikersdata (markeringen, views) in SQLite in `backend/data/f1dash.db` (niet
+  weggooien, niet in git; `F1DASH_DB` wijst een ander bestand aan).
 - **Draait als gewone processen op macOS (uv + npm), zonder Docker of containers.** Een Dockerfile voor
   de thuis-desktop mag later als optie, maar mag nooit nodig zijn om lokaal te ontwikkelen.
 
@@ -93,11 +106,14 @@ backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mi
 backend/app/replay.py      pure replay-logica: positiespoor (build_track), timing tower op t (timing_state),
                            track status uit race control
 backend/app/replays.py     replay per sessie: tijdlijn, timing-index, de bouwjob van het positiespoor (.npz)
+backend/app/store.py       gebruikersdata in SQLite: markeringen en views (migraties via PRAGMA user_version)
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
 backend/scripts/           export_openapi.py (gebruikt door gen-api)
-frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), schema.d.ts (gegenereerd)
+frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanStack hooks), markers.ts en views.ts
+                           (gebruikersdata: queries + mutaties), schema.d.ts (gegenereerd)
 frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus,
-                           bevriezen), dashboards.ts (tabs met elk een layout), clock.ts (sessieklok)
+                           bevriezen), dashboards.ts (tabs met elk een layout), clock.ts (sessieklok),
+                           markerEditor.ts (de open markering-editor: markNew, editMarker)
 frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen),
                            HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
 frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
@@ -106,10 +122,11 @@ frontend/src/widgets/      één map per widget: widget.ts (definitie, help, def
 frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), data/bits.tsx (badges, swatches)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
                            lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts,
-                           replay.ts (auto op t interpoleren, klokformaat)
+                           replay.ts (auto op t interpoleren, klokformaat), markers.ts (labels, plaats als tekst)
 frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
                            sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import),
-                           clock/ (ClockBar onderin, useSessionClock)
+                           clock/ (ClockBar onderin, useSessionClock), markers/ (MarkerEditor, actions:
+                           springen en markeren), views/ (ViewsMenu, openen/opslaan, #view=-links)
 ```
 
 Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt
@@ -169,6 +186,39 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   Een replay-widget die mount start de voorbereiding zelf; de klokbalk toont de voortgang.
   Lap-voortgang: lap 1 (vanaf de grid of pit-exit) en out-laps worden vanaf de finishlijn terug gemeten,
   andere laps als `distance / lapafstand`. Garagetijd en gaten > 2 s zijn `null` (auto niet getoond).
+
+## Markeringen en views (fase 5)
+
+**Twee soorten markeringen** in één tabel, altijd per sessie (niet per circuit: layouts en afstanden
+verschillen per jaar):
+- **Afstand** (`kind: distance`): een punt of bereik in meters vanaf de finishlijn, optioneel over één
+  lap (`driver` + `lap`). Getekend in Telemetry en Delta (grijze band of stippellijn, label in de
+  bovenste chart), op de Track map (band langs de baan of ring) en op de Track line. Zichtbaar in alle
+  link-groepen; hoort hij bij een lap die in die groep niet geselecteerd is, dan fainter. De readout
+  van Telemetry noemt de markering onder de cursor.
+- **Tijd** (`kind: time`): een moment of periode op de sessieklok, optioneel met een driver. Op de
+  klokbalk (klik = erheen), en de readout toont de notitie tot 8 s na een moment.
+
+Maken: Shift + slepen/klikken in een chart, `m` (zoombereik, anders de cursor, anders typ je de
+afstand), `⇧M` of het vlaggetje voor het moment, Shift + slepen op de klokbalk voor een periode. Eén
+editor voor de hele app (`features/markers/MarkerEditor.tsx`, opent ook vanuit een popout in het
+hoofdvenster). Tags: vrij, ontdubbeld zonder hoofdletters; suggesties zijn de vaste lijst in
+`lib/markers.ts` plus de tags die al gebruikt zijn (`/api/markers/tags`).
+
+**Kaart op afstand:** de outline van de kaart komt los van elke lap (MultiViewer, in decimeters, begint
+ergens op de baan). `analysis.outline_distance` koppelt elk outline-punt aan een lapafstand via de
+bochten (dichtstbijzijnde outline-punt per bocht, daartussen lineair, de lus dicht via de eerste bocht
+een lap later). `Circuit.track_distance` en `lap_length` komen daaruit; Monza: elke bocht op 0,1 m.
+
+**Opgeslagen views** zijn bladwijzers: sessie, laps per groep, zoom per groep, kloktijd en de layout van
+het dashboard waar je stond. Openen zet dat allemaal terug en toont de layout in een eigen tab (die
+tab onthoudt `viewId`, dus nog eens openen hergebruikt hem; opslaan koppelt de huidige tab). Een
+andere sessie: de klok springt pas als de nieuwe tijdlijn er is (`clock.seekAfterLoad`). Links
+`#view=<id>` openen de view bij het laden of bij een hash-wissel en halen de hash weer weg.
+
+API: `GET/POST /api/sessions/{y}/{r}/{s}/markers`, `PUT/DELETE /api/markers/{id}`,
+`GET /api/markers/tags`, `GET/POST /api/views`, `PUT/DELETE /api/views/{id}`. Responses hebben alle
+velden (`json_schema_serialization_defaults_required`), inputs mogen velden met een default weglaten.
 
 ## Domeinkennis & FastF1-valkuilen
 
@@ -260,7 +310,7 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   React-renders (anders hapert het).
 - **Sessieklok**: replay en (later) live leveren allebei "tijd t". Widgets vragen de toestand op t en
   weten niet welke bron erachter zit. Zie "Replay". Sneltoetsen: Space, ← → (10 s), - = (snelheid),
-  Home/End.
+  Home/End. Markeren: `m` (afstand), `⇧M` (moment).
 - Widgets zijn losse componenten in `frontend/src/widgets/<Naam>/` met een registry
   (`widgets/registry.ts`). Nieuwe widget = component + `widget.ts` met `defineWidget({ id, title,
   description, help, defaults, settings, component: lazy(...) })` + entry in de registry.

@@ -197,3 +197,44 @@ def corner_segments(
         laps = [_stats(lap, grid, start, end) for lap in comparison.laps]
         segments.append(CornerSegment(label=label, start=start, end=end, laps=laps))
     return segments
+
+
+POSITION_UNITS_PER_METRE = 10.0
+"""x/y in the archive are in decimetres."""
+
+
+def outline_distance(
+    x: np.ndarray, y: np.ndarray, anchors: list[tuple[float, float, float]]
+) -> tuple[np.ndarray, float]:
+    """Lap distance (m) of every point of a circuit outline, and the lap length.
+
+    The outline is drawn separately from any lap, so it neither starts at the line nor has the
+    lap's scale. `anchors` are corners as (lap distance, x, y): each is matched to its nearest
+    outline point, and distances in between are interpolated along the outline. Without usable
+    anchors the outline is taken as decimetres from its first point.
+    """
+    steps = np.hypot(np.diff(x, append=x[:1]), np.diff(y, append=y[:1]))
+    along = np.concatenate([[0.0], np.cumsum(steps[:-1])])
+    total = float(steps.sum())
+
+    matched = sorted(
+        (d, float(along[np.argmin(np.hypot(x - ax, y - ay))])) for d, ax, ay in anchors
+    )
+    if len(matched) >= 2 and total > 0:
+        da = np.array([d for d, _ in matched])
+        sa = np.array([s for _, s in matched])
+        # The outline may start anywhere on the lap: unwrap so position grows with distance.
+        for i in range(1, len(sa)):
+            while sa[i] < sa[i - 1]:
+                sa[i] += total
+        span = sa[-1] - sa[0]
+        if 0 < span < total and da[-1] > da[0]:
+            lap_length = total * (da[-1] - da[0]) / span
+            # Close the loop: the first corner again, one lap later.
+            sa = np.append(sa, sa[0] + total)
+            da = np.append(da, da[0] + lap_length)
+            shifted = sa[0] + np.mod(along - sa[0], total)
+            return np.mod(np.interp(shifted, sa, da), lap_length), lap_length
+
+    lap_length = total / POSITION_UNITS_PER_METRE
+    return along / POSITION_UNITS_PER_METRE, lap_length

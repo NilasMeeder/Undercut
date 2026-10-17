@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 SessionCode = Literal["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"]
 
@@ -220,6 +220,10 @@ class Circuit(BaseModel):
     """Degrees to rotate x/y by so the map matches the official orientation."""
     track_x: list[float]
     track_y: list[float]
+    track_distance: list[float]
+    """Lap distance (m) of each outline point, matched to the corners, for markers on the map."""
+    lap_length: float
+    """Metres, on the scale of track_distance."""
     corners: list[Corner]
     pit_loss: float | None
     pit_loss_sc: float | None
@@ -348,3 +352,92 @@ class TimingState(BaseModel):
     """Qualifying: how many drivers go through to the next part."""
     track_status: TrackStatus
     rows: list[TowerRow]
+
+
+MarkerKind = Literal["distance", "time"]
+
+# Inputs may leave out fields with a default; responses always have them (required in the TS types).
+_RESPONSE_DEFAULTS = ConfigDict(json_schema_serialization_defaults_required=True)
+
+
+class MarkerIn(BaseModel):
+    """A marked point or range: lap distance (m) or session time (s). `end` null = a point."""
+
+    kind: MarkerKind
+    start: float
+    end: float | None = None
+    driver: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+    lap: int | None = Field(default=None, ge=1)
+    """With `driver`: the lap the marker is about (distance markers)."""
+    note: str = Field(default="", max_length=500)
+    tags: list[str] = Field(default_factory=list, max_length=12)
+
+    @field_validator("tags")
+    @classmethod
+    def _clean_tags(cls, tags: list[str]) -> list[str]:
+        seen: dict[str, str] = {}
+        for tag in tags:
+            clean = " ".join(tag.split())[:32]
+            if clean and clean.lower() not in seen:
+                seen[clean.lower()] = clean
+        return list(seen.values())
+
+    @model_validator(mode="after")
+    def _check(self) -> "MarkerIn":
+        if self.end is not None and self.end < self.start:
+            raise ValueError("end must not be before start")
+        if self.kind == "distance" and self.start < 0:
+            raise ValueError("a distance starts at 0 m or later")
+        if self.lap is not None and self.driver is None:
+            raise ValueError("a lap needs a driver")
+        return self
+
+
+class Marker(MarkerIn):
+    model_config = _RESPONSE_DEFAULTS
+
+    id: int
+    year: int
+    round: int
+    session: SessionCode
+    created: datetime
+    updated: datetime
+
+
+class TagCount(BaseModel):
+    tag: str
+    count: int
+
+
+class ViewLap(BaseModel):
+    driver: str
+    lap: int
+
+
+class ViewState(BaseModel):
+    """What a saved view restores. The layout is dockview's JSON, opaque to the backend."""
+
+    model_config = _RESPONSE_DEFAULTS
+
+    laps: dict[str, list[ViewLap]] = Field(default_factory=dict)
+    """Selected laps per link group."""
+    zoom: dict[str, tuple[float, float]] = Field(default_factory=dict)
+    """Distance range (m) per zoomed link group."""
+    clock: float | None = None
+    """Session time (s)."""
+    layout: dict[str, Any] | None = None
+    preset: str | None = None
+
+
+class ViewIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    year: int
+    round: int
+    session: SessionCode
+    state: ViewState
+
+
+class View(ViewIn):
+    id: int
+    created: datetime
+    updated: datetime

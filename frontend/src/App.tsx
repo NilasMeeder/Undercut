@@ -3,6 +3,9 @@ import { ClockBar } from '@/features/clock/ClockBar';
 import { useSessionClock } from '@/features/clock/useSessionClock';
 import { CommandPalette } from '@/features/commands/CommandPalette';
 import { DashboardTabs, LayoutMenu } from '@/features/dashboards/DashboardTabs';
+import { MarkerEditor } from '@/features/markers/MarkerEditor';
+import { useViewFromUrl } from '@/features/views/hooks';
+import { ViewsMenu } from '@/features/views/ViewsMenu';
 import { GroupBar } from '@/features/session/GroupBar';
 import { SessionPicker } from '@/features/session/SessionPicker';
 import { useDefaultSelection } from '@/features/session/useDefaultSelection';
@@ -12,6 +15,7 @@ export default function App() {
   const session = useSessionKey();
   useDefaultSelection();
   useSessionClock();
+  useViewFromUrl();
 
   return (
     <div className="flex h-full flex-col">
@@ -22,6 +26,7 @@ export default function App() {
         <div className="ml-auto" />
         {session ? <CommandPalette /> : null}
         {session ? <DashboardTabs /> : null}
+        {session ? <ViewsMenu /> : null}
         {session ? <LayoutMenu /> : null}
       </header>
       <main className="min-h-0 flex-1">
@@ -34,6 +39,7 @@ export default function App() {
         )}
       </main>
       {session ? <ClockBar /> : null}
+      {session ? <MarkerEditor /> : null}
     </div>
   );
 }

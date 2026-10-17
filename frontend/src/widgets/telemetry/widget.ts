@@ -18,7 +18,10 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
       'Minimum speed in a corner and how early throttle goes back to 100%: that decides the exit.',
       'Brake is on/off only (no pressure), and samples are ~4 Hz, so short lifts can be missed.',
     ],
-    controls: 'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset.',
+    controls:
+      'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset. ' +
+      'Shift + drag marks a range and Shift + click a point (with a note and tags); markers are ' +
+      'grey bands, fainter when they belong to a lap that is not selected.',
   },
   defaults: { channels: ['speed', 'throttle', 'brake', 'gear', 'rpm', 'drs'], step: 5 },
   settings: [

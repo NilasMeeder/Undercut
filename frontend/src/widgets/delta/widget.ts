@@ -16,7 +16,10 @@ export const deltaWidget = defineWidget<DeltaConfig>({
       'Steep slopes are where the lap is won or lost: usually braking zones and slow corners.',
       'A long, even slope on a straight points at top speed or a poor exit from the corner before.',
     ],
-    controls: 'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset.',
+    controls:
+      'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset. ' +
+      'Shift + drag marks a range and Shift + click a point (with a note and tags); markers are ' +
+      'grey bands, fainter when they belong to a lap that is not selected.',
   },
   defaults: { step: 5 },
   settings: [

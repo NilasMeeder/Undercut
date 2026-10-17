@@ -1,6 +1,8 @@
 import type { DockviewApi } from 'dockview-react';
-import type { Lap } from '@/api/client';
+import type { Lap, View } from '@/api/client';
 import { addWidget, applyPreset, PRESETS } from '@/dashboard/layout';
+import { markDistance, markMoment } from '@/features/markers/actions';
+import { openView, sessionLabel } from '@/features/views/views';
 import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
 import { clock } from '@/store/clock';
@@ -23,10 +25,12 @@ export type CommandContext = {
   api: DockviewApi | null;
   group: GroupId;
   laps: Lap[];
+  views: View[];
+  saveView: () => void;
 };
 
 /** Every command, for the palette and the shortcuts. Lap commands act on the last selected lap. */
-export function buildCommands({ api, group, laps }: CommandContext): Command[] {
+export function buildCommands({ api, group, laps, views, saveView }: CommandContext): Command[] {
   const groups = useGroups.getState;
   const selected = () => groups().laps[group];
   const last = () => selected().at(-1);
@@ -108,6 +112,21 @@ export function buildCommands({ api, group, laps }: CommandContext): Command[] {
       run: () => cursorBus.setZoom(group, null),
     },
     {
+      id: 'mark-distance',
+      section: 'Markers',
+      title: 'Mark the zoomed range or the cursor (distance)',
+      key: 'm',
+      run: () => markDistance(group),
+    },
+    {
+      id: 'mark-moment',
+      section: 'Markers',
+      title: 'Mark this moment on the session clock',
+      key: 'M',
+      keyLabel: '⇧M',
+      run: markMoment,
+    },
+    {
       id: 'clock-toggle',
       section: 'Clock',
       title: 'Play or pause the session',
@@ -159,6 +178,18 @@ export function buildCommands({ api, group, laps }: CommandContext): Command[] {
       key: 'End',
       run: () => clock.seek(Infinity),
     },
+    {
+      id: 'view-save',
+      section: 'Views',
+      title: 'Save this view (session, laps, zoom, clock, layout)',
+      run: saveView,
+    },
+    ...views.map((view) => ({
+      id: `view-${view.id}`,
+      section: 'Views',
+      title: `Open view: ${view.name} (${sessionLabel(view)})`,
+      run: () => openView(view),
+    })),
     ...bestLaps(laps).map((lap) => ({
       id: `compare-${lap.driver}`,
       section: 'Compare',

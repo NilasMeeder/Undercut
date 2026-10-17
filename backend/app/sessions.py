@@ -183,15 +183,6 @@ def get_circuit(year: int, round_number: int, code: str) -> Circuit:
     event, session = folders(year, round_number, code)
     data = ti.corners(year, event, session)
     track_x, track_y = data.get("TrackX") or [], data.get("TrackY") or []
-    if not track_x:
-        # No MultiViewer outline for this circuit: draw the session's fastest lap instead.
-        laps = [
-            lap for lap in get_laps(year, round_number, code) if lap.lap_time and not lap.deleted
-        ]
-        best = min(laps, key=lambda lap: lap.lap_time)
-        trace = get_trace(year, round_number, code, best.driver, best.lap)
-        track_x, track_y = trace.channels["x"].tolist(), trace.channels["y"].tolist()
-
     labels = data.get("CornerLabel") or [str(n) for n in data.get("CornerNumber", [])]
     corners = [
         Corner(label=label, distance=dist, x=x, y=y, angle=angle)
@@ -204,11 +195,28 @@ def get_circuit(year: int, round_number: int, code: str) -> Circuit:
             strict=False,
         )
     ]
+    if track_x:
+        track_distance, lap_length = analysis.outline_distance(
+            np.asarray(track_x, dtype=float),
+            np.asarray(track_y, dtype=float),
+            [(c.distance, c.x, c.y) for c in corners],
+        )
+    else:
+        # No MultiViewer outline for this circuit: draw the session's fastest lap instead.
+        laps = [
+            lap for lap in get_laps(year, round_number, code) if lap.lap_time and not lap.deleted
+        ]
+        best = min(laps, key=lambda lap: lap.lap_time)
+        trace = get_trace(year, round_number, code, best.driver, best.lap)
+        track_x, track_y = trace.channels["x"].tolist(), trace.channels["y"].tolist()
+        track_distance, lap_length = trace.distance, trace.length
     return Circuit(
         name=data.get("CircuitName"),
         rotation=float(data.get("Rotation") or 0.0),
         track_x=track_x,
         track_y=track_y,
+        track_distance=np.round(track_distance, 1).tolist(),
+        lap_length=round(float(lap_length), 1),
         corners=corners,
         pit_loss=data.get("PitLossNormal"),
         pit_loss_sc=data.get("PitLossSC"),

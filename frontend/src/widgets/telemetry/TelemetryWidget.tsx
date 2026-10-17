@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import type uPlot from 'uplot';
 import type { ComparedLap } from '@/api/client';
+import { useDistanceMarks } from '@/api/markers';
 import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
 import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
+import { marksAt, type DistanceMark } from '@/lib/markers';
 import type { LapStyle } from '@/lib/timing';
 import { useCursor, useFrozen } from '@/store/cursor';
 import type { GroupId } from '@/store/groups';
@@ -79,6 +81,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
   const { laps, data, styles, detail, isFetching, error } = useGroupComparison(group, {
     step: config.step,
   });
+  const marks = useDistanceMarks(group);
 
   const channels = useMemo(
     () =>
@@ -112,6 +115,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
         laps={data.laps}
         styles={styles}
         channels={channels}
+        marks={marks}
       />
       <div className="flex min-h-0 flex-1 flex-col">
         {charts.map(({ channel, data: chartData, series }, i) => (
@@ -129,6 +133,8 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
               yTicks={channel.key === 'rpm' ? rpmTicks : channel.yTicks}
               yFormat={channel.key === 'rpm' ? rpmFormat : undefined}
               showXAxis={i === charts.length - 1}
+              marks={marks}
+              markLabels={i === 0}
             />
           </div>
         ))}
@@ -155,56 +161,72 @@ function Readout({
   laps,
   styles,
   channels,
+  marks,
 }: {
   group: GroupId;
   distance: number[];
   laps: ComparedLap[];
   styles: LapStyle[];
   channels: Channel[];
+  marks: DistanceMark[];
 }) {
   const cursor = useCursor(group);
   const frozen = useFrozen(group);
   const i = cursor == null ? null : indexAt(distance, cursor);
+  const here = cursor == null ? [] : marksAt(marks, cursor);
   const cell = 'w-16 px-1.5 text-right';
   return (
-    <table className="w-auto shrink-0 self-start text-[11px]">
-      <thead className="text-[10px] uppercase text-faint">
-        <tr>
-          <th className="w-32 px-1.5 text-left font-medium">
-            {i == null ? 'Hover a chart' : `${Math.round(distance[i])} m`}
-            {i != null && frozen ? (
-              <span className="ml-1.5 text-text" title="Press f to release">
-                FROZEN
-              </span>
-            ) : null}
-          </th>
-          <th className={`${cell} font-medium`}>Δ</th>
-          {channels.map((c) => (
-            <th key={c.key} className={`${cell} font-medium`}>
-              {c.short}
+    <div className="flex shrink-0 items-start gap-3">
+      <table className="w-auto shrink-0 text-[11px]">
+        <thead className="text-[10px] uppercase text-faint">
+          <tr>
+            <th className="w-32 px-1.5 text-left font-medium">
+              {i == null ? 'Hover a chart' : `${Math.round(distance[i])} m`}
+              {i != null && frozen ? (
+                <span className="ml-1.5 text-text" title="Press f to release">
+                  FROZEN
+                </span>
+              ) : null}
             </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {laps.map((lap, n) => (
-          <tr key={`${lap.driver}-${lap.lap}`}>
-            <td className="flex items-center gap-1.5 px-1.5">
-              <LineSwatch color={styles[n].color} dash={styles[n].dash} />
-              {lap.driver} <span className="text-faint">L{lap.lap}</span>
-            </td>
-            <td className={cell}>{i == null ? '' : n === 0 ? 'REF' : formatGap(lap.delta[i])}</td>
-            {channels.map((c) => {
-              const value = i == null ? null : lap[c.key]?.[i];
-              return (
-                <td key={c.key} className={cell}>
-                  {value == null ? '' : c.format(value)}
-                </td>
-              );
-            })}
+
+            <th className={`${cell} font-medium`}>Δ</th>
+            {channels.map((c) => (
+              <th key={c.key} className={`${cell} font-medium`}>
+                {c.short}
+              </th>
+            ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {laps.map((lap, n) => (
+            <tr key={`${lap.driver}-${lap.lap}`}>
+              <td className="flex items-center gap-1.5 px-1.5">
+                <LineSwatch color={styles[n].color} dash={styles[n].dash} />
+                {lap.driver} <span className="text-faint">L{lap.lap}</span>
+              </td>
+              <td className={cell}>{i == null ? '' : n === 0 ? 'REF' : formatGap(lap.delta[i])}</td>
+              {channels.map((c) => {
+                const value = i == null ? null : lap[c.key]?.[i];
+                return (
+                  <td key={c.key} className={cell}>
+                    {value == null ? '' : c.format(value)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {here.length > 0 ? (
+        <div className="min-w-0 flex-1 text-[11px] text-dim">
+          {here.map((m) => (
+            <div key={m.id} className="truncate">
+              <span className="mr-1.5 text-[10px] uppercase text-faint">Mark</span>
+              {m.label}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

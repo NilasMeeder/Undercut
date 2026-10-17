@@ -6,6 +6,7 @@ import {
   useSessionDetail,
   type PositionTrack,
 } from '@/api/queries';
+import { useDistanceMarks } from '@/api/markers';
 import { COLORS } from '@/lib/colors';
 import { carAt } from '@/lib/replay';
 import { useGroupLaps, type GroupId } from '@/store/groups';
@@ -30,6 +31,7 @@ export function TrackLineWidget({ group, config }: WidgetProps<TrackLineConfig>)
       track={track}
       drivers={detail.data.drivers}
       circuit={config.corners ? circuit.data : undefined}
+      showMarks={config.markers}
     />
   );
 }
@@ -39,11 +41,13 @@ function TrackLine({
   track,
   drivers,
   circuit,
+  showMarks,
 }: {
   group: GroupId;
   track: PositionTrack;
   drivers: DriverInfo[];
   circuit: Circuit | undefined;
+  showMarks: boolean;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const carsRef = useRef<SVGGElement>(null);
@@ -53,6 +57,18 @@ function TrackLine({
   const highlight = useMemo(() => new Set(selected.map((l) => l.driver)), [selected]);
   const mid = Math.round(height / 2);
   const length = Math.max(width - 2 * PAD, 1);
+  const marks = useDistanceMarks(group);
+  // Labels that would overlap go a row down (~5 px per character at 9 px).
+  const markRows = useMemo(() => {
+    const ends = [-Infinity, -Infinity, -Infinity];
+    return (showMarks ? marks : []).map((mark) => {
+      const x = PAD + (mark.start / track.lapLength) * length;
+      const free = ends.findIndex((end) => end < x);
+      const row = free < 0 ? 0 : free;
+      ends[row] = x + 6 + Math.min(mark.label.length, 24) * 5;
+      return { mark, row };
+    });
+  }, [marks, showMarks, track.lapLength, length]);
   const color = (code: string) => drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
 
   const draw = useCallback(
@@ -93,6 +109,32 @@ function TrackLine({
   return (
     <div ref={boxRef} className="h-full w-full overflow-hidden">
       <svg width={width} height={height} className="block">
+        {markRows.map(({ mark: m, row }) => {
+          const x0 = PAD + (m.start / track.lapLength) * length;
+          const x1 = m.end == null ? x0 : PAD + (m.end / track.lapLength) * length;
+          return (
+            <g key={m.id} opacity={m.dim ? 0.45 : 1}>
+              <title>{m.label}</title>
+              {m.end != null ? (
+                <rect x={x0} y={0} width={x1 - x0} height={height} fill={COLORS.markerFill} />
+              ) : null}
+              {(m.end == null ? [x0] : [x0, x1]).map((x) => (
+                <line
+                  key={x}
+                  x1={x}
+                  x2={x}
+                  y1={0}
+                  y2={height}
+                  stroke={COLORS.textFaint}
+                  strokeDasharray="3 3"
+                />
+              ))}
+              <text x={x0 + 3} y={10 + row * 11} fill={COLORS.textDim} fontSize={9}>
+                {m.label.length > 24 ? `${m.label.slice(0, 23)}…` : m.label}
+              </text>
+            </g>
+          );
+        })}
         <line
           x1={PAD}
           x2={PAD + length}

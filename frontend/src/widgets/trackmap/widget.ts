@@ -1,7 +1,12 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type TrackMapConfig = { cars: 'laps' | 'all'; miniSectors: number; corners: boolean };
+export type TrackMapConfig = {
+  cars: 'laps' | 'all';
+  miniSectors: number;
+  corners: boolean;
+  markers: boolean;
+};
 
 export const trackMapWidget = defineWidget<TrackMapConfig>({
   id: 'trackmap',
@@ -15,11 +20,12 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
       'Runs of one colour show where a driver is consistently quicker, for example all the slow corners.',
       'Mini-sectors shorter than ~50 m mostly show noise: telemetry is only sampled at ~4 Hz.',
       'A zoomed range in the charts is highlighted in white on the map.',
+      'Distance markers (Shift + drag in a chart, or m) are drawn as a grey band with their note.',
       'With “Cars: all” the map shows every car at the session clock instead (replay). The first ' +
         'time, the telemetry of every lap is downloaded once (about 10 s for a race).',
     ],
   },
-  defaults: { cars: 'laps', miniSectors: 25, corners: true },
+  defaults: { cars: 'laps', miniSectors: 25, corners: true, markers: true },
   settings: [
     {
       key: 'cars',
@@ -42,6 +48,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
       ],
     },
     { key: 'corners', label: 'Corner numbers', kind: 'toggle' },
+    { key: 'markers', label: 'Markers', kind: 'toggle' },
   ],
   component: lazy(() => import('./TrackMapWidget').then((m) => ({ default: m.TrackMapWidget }))),
 });

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from app import analysis
 from app.analysis import LapTrace, compare, make_grid, mini_sectors, resample
 
 
@@ -78,3 +79,28 @@ def test_mini_sectors_sum_to_lap_time_and_pick_fastest() -> None:
 def test_compare_needs_a_lap() -> None:
     with pytest.raises(ValueError):
         compare([])
+
+
+def test_outline_distance_follows_the_corners() -> None:
+    # A 400 x 200 rectangle in decimetres (120 m round), starting at the bottom-left corner,
+    # driven anticlockwise. The lap starts 10 m before the bottom-right corner.
+    side = np.linspace(0.0, 1.0, 41)[:-1]
+    x = np.concatenate([side * 400, np.full(40, 400.0), 400 - side * 400, np.zeros(40)])
+    y = np.concatenate([np.zeros(40), side * 200, np.full(40, 200.0), 200 - side * 200])
+    corners = [(10.0, 400.0, 0.0), (30.0, 400.0, 200.0), (70.0, 0.0, 200.0), (90.0, 0.0, 0.0)]
+
+    distance, lap_length = analysis.outline_distance(x, y, corners)
+
+    assert lap_length == pytest.approx(120.0)
+    assert distance[0] == pytest.approx(90.0)  # the bottom-left corner
+    assert distance[40] == pytest.approx(10.0)  # the bottom-right corner
+    assert distance[30] == pytest.approx(0.0, abs=1e-9)  # the line, 10 m before it
+    assert distance[60] == pytest.approx(20.0)
+
+
+def test_outline_distance_without_corners_counts_decimetres() -> None:
+    x = np.array([0.0, 100.0, 100.0, 0.0])
+    y = np.array([0.0, 0.0, 100.0, 100.0])
+    distance, lap_length = analysis.outline_distance(x, y, [])
+    assert lap_length == pytest.approx(40.0)
+    assert distance.tolist() == pytest.approx([0.0, 10.0, 20.0, 30.0])

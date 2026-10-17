@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type uPlot from 'uplot';
+import { useDistanceMarks } from '@/api/markers';
 import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
 import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
@@ -13,6 +14,7 @@ const deltaFormat = (v: number) =>
 /** Time behind the reference lap (the first selected) along the lap; above zero = slower. */
 export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
   const { laps, data, styles, error } = useGroupComparison(group, { step: config.step });
+  const marks = useDistanceMarks(group);
 
   const chart = useMemo(() => {
     if (!data) return null;
@@ -51,6 +53,8 @@ export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
         label="Delta s"
         yFormat={deltaFormat}
         showXAxis
+        marks={marks}
+        markLabels
       />
     </div>
   );

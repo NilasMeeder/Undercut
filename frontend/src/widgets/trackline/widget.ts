@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type TrackLineConfig = { corners: boolean };
+export type TrackLineConfig = { corners: boolean; markers: boolean };
 
 export const trackLineWidget = defineWidget<TrackLineConfig>({
   id: 'trackline',
@@ -19,9 +19,13 @@ export const trackLineWidget = defineWidget<TrackLineConfig>({
       'The first time you open a replay widget for a session, the telemetry of every lap is ' +
         'downloaded once (about 10 s for a race).',
     ],
-    controls: 'Drivers selected in this link group are drawn in white.',
+    controls:
+      'Drivers selected in this link group are drawn in white. Distance markers are grey bands.',
   },
-  defaults: { corners: true },
-  settings: [{ key: 'corners', label: 'Corner numbers', kind: 'toggle' }],
+  defaults: { corners: true, markers: true },
+  settings: [
+    { key: 'corners', label: 'Corner numbers', kind: 'toggle' },
+    { key: 'markers', label: 'Markers', kind: 'toggle' },
+  ],
   component: lazy(() => import('./TrackLineWidget').then((m) => ({ default: m.TrackLineWidget }))),
 });

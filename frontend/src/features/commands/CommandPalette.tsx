@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLaps } from '@/api/queries';
+import { useViews } from '@/api/views';
+import { suggestName } from '@/features/views/views';
+import { useSaveCurrentView } from '@/features/views/hooks';
 import { useActiveLinkGroup, useDashboardApi } from '@/dashboard/api';
 import { cn } from '@/lib/utils';
 import { GROUP_COLORS } from '@/store/groups';
@@ -18,11 +21,20 @@ export function CommandPalette() {
   const api = useDashboardApi((s) => s.api);
   const group = useActiveLinkGroup();
   const laps = useLaps();
+  const views = useViews();
+  const { save } = useSaveCurrentView();
   const [open, setOpen] = useState(false);
 
   const commands = useMemo(
-    () => buildCommands({ api, group, laps: laps.data ?? [] }),
-    [api, group, laps.data]
+    () =>
+      buildCommands({
+        api,
+        group,
+        laps: laps.data ?? [],
+        views: views.data ?? [],
+        saveView: () => void save(suggestName(group)),
+      }),
+    [api, group, laps.data, views.data, save]
   );
 
   useEffect(() => {

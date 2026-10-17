@@ -232,6 +232,7 @@ export function Dashboard() {
   const api = useDashboardApi((s) => s.api);
   const setApi = useDashboardApi((s) => s.setApi);
   const active = useDashboards((s) => s.active);
+  const reload = useDashboards((s) => s.reload);
 
   const onReady = useCallback(
     (event: DockviewReadyEvent) => {
@@ -252,7 +253,7 @@ export function Dashboard() {
         api,
         useDashboards.getState().tabs.find((t) => t.id === active)
       );
-  }, [api, active]);
+  }, [api, active, reload]);
 
   return (
     <DockviewReact

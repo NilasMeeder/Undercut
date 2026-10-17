@@ -10,6 +10,8 @@ export const COLORS = {
   pb: '#34d36e',
   slow: '#f2c230',
   pit: '#ff5252',
+  /** Markers: neutral, they are notes and carry no timing meaning. */
+  markerFill: 'rgba(232, 232, 236, 0.08)',
 } as const;
 
 /** Track flags keep their real-world colours; anything else (chequered, clear) stays neutral. */

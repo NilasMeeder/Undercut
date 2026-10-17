@@ -9,7 +9,8 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: {
-    proxy: { '/api': 'http://localhost:8000' },
+    // F1DASH_API: another backend, e.g. one with a test database (F1DASH_DB) on another port.
+    proxy: { '/api': process.env.F1DASH_API ?? 'http://localhost:8000' },
   },
   build: {
     rolldownOptions: {

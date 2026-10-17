@@ -17,6 +17,10 @@ volgende fase voordat de vorige echt werkt.
   op de balk), Timing tower op t, Track map met alle auto's, Track line, race control volgt de klok,
   preset "Replay". Telemetrie van een hele sessie in één git fetch (race ~8 s), positiespoor op disk.
   Getest in headless Chrome op Monza 2025 Q, R en FP2 (verse download).
+- Fase 5 af (2026-10-17): markeringen op afstand (punt of bereik, optioneel per lap) en op sessietijd,
+  met notitie en tags, in Telemetry, Delta, Track map, Track line en de klokbalk, plus een Markers-
+  widget; opgeslagen views (sessie, laps, zoom, klok, layout) als bladwijzer met `#view=`-links.
+  Alles in SQLite (`backend/data/f1dash.db`). Getest in headless Chrome op Monza 2025 Q en R.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
@@ -144,10 +148,19 @@ alle panelen meeloopt.
 
 ## Fase 5 — Markeringen en opgeslagen views
 
-- [ ] Afstandsbereik of moment markeren met notitie en tags ("lift & coast", "lock-up")
-- [ ] Markeringen zichtbaar in charts, track map en Track Line
-- [ ] Opgeslagen views: selectie + layout als bladwijzer
-- [ ] Opslag in een lokaal SQLite-bestand in `backend/` (geen databaseserver)
+Ontwerp (zie CLAUDE.md "Markeringen en views"): markeringen per sessie, op afstand (optioneel aan
+één lap gekoppeld) of op sessietijd (optioneel aan een driver).
+
+- [x] Afstandsbereik of moment markeren met notitie en tags ("lift & coast", "lock-up"): Shift + slepen
+      of klikken in een chart, `m`, `⇧M`, het vlaggetje en Shift + slepen op de klokbalk
+- [x] Markeringen zichtbaar in charts, track map en Track Line (afstand) en op de klokbalk (tijd)
+- [x] Markers-widget: lijst per sessie, filter op tag, klik = erheen (zoom of klok), bewerken, verwijderen
+- [x] Opgeslagen views: sessie, laps, zoom, klok en layout als bladwijzer, ook als link (`#view=12`)
+- [x] Opslag in een lokaal SQLite-bestand in `backend/data/` (geen databaseserver)
+- [ ] Tijdmarkering met driver ook op de kaart en de Track line (ring om die auto zolang hij geldt)
+- [ ] Markeringen over sessies heen: die van Q ook in R tonen (zelfde event), zoeken op tag over alles
+- [ ] Inzichten van de Corners-widget als (tijdelijke) markering in de charts (kan nu met `DistanceMark`)
+- [ ] Markeringen en views mee in de export/import van het Layout-menu
 
 ## Fase 6 — Strategie en race-analyse
 

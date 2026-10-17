@@ -9,6 +9,8 @@ export type DashboardTab = {
   name: string;
   layout: SerializedDockview | null;
   preset: PresetId;
+  /** The saved view this tab shows: opening that view again reuses the tab. */
+  viewId?: number;
 };
 
 type DashboardsState = {
@@ -19,6 +21,16 @@ type DashboardsState = {
   remove: (id: string) => void;
   activate: (id: string) => void;
   saveLayout: (id: string, layout: SerializedDockview) => void;
+  /** Bumped to make the dashboard load the active tab's layout again. */
+  reload: number;
+  /** Show a saved view's layout: in its own tab, made or reused. */
+  showView: (view: {
+    id: number;
+    name: string;
+    layout: SerializedDockview | null;
+    preset: PresetId;
+  }) => void;
+  linkView: (id: string, viewId: number | undefined) => void;
   /** Append tabs from an exported file. */
   importTabs: (tabs: Omit<DashboardTab, 'id'>[]) => void;
 };
@@ -62,12 +74,31 @@ export const useDashboards = create<DashboardsState>()(
       activate: (id) => set({ active: id }),
       saveLayout: (id, layout) =>
         set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, layout } : t)) })),
+      reload: 0,
+      showView: ({ id: viewId, name, layout, preset }) =>
+        set((s) => {
+          const existing = s.tabs.find((t) => t.viewId === viewId);
+          if (!existing) {
+            const tab = { id: newId(), name, layout, preset, viewId };
+            return { tabs: [...s.tabs, tab], active: tab.id };
+          }
+          return {
+            tabs: s.tabs.map((t) => (t.id === existing.id ? { ...t, layout, preset } : t)),
+            active: existing.id,
+            reload: s.reload + 1,
+          };
+        }),
+      linkView: (id, viewId) =>
+        set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, viewId } : t)) })),
       importTabs: (imported) =>
         set((s) => {
           const tabs = imported.map((t) => ({ ...t, id: newId() }));
           return tabs.length ? { tabs: [...s.tabs, ...tabs], active: tabs[0].id } : s;
         }),
     }),
-    { name: 'f1dash-dashboards' }
+    {
+      name: 'f1dash-dashboards',
+      partialize: ({ tabs, active }) => ({ tabs, active }),
+    }
   )
 );

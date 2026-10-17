@@ -245,6 +245,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/markers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Markers */
+        get: operations["session_markers_api_sessions__year___round___session__markers_get"];
+        put?: never;
+        /** Add Marker */
+        post: operations["add_marker_api_sessions__year___round___session__markers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/markers/{marker_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Marker */
+        put: operations["update_marker_api_markers__marker_id__put"];
+        post?: never;
+        /** Delete Marker */
+        delete: operations["delete_marker_api_markers__marker_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/markers/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Marker Tags
+         * @description Tags in use over all sessions, most used first (suggestions in the marker editor).
+         */
+        get: operations["marker_tags_api_markers_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Views */
+        get: operations["views_api_views_get"];
+        put?: never;
+        /** Add View */
+        post: operations["add_view_api_views_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/views/{view_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update View */
+        put: operations["update_view_api_views__view_id__put"];
+        post?: never;
+        /** Delete View */
+        delete: operations["delete_view_api_views__view_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -270,6 +362,10 @@ export interface components {
             track_x: number[];
             /** Track Y */
             track_y: number[];
+            /** Track Distance */
+            track_distance: number[];
+            /** Lap Length */
+            lap_length: number;
             /** Corners */
             corners: components["schemas"]["Corner"][];
             /** Pit Loss */
@@ -469,6 +565,76 @@ export interface components {
             /** Pit Out Time */
             pit_out_time: number | null;
         };
+        /** Marker */
+        Marker: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "distance" | "time";
+            /** Start */
+            start: number;
+            /** End */
+            end: number | null;
+            /** Driver */
+            driver: string | null;
+            /** Lap */
+            lap: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Tags */
+            tags: string[];
+            /** Id */
+            id: number;
+            /** Year */
+            year: number;
+            /** Round */
+            round: number;
+            /**
+             * Session
+             * @enum {string}
+             */
+            session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            /**
+             * Created
+             * Format: date-time
+             */
+            created: string;
+            /**
+             * Updated
+             * Format: date-time
+             */
+            updated: string;
+        };
+        /**
+         * MarkerIn
+         * @description A marked point or range: lap distance (m) or session time (s). `end` null = a point.
+         */
+        MarkerIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "distance" | "time";
+            /** Start */
+            start: number;
+            /** End */
+            end?: number | null;
+            /** Driver */
+            driver?: string | null;
+            /** Lap */
+            lap?: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Tags */
+            tags?: string[];
+        };
         /** MiniSectors */
         MiniSectors: {
             /** Boundaries */
@@ -623,6 +789,13 @@ export interface components {
              */
             status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
         };
+        /** TagCount */
+        TagCount: {
+            /** Tag */
+            tag: string;
+            /** Count */
+            count: number;
+        };
         /**
          * Telemetry
          * @description One lap, columnar, at the source sample rate (~4 Hz car data merged with position).
@@ -755,6 +928,105 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** View */
+        View: {
+            /** Name */
+            name: string;
+            /** Year */
+            year: number;
+            /** Round */
+            round: number;
+            /**
+             * Session
+             * @enum {string}
+             */
+            session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            state: components["schemas"]["ViewState-Output"];
+            /** Id */
+            id: number;
+            /**
+             * Created
+             * Format: date-time
+             */
+            created: string;
+            /**
+             * Updated
+             * Format: date-time
+             */
+            updated: string;
+        };
+        /** ViewIn */
+        ViewIn: {
+            /** Name */
+            name: string;
+            /** Year */
+            year: number;
+            /** Round */
+            round: number;
+            /**
+             * Session
+             * @enum {string}
+             */
+            session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            state: components["schemas"]["ViewState-Input"];
+        };
+        /** ViewLap */
+        ViewLap: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+        };
+        /**
+         * ViewState
+         * @description What a saved view restores. The layout is dockview's JSON, opaque to the backend.
+         */
+        "ViewState-Input": {
+            /** Laps */
+            laps?: {
+                [key: string]: components["schemas"]["ViewLap"][];
+            };
+            /** Zoom */
+            zoom?: {
+                [key: string]: [
+                    number,
+                    number
+                ];
+            };
+            /** Clock */
+            clock?: number | null;
+            /** Layout */
+            layout?: {
+                [key: string]: unknown;
+            } | null;
+            /** Preset */
+            preset?: string | null;
+        };
+        /**
+         * ViewState
+         * @description What a saved view restores. The layout is dockview's JSON, opaque to the backend.
+         */
+        "ViewState-Output": {
+            /** Laps */
+            laps: {
+                [key: string]: components["schemas"]["ViewLap"][];
+            };
+            /** Zoom */
+            zoom: {
+                [key: string]: [
+                    number,
+                    number
+                ];
+            };
+            /** Clock */
+            clock: number | null;
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            } | null;
+            /** Preset */
+            preset: string | null;
         };
         /**
          * Weather
@@ -1244,6 +1516,277 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Comparison"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    session_markers_api_sessions__year___round___session__markers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Marker"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_marker_api_sessions__year___round___session__markers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Marker"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_marker_api_markers__marker_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                marker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Marker"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_marker_api_markers__marker_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                marker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    marker_tags_api_markers_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagCount"][];
+                };
+            };
+        };
+    };
+    views_api_views_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["View"][];
+                };
+            };
+        };
+    };
+    add_view_api_views_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ViewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["View"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_view_api_views__view_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                view_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ViewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["View"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_view_api_views__view_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                view_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -6,8 +6,10 @@ import {
   useSessionDetail,
   type PositionTrack,
 } from '@/api/queries';
+import { useDistanceMarks } from '@/api/markers';
 import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
+import type { DistanceMark } from '@/lib/markers';
 import { carAt } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom } from '@/store/cursor';
@@ -47,7 +49,14 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
   if (circuit.error) return <PanelMessage>{circuit.error.message}</PanelMessage>;
   if (!circuit.data) return <PanelMessage>Loading circuit…</PanelMessage>;
   if (config.cars === 'all')
-    return <ReplayMap group={group} circuit={circuit.data} showCorners={config.corners} />;
+    return (
+      <ReplayMap
+        group={group}
+        circuit={circuit.data}
+        showCorners={config.corners}
+        showMarks={config.markers}
+      />
+    );
   return (
     <TrackMap
       group={group}
@@ -55,6 +64,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       comparison={data}
       styles={styles}
       showCorners={config.corners}
+      showMarks={config.markers}
     />
   );
 }
@@ -64,10 +74,12 @@ function ReplayMap({
   group,
   circuit,
   showCorners,
+  showMarks,
 }: {
   group: GroupId;
   circuit: Circuit;
   showCorners: boolean;
+  showMarks: boolean;
 }) {
   const { status, track, error } = useReplayPositions();
   const detail = useSessionDetail();
@@ -85,6 +97,7 @@ function ReplayMap({
       comparison={undefined}
       styles={[]}
       showCorners={showCorners}
+      showMarks={showMarks}
       note={loading}
       cars={track && detail.data ? { track, drivers: detail.data.drivers } : undefined}
     />
@@ -97,6 +110,7 @@ function TrackMap({
   comparison,
   styles,
   showCorners,
+  showMarks,
   note,
   cars,
 }: {
@@ -105,6 +119,7 @@ function TrackMap({
   comparison: Comparison | undefined;
   styles: LapStyle[];
   showCorners: boolean;
+  showMarks: boolean;
   note?: string | null;
   cars?: { track: PositionTrack; drivers: DriverInfo[] };
 }) {
@@ -114,6 +129,7 @@ function TrackMap({
   const emptyRef = useRef<HTMLDivElement>(null);
   const selected = useGroupLaps(group);
   const highlight = useMemo(() => new Set(selected.map((l) => l.driver)), [selected]);
+  const marks = useDistanceMarks(group);
 
   const geometry = useMemo(() => {
     const outline = circuit.track_x.map((x, i) => project(x, circuit.track_y[i], circuit.rotation));
@@ -127,7 +143,14 @@ function TrackMap({
     ];
     const size = Math.max(maxX - minX, maxY - minY);
     const pad = size * 0.08;
+    // The outline from the start/finish line on, so lap distance only grows along it.
+    const first = circuit.track_distance.indexOf(Math.min(...circuit.track_distance));
+    const order = outline.map((_, i) => (first + i) % outline.length);
     return {
+      along: {
+        points: order.map((i) => outline[i]),
+        distance: order.map((i) => circuit.track_distance[i]),
+      },
       outline: toPath(outline) + 'Z',
       viewBox: `${minX - pad} ${minY - pad} ${maxX - minX + 2 * pad} ${maxY - minY + 2 * pad}`,
       unit: size / 100,
@@ -211,6 +234,7 @@ function TrackMap({
   useClockDraw(cars ? drawCars : null);
 
   const u = geometry.unit;
+  const markShapes = showMarks ? marks.map((m) => markShape(m, geometry.along, u)) : [];
   const color = (code: string) =>
     cars?.drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
   return (
@@ -233,6 +257,39 @@ function TrackMap({
           strokeWidth={u * 2.2}
           strokeLinejoin="round"
         />
+        {markShapes.map((m) => (
+          <g key={m.id} opacity={m.dim ? 0.45 : 1}>
+            {m.path ? (
+              <path
+                d={m.path}
+                fill="none"
+                stroke={COLORS.text}
+                strokeOpacity={0.22}
+                strokeWidth={u * 4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ) : (
+              <circle
+                cx={m.at[0]}
+                cy={m.at[1]}
+                r={u * 2.2}
+                fill="none"
+                stroke={COLORS.textDim}
+                strokeWidth={u * 0.4}
+              />
+            )}
+            <text
+              x={m.at[0]}
+              y={m.at[1] - u * 3.2}
+              fill={COLORS.textDim}
+              fontSize={u * 2.4}
+              textAnchor="middle"
+            >
+              {m.label.length > 28 ? `${m.label.slice(0, 27)}…` : m.label}
+            </text>
+          </g>
+        ))}
         {lap?.sectors.map((s, i) => (
           <path
             key={i}
@@ -305,4 +362,20 @@ function TrackMap({
       </svg>
     </div>
   );
+}
+
+/** A marker on the outline: the stretch it covers (or none for a point) and where its label goes. */
+function markShape(
+  mark: DistanceMark,
+  along: { points: Point[]; distance: number[] },
+  unit: number
+): DistanceMark & { path: string | null; at: Point } {
+  const from = indexAt(along.distance, mark.start);
+  if (mark.end == null) {
+    const at = along.points[Math.min(from, along.points.length - 1)];
+    return { ...mark, path: null, at: [at[0], at[1] - unit] };
+  }
+  const to = Math.max(indexAt(along.distance, mark.end), from + 1);
+  const points = along.points.slice(from, to + 1);
+  return { ...mark, path: toPath(points), at: points[Math.floor(points.length / 2)] };
 }

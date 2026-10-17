@@ -61,6 +61,7 @@ function engineer(api: DockviewApi) {
     direction: 'below',
   });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
+  addWidget(api, 'markers', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
   laps.group.api.setSize({ width: 400 });
@@ -96,6 +97,7 @@ function replay(api: DockviewApi) {
   );
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
+  addWidget(api, 'markers', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
   const line = addWidget(api, 'trackline', 'blue', { referencePanel: map, direction: 'below' });
   tower.group.api.setSize({ width: 560 });
