@@ -216,6 +216,11 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
       vorige of de beste lap). Getest met de simulator (Monza R) en in replay (Monza Q en R)
 - [x] Widget Clock (2026-10-18): sessieklok in rode cijfers, live F1's ExtrapolatedClock, anders
       nagerekend uit Q-delen en rode vlaggen; race: racetijd en lap. In de Replay-preset bovenaan rechts
+- [ ] Clock als digitale klok (Nilas, 2026-10-18): 7-segment-achtig lettertype, standaard de **lokale
+      tijd op het circuit** als h:m:s (tijdzone van het event uit het schema), met een klein knopje dat
+      wisselt naar **sessietijd** h:m:s; de keuze onthouden per paneel (config)
+- [ ] Test die een echte (gesimuleerde) sessie door `convert.lap_columns` haalt: een helper met
+      dezelfde naam (`_seconds`) brak op 2026-10-18 de hele omzetting zonder dat een test faalde
 - [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
 - [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
 
