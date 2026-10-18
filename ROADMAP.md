@@ -344,7 +344,10 @@ Ontwerp (2026-10-18):
 - [x] Meerdere Pitwall-borden snel wisselen (2026-10-18, Nilas): toetsen 1–9 per werkplek (cijfer in
       de tab), "Duplicate this dashboard" om een variant te maken. Getest in Pitwall (Monza 2025 R)
 - [ ] Presets naar schermgrootte ook voor Analyse (nu alleen Pitwall)
-- [ ] Tweede venster: selectie en klok delen tussen vensters (BroadcastChannel), nu los
+- [x] Tweede venster (2026-10-18): sessie en met de hand gekozen laps lopen mee tussen vensters
+      (BroadcastChannel); klok, cursor, zoom en Follow blijven per venster. Getest met twee vensters
+      (Analyse kiest LEC → Pitwall toont hem; Pitwall → FP2 → Analyse ook)
+- [ ] Tweede venster: "klok hierheen" ook in het andere venster (bv. een klik in Report), als optie
 
 ## Later / backlog
 

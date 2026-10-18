@@ -165,7 +165,8 @@ frontend/src/api/          client.ts (fetch + type-aliassen), queries.ts (TanSta
                            aanplakken), schema.d.ts (gegenereerd)
 frontend/src/store/        selection.ts (sessie), groups.ts (link-groepen + laps per groep), cursor.ts (cursor/zoom-bus,
                            bevriezen), dashboards.ts (tabs met elk een layout), clock.ts (sessieklok),
-                           markerEditor.ts (de open markering-editor: markNew, editMarker), live.ts (live-status)
+                           markerEditor.ts (de open markering-editor: markNew, editMarker), live.ts (live-status),
+                           sync.ts (sessie en laps delen tussen vensters)
 frontend/src/dashboard/    Dashboard.tsx (dockview, tabs, header-acties), layout.ts (presets, opslaan/herstellen),
                            HeaderMenu.tsx (dropdown in de titelbalk), PanelMenus.tsx (uitleg en instellingen)
 frontend/src/widgets/      één map per widget: widget.ts (definitie, help, defaults, settings, lazy component)
@@ -508,8 +509,10 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   sessie vergeet ze. Een gepauzeerde klok op het einde blijft op het einde als het bereik groeit
   (`clock.atEnd`), zodat Analyse live alles blijft tonen.
 - **Tweede scherm**: het icoon naast de schakelaar opent de andere werkplek in een eigen venster
-  (`window.open` met `?ws=`); elk venster heeft zijn eigen klok, de opslag (tabs, selectie) is
-  gedeeld via localStorage maar wordt niet live gesynchroniseerd.
+  (`window.open` met `?ws=`); elk venster heeft zijn eigen klok, cursor en zoom. De sessie en de
+  laps die met de hand gekozen zijn lopen live mee via een BroadcastChannel (`store/sync.ts`:
+  `share`/`onShared`; `toggleLap`/`setLaps`/`replaceLap` en de sessie, een gedeelde keuze zet Follow
+  daar uit). Follow (`followTo`) gaat bewust niet mee: elk venster schuift op zijn eigen klok.
 - **Report** (`/report`, `reports.py`, widget `report`): de backend zoekt, de frontend schrijft
   (`lib/report.ts`, bochten met `explainCorner`). Elk punt heeft een `ReportAction` (laps, zoom, t);
   een klik zet de laps in de link-groep, zoomt, of zet de klok. Waar de tijd zit: beste laps van de

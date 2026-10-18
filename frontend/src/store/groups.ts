@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useSelection } from './selection';
+import { onShared, share } from './sync';
 
 /**
  * Link groups: every panel belongs to one. Panels in the same group share the selected laps and the
@@ -53,25 +54,29 @@ const none = (): Record<GroupId, boolean> => ({
 
 export const useGroups = create<GroupsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       laps: empty(),
       follow: none(),
       setFollow: (group, on) => set((state) => ({ follow: { ...state.follow, [group]: on } })),
       followTo: (group, laps) => set((state) => ({ laps: { ...state.laps, [group]: laps } })),
-      toggleLap: (group, lap) =>
+      toggleLap: (group, lap) => {
         set((state) => {
           const current = state.laps[group];
           const next = current.some((l) => sameLap(l, lap))
             ? current.filter((l) => !sameLap(l, lap))
             : [...current, lap].slice(-MAX_LAPS_PER_GROUP);
           return { laps: { ...state.laps, [group]: next }, follow: stop(state, group) };
-        }),
-      setLaps: (group, laps) =>
+        });
+        shareLaps(group, get().laps[group]);
+      },
+      setLaps: (group, laps) => {
         set((state) => ({
           laps: { ...state.laps, [group]: laps.slice(0, MAX_LAPS_PER_GROUP) },
           follow: stop(state, group),
-        })),
-      replaceLap: (group, from, to) =>
+        }));
+        shareLaps(group, get().laps[group]);
+      },
+      replaceLap: (group, from, to) => {
         set((state) => {
           const current = state.laps[group];
           // Replacing with a lap that is already selected would duplicate it: drop the old one.
@@ -79,7 +84,9 @@ export const useGroups = create<GroupsState>()(
             ? current.filter((l) => !sameLap(l, from))
             : current.map((l) => (sameLap(l, from) ? to : l));
           return { laps: { ...state.laps, [group]: next }, follow: stop(state, group) };
-        }),
+        });
+        shareLaps(group, get().laps[group]);
+      },
       reset: () => set({ laps: empty(), follow: none() }),
     }),
     { name: 'f1dash-groups' }
@@ -88,6 +95,16 @@ export const useGroups = create<GroupsState>()(
 
 const stop = (state: GroupsState, group: GroupId) =>
   state.follow[group] ? { ...state.follow, [group]: false } : state.follow;
+
+// Laps picked by hand show in every window of the app (Follow moves them per window).
+type SharedLaps = { group: GroupId; laps: LapRef[] };
+const shareLaps = (group: GroupId, laps: LapRef[]) => share('laps', { group, laps });
+onShared<SharedLaps>('laps', ({ group, laps }) =>
+  useGroups.setState((state) => ({
+    laps: { ...state.laps, [group]: laps },
+    follow: stop(state, group),
+  }))
+);
 
 export function useGroupLaps(group: GroupId): LapRef[] {
   return useGroups((s) => s.laps[group]);
