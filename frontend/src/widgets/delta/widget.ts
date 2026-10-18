@@ -19,7 +19,8 @@ export const deltaWidget = defineWidget<DeltaConfig>({
     controls:
       'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset. ' +
       'Shift + drag marks a range and Shift + click a point (with a note and tags); markers are ' +
-      'grey bands, fainter when they belong to a lap that is not selected.',
+      'grey bands, fainter when they belong to a lap that is not selected. Click a marker to ' +
+      'edit or delete it.',
   },
   defaults: { step: 5 },
   settings: [

@@ -3,6 +3,7 @@ import { cornersWidget } from './corners/widget';
 import { deltaWidget } from './delta/widget';
 import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
+import { liveLapWidget } from './livelap/widget';
 import { markersWidget } from './markers/widget';
 import { paceWidget } from './pace/widget';
 import { pitWindowWidget } from './pitwindow/widget';
@@ -26,6 +27,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   lapsWidget,
   telemetryWidget,
   deltaWidget,
+  liveLapWidget,
   trackMapWidget,
   bestsWidget,
   speedTrapsWidget,

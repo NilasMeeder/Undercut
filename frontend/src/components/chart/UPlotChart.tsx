@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import uPlot from 'uplot';
 import { COLORS } from '@/lib/colors';
 import { formatDistance } from '@/lib/format';
-import type { DistanceMark } from '@/lib/markers';
+import { marksAt, type DistanceMark } from '@/lib/markers';
 import { cursorBus } from '@/store/cursor';
 import type { GroupId } from '@/store/groups';
-import { markNew } from '@/store/markerEditor';
+import { editMarker, markNew } from '@/store/markerEditor';
 
 export type ChartSeries = {
   color: string;
@@ -93,7 +93,7 @@ function drawMarks(u: uPlot, marks: DistanceMark[], labels: boolean) {
 /**
  * A distance-based uPlot chart wired into its link group's cursor and zoom: hovering moves the
  * group cursor, drag-select zooms the whole group, double-click resets. Shift + drag or Shift + click
- * opens the marker editor for that range or point.
+ * opens the marker editor for that range or point; a click on a marker edits it.
  */
 export function UPlotChart({
   group,
@@ -222,9 +222,16 @@ export function UPlotChart({
       downX = e.clientX;
     };
     const onClick = (e: MouseEvent) => {
-      if (!e.shiftKey || Math.abs(e.clientX - downX) > 4) return;
+      if (Math.abs(e.clientX - downX) > 4) return;
       const distance = chart.posToVal(e.offsetX, 'x');
-      markNew({ kind: 'distance', start: Math.round(Math.max(distance, 0)), group });
+      if (e.shiftKey) {
+        markNew({ kind: 'distance', start: Math.round(Math.max(distance, 0)), group });
+        return;
+      }
+      // A plain click on a marker (a point within a few pixels) opens it in the editor.
+      const slack = Math.abs(chart.posToVal(e.offsetX + 5, 'x') - distance);
+      const hit = marksAt(marksRef.current, distance, slack)[0];
+      if (hit) editMarker(hit.marker, group);
     };
     chart.over.addEventListener('dblclick', onDoubleClick);
     chart.over.addEventListener('pointerdown', onPointerDown);

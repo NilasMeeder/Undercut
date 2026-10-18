@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
 
-from app import analysis, replays, schedule, sessions, store, strategies, strategy
+from app import analysis, progress, replays, schedule, sessions, store, strategies, strategy
 from app.live import service as live
 from app.schemas import (
     Circuit,
@@ -21,11 +21,13 @@ from app.schemas import (
     CornerSegment,
     Degradation,
     Lap,
+    LapProgress,
     LiveSessionInfo,
     Marker,
     MarkerIn,
     MiniSectors,
     PitWindow,
+    ProgressReference,
     RaceControlMessage,
     RaceHistory,
     ReplayPositions,
@@ -82,6 +84,15 @@ def _one_decimal(value: float) -> float:
 
 def _maybe_one_decimal(value: float | None) -> float | None:
     return None if value is None else round(value, 1)
+
+
+def _nullable(values: np.ndarray, decimals: int) -> list[float | None]:
+    """Rounded, NaN as null."""
+    return [None if np.isnan(v) else float(v) for v in np.round(values, decimals)]
+
+
+def _nullable_ints(values: np.ndarray) -> list[int | None]:
+    return [None if np.isnan(v) else int(v) for v in values]
 
 
 def _ints(values: np.ndarray) -> list[int]:
@@ -234,6 +245,48 @@ def lap_telemetry(
             drs=_ints(ch["drs"]) if "drs" in ch else None,
             x=_rounded(ch["x"], 0),
             y=_rounded(ch["y"], 0),
+        )
+
+    return _guard(load)
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/lap-progress")
+def lap_progress(
+    year: int,
+    round: int,
+    session: SessionCode,
+    driver: Annotated[str, Query(min_length=3, max_length=3)],
+    t: Annotated[float, Query(description="Session time (s)")],
+    reference: Annotated[
+        progress.Reference, Query(description="previous lap, or the best lap until t")
+    ] = "previous",
+) -> LapProgress:
+    def load() -> LapProgress:
+        p = progress.lap_in_progress(year, round, session, driver.upper(), t, reference)
+        grid = progress.on_grid(p.trace, p.reference_trace, p.length)
+        lap = grid.current
+        ref = None
+        if p.reference is not None and grid.reference is not None:
+            ref = ProgressReference(
+                lap=p.reference.lap,
+                lap_time=p.reference.lap_time,
+                speed=_nullable(grid.reference["speed"], 1),
+            )
+        return LapProgress(
+            driver=driver.upper(),
+            lap=p.lap,
+            start=float(np.round(p.start, 3)),
+            elapsed=float(np.round(p.trace.time[-1], 3)),
+            progress=float(np.round(grid.progress, 1)),
+            out_lap=p.out_lap,
+            distance=_rounded(grid.distance, 1),
+            time=_nullable(lap["time"], 3),
+            speed=_nullable(lap["speed"], 1),
+            throttle=_nullable(lap["throttle"], 0),
+            brake=_nullable_ints(lap["brake"]),
+            gear=_nullable_ints(lap["gear"]),
+            reference=ref,
+            delta=_nullable(grid.delta, 3),
         )
 
     return _guard(load)

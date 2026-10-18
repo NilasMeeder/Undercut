@@ -22,6 +22,8 @@ export type DistanceMark = {
   label: string;
   /** Tied to a lap that is not selected in this link group: drawn fainter. */
   dim: boolean;
+  /** The marker itself, to open in the editor on a click. */
+  marker: Marker;
 };
 
 export function markerLabel(marker: Pick<Marker, 'note' | 'tags'>): string {
@@ -42,6 +44,7 @@ export function distanceMarks(markers: Marker[] | undefined, selected: LapRef[])
       end: m.end ?? null,
       label: markerLabel(m) || markerLap(m) || 'Marker',
       dim: m.lap != null && !selected.some((l) => l.driver === m.driver && l.lap === m.lap),
+      marker: m,
     }));
 }
 

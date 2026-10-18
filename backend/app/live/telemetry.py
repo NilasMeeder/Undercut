@@ -33,6 +33,18 @@ class Samples:
         for name, value in sample.items():
             self.values.setdefault(name, _floats()).append(value)
 
+    def copy(self) -> "Samples":
+        """A snapshot another thread can read while this one grows (numpy views of the arrays
+        would block their appends). Values appended after the times are cut off."""
+        t = self.t[:]
+        values = {name: v[: len(t)] for name, v in list(self.values.items())}
+        n = min([len(t), *(len(v) for v in values.values())])
+        return Samples(t[:n], {name: v[:n] for name, v in values.items()})
+
+    @property
+    def last(self) -> float | None:
+        return self.t[-1] if self.t else None
+
     def window(self, start: float, end: float) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """Samples from just before `start` to just after `end` (to interpolate the ends)."""
         t = np.frombuffer(self.t, dtype=float)

@@ -143,3 +143,14 @@ def test_lap_telemetry_integrates_distance_and_holds_gears() -> None:
     assert math.isclose(tel["distance"][-1], 8 * 50, rel_tol=1e-6)  # 180 km/h = 50 m/s
     assert set(tel["gear"]) == {7, 8} and set(tel["drs"]) == {1}
     assert telemetry.lap_telemetry(car, pos, 5.0, 20.0) is None  # samples end before the lap
+
+
+def test_samples_copy_is_cut_to_whole_samples() -> None:
+    samples = telemetry.Samples()
+    samples.add(1.0, {"speed": 100.0})
+    samples.add(2.0, {"speed": 110.0})
+    samples.t.append(3.0)  # a sample half added: its value is not in yet
+    copy = samples.copy()
+    assert (list(copy.t), list(copy.values["speed"])) == ([1.0, 2.0], [100.0, 110.0])
+    samples.add(4.0, {"speed": 0.0})  # the original still grows (no buffer is exported)
+    assert copy.last == 2.0

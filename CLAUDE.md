@@ -13,15 +13,16 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met achttien widgets (Laps, Telemetry, Delta,
-Track map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower, Track line,
-Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met negentien widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower,
+Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
 (zie "Markeringen en views"), en strategie: stints, degradatie, gaps, posities, undercut en
 pitverlies-ghosts, allemaal op de sessieklok (zie "Strategie"). Fase 7 (live) is gebouwd en getest met
 de simulator; de echte test is de eerste sessie met Nilas' F1 TV-login (zie "Live" en ROADMAP.md).
+Live telemetrie volgen: FOLLOW per link-groep (`l`) en de widget Live lap (zie "Live lap en Follow").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -123,6 +124,7 @@ backend/app/analysis.py    pure numpy-rekenlogica: resample, compare (delta), mi
 backend/app/replay.py      pure replay-logica: positiespoor (build_track), timing tower op t (timing_state),
                            track status uit race control
 backend/app/replays.py     replay per sessie: tijdlijn, timing-index, de bouwjob van het positiespoor (.npz)
+backend/app/progress.py    de lap die bezig is op t (replay: afgeknipt, live: uit het geheugen) en de live delta
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
                            pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
 backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
@@ -154,7 +156,8 @@ frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaul
                            sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import),
                            clock/ (ClockBar onderin, useSessionClock), markers/ (MarkerEditor, actions:
                            springen en markeren), views/ (ViewsMenu, openen/opslaan, #view=-links),
-                           live/ (LiveBadge: een live sessie die niet open staat)
+                           live/ (LiveBadge: een live sessie die niet open staat), session/FollowLatest
+                           (laps van volgende groepen meeschuiven)
 ```
 
 Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt
@@ -294,6 +297,28 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   een echte feed anders zijn: de opname blijft ruw bewaard, dus fouten zijn achteraf te herstellen
   (`converted/` weggooien).
 
+## Live lap en Follow
+
+Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessieklok:
+- **Follow** (`store/groups.ts` `follow`, knop FOLLOW in de topbalk, sneltoets `l`): de laps van een
+  groep schuiven mee naar de nieuwste lap van elke driver die op t af is, met behoud van de afstand
+  ertussen (`lib/laps.ts` `followLatest`: VER L12 + L11 → L13 + L12). Live pas 4 s na de lijn
+  (`LIVE_MARGIN`): de telemetrie van een lap wordt geschreven als de posities eromheen binnen zijn.
+  Zelf laps kiezen (`toggleLap`/`setLaps`/`replaceLap`) zet Follow uit; `followTo` niet.
+  `FollowLatest` is een eigen component dat niets rendert, zodat de klok de App niet re-rendert.
+- **Live lap** (widget `livelap`, `GET .../lap-progress?driver=&t=&reference=previous|best`): de lap
+  die de eerste driver van de groep op t rijdt, tot zover, op een raster van 5 m over de referentielap
+  (`progress.on_grid`; `null` voorbij de auto, dus de chart over de hele lap groeit), met de delta.
+  Replay: de afgeronde lap afgeknipt op t en uitgerekt naar de referentielengte zoals `/compare`
+  (aan de lijn exact het laptijdverschil). Live: de samples tot t uit het geheugen van de recorder
+  (`LiveSession.lap_samples`, met `Samples.copy`: een numpy-view op een `array('d')` blokkeert de
+  appends van de live-thread), niet uitgerekt (de lengte is nog niet bekend; de delta drijft een paar
+  honderdsten, op Monza gelijk aan het archief zonder uitrekken). Een lap die net af is maar nog geen
+  bestand heeft komt ook uit het geheugen; de eerste 3 s na de lijn (`HOLD`) toont hij de net
+  afgeronde lap. Pit-laps (lengte > 0,5% anders) worden nooit uitgerekt; out-laps (vanaf de garage)
+  tonen geen delta. Referentie "Auto": vorige lap in een race, beste lap tot t in Q/FP (de lap ervoor
+  is daar meestal een out- of cool-down lap). De frontend vraagt per hele seconde klok.
+
 ## Markeringen en views (fase 5)
 
 **Twee soorten markeringen** in één tabel, altijd per sessie (niet per circuit: layouts en afstanden
@@ -309,7 +334,8 @@ verschillen per jaar):
 Maken: Shift + slepen/klikken in een chart, `m` (zoombereik, anders de cursor, anders typ je de
 afstand), `⇧M` of het vlaggetje voor het moment, Shift + slepen op de klokbalk voor een periode. Eén
 editor voor de hele app (`features/markers/MarkerEditor.tsx`, opent ook vanuit een popout in het
-hoofdvenster). Tags: vrij, ontdubbeld zonder hoofdletters; suggesties zijn de vaste lijst in
+hoofdvenster). Bewerken of verwijderen: klik op een markering in een chart (punt binnen 5 px, bereik
+erbinnen), dubbelklik op de klokbalk, of het potlood in het Markers-paneel. Tags: vrij, ontdubbeld zonder hoofdletters; suggesties zijn de vaste lijst in
 `lib/markers.ts` plus de tags die al gebruikt zijn (`/api/markers/tags`).
 
 **Kaart op afstand:** de outline van de kaart komt los van elke lap (MultiViewer, in decimeters, begint

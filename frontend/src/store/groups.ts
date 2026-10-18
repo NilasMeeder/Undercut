@@ -30,6 +30,12 @@ export function sameLap(a: LapRef, b: LapRef): boolean {
 
 type GroupsState = {
   laps: Record<GroupId, LapRef[]>;
+  /** The group's laps move along to each driver's newest lap at the clock (useFollowLatest).
+   * Picking laps by hand stops it. */
+  follow: Record<GroupId, boolean>;
+  setFollow: (group: GroupId, on: boolean) => void;
+  /** Set the laps while following (does not stop it). */
+  followTo: (group: GroupId, laps: LapRef[]) => void;
   toggleLap: (group: GroupId, lap: LapRef) => void;
   setLaps: (group: GroupId, laps: LapRef[]) => void;
   /** Swap one lap for another in place (keeps the reference first). */
@@ -38,21 +44,33 @@ type GroupsState = {
 };
 
 const empty = (): Record<GroupId, LapRef[]> => ({ blue: [], orange: [], cyan: [], pink: [] });
+const none = (): Record<GroupId, boolean> => ({
+  blue: false,
+  orange: false,
+  cyan: false,
+  pink: false,
+});
 
 export const useGroups = create<GroupsState>()(
   persist(
     (set) => ({
       laps: empty(),
+      follow: none(),
+      setFollow: (group, on) => set((state) => ({ follow: { ...state.follow, [group]: on } })),
+      followTo: (group, laps) => set((state) => ({ laps: { ...state.laps, [group]: laps } })),
       toggleLap: (group, lap) =>
         set((state) => {
           const current = state.laps[group];
           const next = current.some((l) => sameLap(l, lap))
             ? current.filter((l) => !sameLap(l, lap))
             : [...current, lap].slice(-MAX_LAPS_PER_GROUP);
-          return { laps: { ...state.laps, [group]: next } };
+          return { laps: { ...state.laps, [group]: next }, follow: stop(state, group) };
         }),
       setLaps: (group, laps) =>
-        set((state) => ({ laps: { ...state.laps, [group]: laps.slice(0, MAX_LAPS_PER_GROUP) } })),
+        set((state) => ({
+          laps: { ...state.laps, [group]: laps.slice(0, MAX_LAPS_PER_GROUP) },
+          follow: stop(state, group),
+        })),
       replaceLap: (group, from, to) =>
         set((state) => {
           const current = state.laps[group];
@@ -60,13 +78,16 @@ export const useGroups = create<GroupsState>()(
           const next = current.some((l) => sameLap(l, to))
             ? current.filter((l) => !sameLap(l, from))
             : current.map((l) => (sameLap(l, from) ? to : l));
-          return { laps: { ...state.laps, [group]: next } };
+          return { laps: { ...state.laps, [group]: next }, follow: stop(state, group) };
         }),
-      reset: () => set({ laps: empty() }),
+      reset: () => set({ laps: empty(), follow: none() }),
     }),
     { name: 'f1dash-groups' }
   )
 );
+
+const stop = (state: GroupsState, group: GroupId) =>
+  state.follow[group] ? { ...state.follow, [group]: false } : state.follow;
 
 export function useGroupLaps(group: GroupId): LapRef[] {
   return useGroups((s) => s.laps[group]);

@@ -96,6 +96,8 @@ function replay(api: DockviewApi) {
       cars: 'all',
     }
   );
+  addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'within' });
+  map.api.setActive();
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
   addWidget(api, 'markers', 'blue', { referencePanel: feed, direction: 'within' });
@@ -151,7 +153,8 @@ export const PRESETS = [
   {
     id: 'replay',
     title: 'Replay',
-    description: 'Timing tower, every car on the map and the track line, with the clock',
+    description:
+      'Timing tower, every car on the map, the live lap and the track line, with the clock',
     apply: replay,
   },
   {

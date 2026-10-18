@@ -33,3 +33,33 @@ export function earlierLap(laps: Lap[], selected: LapRef[], driver: string): Lap
   const before = ownAttempts(laps, driver).findLast((l) => l.lap < Math.min(...mine));
   return before ? { driver, lap: before.lap } : null;
 }
+
+/**
+ * Follow: every driver's selected laps moved along so the newest is that driver's newest lap
+ * finished by `t` (session time), keeping the gaps between them (VER L12 + L11 → L13 + L12; VER
+ * L12 + NOR L12 → L13 + L13). A driver without a finished lap yet stays where he is. Returns
+ * `selected` itself when nothing moves.
+ */
+export function followLatest(laps: Lap[], selected: LapRef[], t: number): LapRef[] {
+  const newest = new Map<string, number>();
+  for (const l of laps) {
+    if (l.end_time == null || l.end_time > t) continue;
+    newest.set(l.driver, Math.max(newest.get(l.driver) ?? 0, l.lap));
+  }
+  const shift = new Map<string, number>();
+  for (const ref of selected) {
+    const latest = newest.get(ref.driver);
+    if (latest == null) continue;
+    const top = Math.max(...selected.filter((s) => s.driver === ref.driver).map((s) => s.lap));
+    shift.set(ref.driver, latest - top);
+  }
+  if ([...shift.values()].every((s) => s === 0)) return selected;
+  const moved: LapRef[] = [];
+  for (const ref of selected) {
+    const lap = ref.lap + (shift.get(ref.driver) ?? 0);
+    if (lap >= 1 && !moved.some((m) => m.driver === ref.driver && m.lap === lap)) {
+      moved.push({ driver: ref.driver, lap });
+    }
+  }
+  return moved;
+}

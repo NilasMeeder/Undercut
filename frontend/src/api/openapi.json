@@ -1141,6 +1141,111 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/lap-progress": {
+      "get": {
+        "summary": "Lap Progress",
+        "operationId": "lap_progress_api_sessions__year___round___session__lap_progress_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "driver",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 3,
+              "title": "Driver"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Session time (s)",
+              "title": "T"
+            },
+            "description": "Session time (s)"
+          },
+          {
+            "name": "reference",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "previous",
+                "best"
+              ],
+              "type": "string",
+              "description": "previous lap, or the best lap until t",
+              "default": "previous",
+              "title": "Reference"
+            },
+            "description": "previous lap, or the best lap until t"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LapProgress"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/compare": {
       "get": {
         "summary": "Compare Laps",
@@ -1271,7 +1376,7 @@
     "/api/live/{year}/{round}/{session}/events": {
       "get": {
         "summary": "Live Events",
-        "description": "Server-sent events: a `status` event (LiveSessionInfo) whenever the data horizon or the\nversion moves. A new version means new laps: refetch the session's data.",
+        "description": "Server-sent events: a `status` event (LiveSessionInfo) whenever the data horizon or the\nversion moves (a new version means new laps: refetch the session's data), and a `positions`\nevent with the new points of the position track: {first, count, cars} as in /positions, from\ngrid point `first` on. Points from before the connection come from /positions.",
         "operationId": "live_events_api_live__year___round___session__events_get",
         "parameters": [
           {
@@ -2889,6 +2994,154 @@
         ],
         "title": "Lap"
       },
+      "LapProgress": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "elapsed": {
+            "type": "number",
+            "title": "Elapsed"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress"
+          },
+          "out_lap": {
+            "type": "boolean",
+            "title": "Out Lap"
+          },
+          "distance": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Distance"
+          },
+          "time": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Time"
+          },
+          "speed": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Speed"
+          },
+          "throttle": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Throttle"
+          },
+          "brake": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Brake"
+          },
+          "gear": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Gear"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delta": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Delta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "start",
+          "elapsed",
+          "progress",
+          "out_lap",
+          "distance",
+          "time",
+          "speed",
+          "throttle",
+          "brake",
+          "gear",
+          "reference",
+          "delta"
+        ],
+        "title": "LapProgress",
+        "description": "The lap a driver is on at session time t, as far as it got (replay: a finished lap cut off\nat t; live: the samples so far), on a distance grid over the reference lap with the delta to\nit. Values past where the car is are null, so a chart over the whole lap grows."
+      },
       "LiveSessionInfo": {
         "properties": {
           "year": {
@@ -3391,6 +3644,47 @@
         ],
         "title": "PitWindow",
         "description": "A pit stop for one driver at the cutoff: where he rejoins, and undercut/overcut on the cars\nahead and behind. Tyre model from Degradation; pit loss from the circuit."
+      },
+      "ProgressReference": {
+        "properties": {
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "lap_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap Time"
+          },
+          "speed": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Speed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lap",
+          "lap_time",
+          "speed"
+        ],
+        "title": "ProgressReference",
+        "description": "The finished lap the lap in progress is measured against, on the same grid."
       },
       "RaceControlMessage": {
         "properties": {

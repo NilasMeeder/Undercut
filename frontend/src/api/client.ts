@@ -70,3 +70,4 @@ export function apiSend<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body
   });
 }
 export type LiveSessionInfo = Schemas['LiveSessionInfo'];
+export type LapProgress = Schemas['LapProgress'];

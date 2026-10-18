@@ -167,7 +167,11 @@ def resolve_lap(year: int, round_number: int, code: str, driver: str, lap: int |
 @session_cache(maxsize=256)
 def get_trace(year: int, round_number: int, code: str, driver: str, lap: int) -> analysis.LapTrace:
     event, session = folders(year, round_number, code)
-    tel = ti.lap_telemetry(year, event, session, driver, lap)
+    return trace_from_tel(ti.lap_telemetry(year, event, session, driver, lap), year)
+
+
+def trace_from_tel(tel: dict[str, Any], year: int) -> analysis.LapTrace:
+    """A lap's trace from the archive's `tel` columns (also what the live recorder writes)."""
     channels = {
         name: np.asarray(tel[key], dtype=float)
         for name, key in TRACE_CHANNELS.items()

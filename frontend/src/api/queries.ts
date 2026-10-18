@@ -11,6 +11,7 @@ import {
   type Comparison,
   type Degradation,
   type Lap,
+  type LapProgress,
   type PitWindow,
   type RaceHistory,
   type RaceControlMessage,
@@ -67,6 +68,30 @@ export function useComparison(laps: LapRef[], { step = 5, miniSectors = 25 }: Co
     staleTime: Infinity,
     // Keep showing the previous comparison while a new selection loads (no layout jump).
     placeholderData: keepPreviousData,
+  });
+}
+
+export type ProgressReference = 'previous' | 'best';
+
+/** The lap a driver is on at session time `t` (whole seconds, so a playing clock asks about once
+ * a second); the previous answer stays on screen while the next one loads. */
+export function useLapProgress(
+  driver: string | undefined,
+  t: number,
+  reference: ProgressReference
+) {
+  const key = useSessionKey();
+  const at = Math.floor(t);
+  return useQuery({
+    queryKey: ['session', key, 'lap-progress', driver, at, reference],
+    queryFn: () =>
+      apiGet<LapProgress>(
+        `${sessionPath(key!)}/lap-progress?driver=${driver}&t=${at}&reference=${reference}`
+      ),
+    enabled: key != null && driver != null,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    retry: false,
   });
 }
 

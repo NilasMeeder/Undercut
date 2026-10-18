@@ -1,12 +1,16 @@
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useLaps, useSessionDetail } from '@/api/queries';
 import { formatLapTime } from '@/lib/format';
 import { GROUP_COLORS, GROUP_IDS, useGroups } from '@/store/groups';
 
-/** The laps selected per link group, removable. The first lap of a group is the reference. */
+/** The laps selected per link group, removable, and whether they follow the newest laps. The
+ * first lap of a group is the reference. */
 export function GroupBar() {
   const groups = useGroups((s) => s.laps);
   const toggleLap = useGroups((s) => s.toggleLap);
+  const follow = useGroups((s) => s.follow);
+  const setFollow = useGroups((s) => s.setFollow);
   const laps = useLaps();
   const detail = useSessionDetail();
 
@@ -40,6 +44,24 @@ export function GroupBar() {
               </button>
             </span>
           ))}
+          <button
+            type="button"
+            title={
+              follow[g]
+                ? 'Following the newest laps: picking a lap by hand stops it (l)'
+                : 'Follow the newest laps: each driver moves to their newest lap at the clock, every lap (l)'
+            }
+            aria-pressed={follow[g]}
+            onClick={() => setFollow(g, !follow[g])}
+            className={cn(
+              'h-5 border px-1 text-[9px] font-semibold tracking-wider',
+              follow[g]
+                ? 'border-line-strong bg-raised text-text'
+                : 'border-transparent text-faint hover:text-text'
+            )}
+          >
+            FOLLOW
+          </button>
         </div>
       ))}
     </div>

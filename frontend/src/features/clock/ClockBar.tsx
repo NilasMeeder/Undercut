@@ -11,7 +11,7 @@ import { formatClock, TRACK_STATUS_LABEL } from '@/lib/replay';
 import { cn } from '@/lib/utils';
 import { clock, SPEEDS, useClockControls, useClockTime } from '@/store/clock';
 import { useDashboards } from '@/store/dashboards';
-import { markNew } from '@/store/markerEditor';
+import { editMarker, markNew } from '@/store/markerEditor';
 
 /** A moment counts as "now" this long after it, so its note can be read while playing. */
 const MOMENT_SHOWN = 8;
@@ -184,12 +184,13 @@ function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marke
           key={m.id}
           className="absolute inset-y-0 min-w-[3px] cursor-pointer border-x border-dim bg-marker-fill"
           style={{ left: pct(m.start), width: pct(start + ((m.end ?? m.start) - m.start)) }}
-          title={`${timeLabel(m)}. Click to go there.`}
+          title={`${timeLabel(m)}. Click to go there, double-click to edit or delete.`}
           onPointerDown={(e) => {
             if (e.shiftKey) return;
             e.stopPropagation();
             clock.seek(m.start);
           }}
+          onDoubleClick={() => editMarker(m)}
         />
       ))}
       {range ? (

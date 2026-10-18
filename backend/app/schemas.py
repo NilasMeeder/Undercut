@@ -143,6 +143,41 @@ class Telemetry(BaseModel):
     y: list[float]
 
 
+class ProgressReference(BaseModel):
+    """The finished lap the lap in progress is measured against, on the same grid."""
+
+    lap: int
+    lap_time: float | None
+    speed: list[float | None]
+
+
+class LapProgress(BaseModel):
+    """The lap a driver is on at session time t, as far as it got (replay: a finished lap cut off
+    at t; live: the samples so far), on a distance grid over the reference lap with the delta to
+    it. Values past where the car is are null, so a chart over the whole lap grows."""
+
+    driver: str
+    lap: int
+    start: float
+    """Session time (s) the lap started."""
+    elapsed: float
+    """Seconds into the lap at t (or as far as the samples go)."""
+    progress: float
+    """Metres into the lap, on the grid's scale."""
+    out_lap: bool
+    """First lap after a pit stop or out of the garage: the delta means little."""
+    distance: list[float]
+    """Grid (m), every 5 m."""
+    time: list[float | None]
+    speed: list[float | None]
+    throttle: list[float | None]
+    brake: list[int | None]
+    gear: list[int | None]
+    reference: ProgressReference | None
+    delta: list[float | None]
+    """Seconds behind the reference; positive = slower."""
+
+
 class ComparedLap(BaseModel):
     """A lap resampled onto the comparison's shared distance grid."""
 

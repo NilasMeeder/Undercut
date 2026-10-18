@@ -279,6 +279,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/lap-progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lap Progress */
+        get: operations["lap_progress_api_sessions__year___round___session__lap_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -326,7 +343,9 @@ export interface paths {
         /**
          * Live Events
          * @description Server-sent events: a `status` event (LiveSessionInfo) whenever the data horizon or the
-         *     version moves. A new version means new laps: refetch the session's data.
+         *     version moves (a new version means new laps: refetch the session's data), and a `positions`
+         *     event with the new points of the position track: {first, count, cars} as in /positions, from
+         *     grid point `first` on. Points from before the connection come from /positions.
          */
         get: operations["live_events_api_live__year___round___session__events_get"];
         put?: never;
@@ -755,6 +774,41 @@ export interface components {
             pit_out_time: number | null;
         };
         /**
+         * LapProgress
+         * @description The lap a driver is on at session time t, as far as it got (replay: a finished lap cut off
+         *     at t; live: the samples so far), on a distance grid over the reference lap with the delta to
+         *     it. Values past where the car is are null, so a chart over the whole lap grows.
+         */
+        LapProgress: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Start */
+            start: number;
+            /** Elapsed */
+            elapsed: number;
+            /** Progress */
+            progress: number;
+            /** Out Lap */
+            out_lap: boolean;
+            /** Distance */
+            distance: number[];
+            /** Time */
+            time: (number | null)[];
+            /** Speed */
+            speed: (number | null)[];
+            /** Throttle */
+            throttle: (number | null)[];
+            /** Brake */
+            brake: (number | null)[];
+            /** Gear */
+            gear: (number | null)[];
+            reference: components["schemas"]["ProgressReference"] | null;
+            /** Delta */
+            delta: (number | null)[];
+        };
+        /**
          * LiveSessionInfo
          * @description A session recorded from the live timing feed (app/live), live or done.
          */
@@ -925,6 +979,18 @@ export interface components {
             duels: components["schemas"]["Duel"][];
             /** Notes */
             notes: string[];
+        };
+        /**
+         * ProgressReference
+         * @description The finished lap the lap in progress is measured against, on the same grid.
+         */
+        ProgressReference: {
+            /** Lap */
+            lap: number;
+            /** Lap Time */
+            lap_time: number | null;
+            /** Speed */
+            speed: (number | null)[];
         };
         /** RaceControlMessage */
         RaceControlMessage: {
@@ -1950,6 +2016,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Telemetry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lap_progress_api_sessions__year___round___session__lap_progress_get: {
+        parameters: {
+            query: {
+                driver: string;
+                /** @description Session time (s) */
+                t: number;
+                /** @description previous lap, or the best lap until t */
+                reference?: "previous" | "best";
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LapProgress"];
                 };
             };
             /** @description Validation Error */

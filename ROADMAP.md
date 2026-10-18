@@ -170,8 +170,8 @@ Ontwerp (zie CLAUDE.md "Markeringen en views"): markeringen per sessie, op afsta
 - [ ] Markeringen over sessies heen: die van Q ook in R tonen (zelfde event), zoeken op tag over alles
 - [ ] Inzichten van de Corners-widget als (tijdelijke) markering in de charts (kan nu met `DistanceMark`)
 - [ ] Markeringen en views mee in de export/import van het Layout-menu
-- [ ] Klik op een markering in een chart, de kaart of de klokbalk = bewerken/verwijderen (nu alleen via
-      het Markers-paneel)
+- [x] Klik op een markering in een chart = bewerken/verwijderen, dubbelklik op de klokbalk
+- [ ] Hetzelfde op de Track map en de Track line
 
 ## Fase 6 — Strategie en race-analyse
 
@@ -211,12 +211,11 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [ ] Late start: een opname die halverwege begint mist laps (FastF1 telt NumberOfLaps per stap);
       eventueel de eerste toestand als startpunt van de lap-telling gebruiken
 - [ ] Tower live direct uit TimingData (gaps/intervallen van F1 zelf), nu uit de laps (tot 3 s later)
-- [ ] Live telemetrie volgen (Nilas, 2026-10-18): (1) "volg de laatste lap" per link-groep, bv.
-      `VER:last` tegen `VER:last-1`, schuift elke lap mee (nu staat de selectie op vaste lapnummers);
-      (2) de lap die nu bezig is als groeiende trace, met de delta tot de vorige lap op hetzelfde punt
-      (zoals de live delta op tv); (3) eventueel live meters (snelheid, gear, gas/rem nu). De data is er:
-      CarData.z en Position.z komen al binnen, telemetrie van afgeronde laps staat er ~3 s na de lijn.
-      Te bouwen en te testen met de simulator (die stuurt CarData.z ook).
+- [x] Live telemetrie volgen (2026-10-18): FOLLOW per link-groep (`l`, de laps schuiven per lap mee,
+      ook in replay) en de widget Live lap (de lap die bezig is, groeiend, met de live delta tegen de
+      vorige of de beste lap). Getest met de simulator (Monza R) en in replay (Monza Q en R)
+- [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
+- [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
 
 ## Later / backlog
 

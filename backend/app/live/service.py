@@ -210,6 +210,21 @@ class LiveSession:
             if tel is not None or final or end < self.horizon - 60:
                 self.written.add((driver, lap))
 
+    def lap_samples(self, driver: str, start: float, end: float) -> dict[str, list] | None:
+        """The `tel` columns of one driver from `start` to `end` (session time), cut off where
+        the samples end: also for a lap that is still going. Safe from request threads."""
+        number = next((n for n, code in list(self.codes.items()) if code == driver), "")
+        car, own = self.car_data.get(number), self.track.cars.get(number)
+        if car is None or own is None:
+            return None
+        car, pos = car.copy(), own.raw.copy()
+        if car.last is None or pos.last is None:
+            return None
+        end = min(end, car.last, pos.last)
+        if end - start < 1:
+            return None
+        return telemetry.lap_telemetry(car, pos, start, end)
+
     def _lap_counts(self, data: dict[str, Any], at: float) -> None:
         for number, line in (data.get("Lines") or {}).items():
             if isinstance(line, dict) and isinstance(line.get("NumberOfLaps"), int):

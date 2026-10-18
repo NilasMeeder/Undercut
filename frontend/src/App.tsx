@@ -8,6 +8,7 @@ import { LiveBadge } from '@/features/live/LiveBadge';
 import { MarkerEditor } from '@/features/markers/MarkerEditor';
 import { useViewFromUrl } from '@/features/views/hooks';
 import { ViewsMenu } from '@/features/views/ViewsMenu';
+import { FollowLatest } from '@/features/session/FollowLatest';
 import { GroupBar } from '@/features/session/GroupBar';
 import { SessionPicker } from '@/features/session/SessionPicker';
 import { useDefaultSelection } from '@/features/session/useDefaultSelection';
@@ -44,6 +45,7 @@ export default function App() {
       </main>
       {session ? <ClockBar /> : null}
       {session ? <MarkerEditor /> : null}
+      {session ? <FollowLatest /> : null}
     </div>
   );
 }

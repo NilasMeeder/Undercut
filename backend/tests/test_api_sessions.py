@@ -267,3 +267,13 @@ def test_race_history_and_degradation(client: TestClient) -> None:
 def test_pit_window_is_for_races(client: TestClient) -> None:
     response = client.get("/api/sessions/2025/1/Q/pit-window?driver=VER")
     assert response.status_code == 404
+
+
+def test_lap_progress_cuts_the_lap_off_at_t(client: TestClient) -> None:
+    body = client.get("/api/sessions/2025/1/Q/lap-progress?driver=VER&t=130").json()
+    assert (body["lap"], body["start"], body["elapsed"]) == (2, 100.0, 30.0)
+    assert body["progress"] == pytest.approx(500.0)
+    assert body["reference"] is None  # lap 1 (the out-lap) has no telemetry
+    assert body["speed"][-1] == 200.0
+    assert set(body["delta"]) == {None}
+    assert client.get("/api/sessions/2025/1/Q/lap-progress?driver=VER&t=170").status_code == 404

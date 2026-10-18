@@ -92,6 +92,13 @@ export function buildCommands({ api, group, laps, views, saveView }: CommandCont
       },
     },
     {
+      id: 'follow',
+      section: 'Laps',
+      title: 'Follow the newest laps (or stop)',
+      key: 'l',
+      run: () => groups().setFollow(group, !groups().follow[group]),
+    },
+    {
       id: 'clear',
       section: 'Laps',
       title: 'Clear the laps of this group',
