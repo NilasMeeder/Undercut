@@ -462,6 +462,11 @@ dan pas bouwen.
   de lap die nu bezig is vergeleken met de beste of de vorige lap (keuze, zoals de referentie van
   Live lap), per bocht bijgewerkt zodra de auto erdoor is
 
+- **Delta in cijfers** (Nilas, 2026-10-19): een klein blokje (widget) met de delta als getal,
+  zoals bovenin Live lap, groot en in één oogopslag: groen als hij voorligt, oranje als hij
+  achterligt. Misschien ook de gap op de auto ervoor en erachter. Let op de stijl: oranje/amber
+  betekent nu clipping en geel "langzamer"; kiezen welke kleur achterliggen krijgt
+
 - **Automatische analyses** (Nilas, 2026-10-18): na (of tijdens) een sessie zelf analyses laten
   draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten
   (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag
