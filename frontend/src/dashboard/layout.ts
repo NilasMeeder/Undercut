@@ -17,12 +17,14 @@ export function addWidget(
   position?: Position,
   config?: WidgetConfig
 ) {
+  const def = WIDGETS_BY_ID.get(widget);
   return api.addPanel<PanelParams>({
     id: newId(widget),
     component: widget,
-    title: WIDGETS_BY_ID.get(widget)?.title ?? widget,
+    title: def?.title ?? widget,
     params: config ? { group, config } : { group },
     position,
+    ...def?.constraints,
   });
 }
 
@@ -102,10 +104,12 @@ function replay(api: DockviewApi) {
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
   addWidget(api, 'markers', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
+  const clock = addWidget(api, 'clock', 'blue', { referencePanel: feed, direction: 'above' });
   const line = addWidget(api, 'trackline', 'blue', { referencePanel: map, direction: 'below' });
   tower.group.api.setSize({ width: 560 });
   feed.group.api.setSize({ width: 360 });
   line.group.api.setSize({ height: 120 });
+  clock.group.api.setSize({ height: 64 });
 }
 
 /** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */

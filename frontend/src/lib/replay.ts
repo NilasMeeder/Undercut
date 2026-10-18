@@ -1,5 +1,5 @@
 import type { PositionTrack } from '@/api/queries';
-import type { Circuit, TrackStatus } from '@/api/client';
+import type { Circuit, SessionTimeline, TrackStatus } from '@/api/client';
 
 export type CarPosition = { x: number; y: number; progress: number };
 
@@ -38,6 +38,19 @@ export function formatClock(seconds: number): string {
   const m = Math.floor((s % 3600) / 60);
   const rest = String(s % 60).padStart(2, '0');
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${rest}` : `${m}:${rest}`;
+}
+
+/** F1's session clock at `t` (time remaining, and whether it runs), or null without one. Before
+ * the first point the clock stands at that point's time. */
+export function sessionClockAt(
+  clock: SessionTimeline['clock'],
+  t: number
+): { remaining: number; running: boolean } | null {
+  if (clock.length === 0) return null;
+  const point = clock.findLast((p) => p.t <= t);
+  if (!point) return { remaining: clock[0].remaining, running: false };
+  const remaining = point.running ? point.remaining - (t - point.t) : point.remaining;
+  return { remaining: Math.max(0, remaining), running: point.running && remaining > 0 };
 }
 
 export const TRACK_STATUS_LABEL: Record<TrackStatus, string> = {

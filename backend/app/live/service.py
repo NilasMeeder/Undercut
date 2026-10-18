@@ -269,6 +269,7 @@ class LiveSession:
             "drivers.json": convert.driver_rows(session),
             # The laps so far do not tell how many there will be.
             "live.json": {"total_laps": _total_laps(session)},
+            "clock.json": convert.clock_columns(self.timing, self.origin),
         }
         with contextlib.suppress(fastf1.exceptions.DataNotLoadedError):  # no laps yet
             laps = files["session_laptimes.json"] = convert.lap_columns(session, self.origin)

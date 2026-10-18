@@ -13,9 +13,9 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met negentien widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Race control, Weather, Timing tower,
-Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met twintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Clock, Race control, Weather, Timing
+tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -224,6 +224,12 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   elk tot de volgende; de laatste loopt over de finish). `replay.sector_flag_periods` maakt uit race
   control (scope `Sector`) perioden per sector tot CLEAR, of tot een baanbrede GREEN/CLEAR/RED/CHEQUERED
   (`SessionTimeline.sector_flags`). De kaart (met alle auto's) en de Track line kleuren die stukken geel.
+- **Sessieklok** (`SessionTimeline.clock`, widget Clock): punten (t, resterend, loopt). Live F1's eigen
+  `ExtrapolatedClock` (`converted/clock.json`, `convert.clock_columns`: updates bevatten alleen wat
+  verandert, dus samenvoegen met de toestand ervoor). Archief: nagerekend in `replay.session_clock`
+  (Q1 18, Q2 15, Q3 12 min, SQ 12/10/8, vanaf de eerste auto uit de pit; training 60 min vanaf de
+  eerste lap; stil tijdens rode vlaggen), dus een paar seconden onzeker. Races: geen klok, de widget
+  toont racetijd en lap. De simulator stuurt de nagerekende klok als `ExtrapolatedClock`.
 
 ## Live (fase 7)
 
@@ -486,6 +492,8 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   description, help, defaults, settings, component: lazy(...) })` + entry in de registry. Volgt hij
   de sessieklok, zet dan `followsClock` (of een functie van de config): afspelen op een dashboard
   zonder zo'n paneel toont in de klokbalk "No panel here follows the clock" met "Open Replay".
+- Kleine panelen (Clock): `constraints: { minimumHeight }` in de widget-definitie. `addWidget` geeft
+  die door aan dockview (dat anders minimaal 100 px houdt) en ze gaan mee in de layout.
 - Dropdowns in titelbalken (`HeaderMenu`) gaan via een portal naar de body met `position: fixed`,
   anders knipt dockview ze af en liggen de panelen eronder erover; ze scrollen als ze te lang zijn.
 - **Paneel-instellingen** zijn declaratief: het type van het config-veld bepaalt de control (boolean =

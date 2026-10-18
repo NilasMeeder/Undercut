@@ -18,6 +18,7 @@ import numpy as np
 
 from app.schemas import (
     CarStatus,
+    ClockPoint,
     Lap,
     RaceControlMessage,
     SectorFlag,
@@ -318,6 +319,47 @@ def segments(laps: list[Lap]) -> list[Segment]:
         (Segment(name=name, start=a, end=b) for name, (a, b) in spans.items()),
         key=lambda s: s.start,
     )
+
+
+PART_LENGTH = {
+    "Q1": 18 * 60,
+    "Q2": 15 * 60,
+    "Q3": 12 * 60,
+    "SQ1": 12 * 60,
+    "SQ2": 10 * 60,
+    "SQ3": 8 * 60,
+}
+"""Seconds on the clock per qualifying part."""
+PRACTICE_LENGTH = 60 * 60
+
+
+def session_clock(
+    kind: SessionKind, start: float, parts: list[Segment], status: list[StatusPeriod]
+) -> list[ClockPoint]:
+    """The session clock as the archive allows (the live feed has F1's own): each qualifying
+    part from its first car out, practice from the first lap start, stopped during red flags.
+    Races: none (the time limit hardly matters, laps do)."""
+    if kind == "race":
+        return []
+    starts = (
+        [(p.start, PART_LENGTH.get(p.name, PART_LENGTH["Q3"])) for p in parts]
+        if kind == "quali"
+        else [(start, PRACTICE_LENGTH)]
+    )
+    reds = sorted((p.start, p.end) for p in status if p.status == "red")
+    points: list[ClockPoint] = []
+    for begin, length in starts:
+        at, remaining = begin, float(length)
+        points.append(ClockPoint(t=begin, remaining=remaining, running=True))
+        for red_start, red_end in reds:
+            if red_end <= at or red_start >= at + remaining:
+                continue
+            stop = max(red_start, at)
+            remaining -= stop - at
+            points.append(ClockPoint(t=stop, remaining=remaining, running=False))
+            at = red_end
+            points.append(ClockPoint(t=red_end, remaining=remaining, running=True))
+    return points
 
 
 def build_index(

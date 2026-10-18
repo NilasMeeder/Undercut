@@ -20,6 +20,7 @@ from app.config import REPLAY_CACHE_DIR
 from app.generations import session_cache
 from app.live import recordings
 from app.schemas import (
+    ClockPoint,
     RaceControlMessage,
     ReplayState,
     ReplayStatus,
@@ -67,6 +68,8 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
                 first[lap.lap] = min(lap.start_time, first.get(lap.lap, math.inf))
         lap_starts = [first[n] for n in sorted(first)]
     messages = _race_control(year, round_number, code)
+    parts = replay.segments(laps) if kind == "quali" else []
+    status = replay.track_status_periods(messages, start, end)
     return SessionTimeline(
         start=start,
         end=end,
@@ -74,10 +77,27 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
         kind=kind,
         total_laps=total_laps,
         lap_starts=lap_starts,
-        segments=replay.segments(laps) if kind == "quali" else [],
-        track_status=replay.track_status_periods(messages, start, end),
+        segments=parts,
+        track_status=status,
         sector_flags=replay.sector_flag_periods(messages, start, end),
+        clock=(_live_clock(year, round_number, code) if kind != "race" else [])
+        or replay.session_clock(kind, start, parts, status),
     )
+
+
+def _live_clock(year: int, round_number: int, code: str) -> list[ClockPoint]:
+    """F1's own session clock, from a live recording (live/convert.py clock_columns)."""
+    event, session = sessions.folders(year, round_number, code)
+    columns = ti.live_file(year, event, session, "clock.json") or {}
+    return [
+        ClockPoint(t=t, remaining=remaining, running=running)
+        for t, remaining, running in zip(
+            columns.get("t", []),
+            columns.get("remaining", []),
+            columns.get("running", []),
+            strict=True,
+        )
+    ]
 
 
 def starting_grid(year: int, round_number: int, code: str) -> dict[str, int]:

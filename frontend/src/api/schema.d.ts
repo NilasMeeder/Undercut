@@ -489,6 +489,19 @@ export interface components {
             pit_loss_vsc: number | null;
         };
         /**
+         * ClockPoint
+         * @description F1's session clock from session time `t` on: `remaining` seconds, counting down if
+         *     `running` (stopped under a red flag and between qualifying parts).
+         */
+        ClockPoint: {
+            /** T */
+            t: number;
+            /** Remaining */
+            remaining: number;
+            /** Running */
+            running: boolean;
+        };
+        /**
          * ComparedLap
          * @description A lap resampled onto the comparison's shared distance grid.
          */
@@ -1176,6 +1189,8 @@ export interface components {
             track_status: components["schemas"]["StatusPeriod"][];
             /** Sector Flags */
             sector_flags: components["schemas"]["SectorFlag"][];
+            /** Clock */
+            clock: components["schemas"]["ClockPoint"][];
         };
         /** StatusPeriod */
         StatusPeriod: {

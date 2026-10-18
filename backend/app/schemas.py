@@ -302,6 +302,15 @@ class SectorFlag(BaseModel):
     flag: Literal["yellow", "double_yellow"]
 
 
+class ClockPoint(BaseModel):
+    """F1's session clock from session time `t` on: `remaining` seconds, counting down if
+    `running` (stopped under a red flag and between qualifying parts)."""
+
+    t: float
+    remaining: float
+    running: bool
+
+
 class SessionTimeline(BaseModel):
     """What the session clock needs: its range, the laps and the track status over time."""
 
@@ -318,6 +327,9 @@ class SessionTimeline(BaseModel):
     segments: list[Segment]
     track_status: list[StatusPeriod]
     sector_flags: list[SectorFlag]
+    clock: list[ClockPoint]
+    """The session clock (time remaining): F1's own when recorded live, otherwise worked out from
+    the qualifying parts (or the first lap of practice) and red flags. Empty for races."""
 
 
 ReplayState = Literal["missing", "loading", "ready", "error"]

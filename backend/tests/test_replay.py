@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from app import replay, sessions
-from app.schemas import Lap, RaceControlMessage
+from app.schemas import Lap, RaceControlMessage, Segment, StatusPeriod
 from app.sources import jolpica
 
 
@@ -329,3 +329,20 @@ def test_quali_eliminated_drivers_below(quali: replay.TimingIndex) -> None:
     assert state.rows[0].best_lap == 79.0
     assert state.rows[2].best_lap == 81.0
     assert state.rows[2].status == "garage"
+
+
+def test_session_clock_counts_down_each_part_and_stops_for_red_flags() -> None:
+    parts = [
+        Segment(name="Q1", start=100.0, end=1300.0),
+        Segment(name="Q2", start=1800.0, end=2800),
+    ]
+    red = [StatusPeriod(start=400.0, end=1000.0, status="red")]
+    points = replay.session_clock("quali", 90.0, parts, red)
+    assert [(p.t, p.remaining, p.running) for p in points] == [
+        (100.0, 1080.0, True),
+        (400.0, 780.0, False),  # 300 s gone when the red flag came out
+        (1000.0, 780.0, True),
+        (1800.0, 900.0, True),  # Q2: 15 minutes, the red flag was before it
+    ]
+    assert [p.remaining for p in replay.session_clock("practice", 50.0, [], [])] == [3600.0]
+    assert replay.session_clock("race", 0.0, [], red) == []

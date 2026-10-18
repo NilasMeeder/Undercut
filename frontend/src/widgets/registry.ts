@@ -1,4 +1,5 @@
 import { bestsWidget } from './bests/widget';
+import { clockWidget } from './clock/widget';
 import { cornersWidget } from './corners/widget';
 import { deltaWidget } from './delta/widget';
 import { gapsWidget } from './gaps/widget';
@@ -33,6 +34,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   speedTrapsWidget,
   timelineWidget,
   cornersWidget,
+  clockWidget,
   raceControlWidget,
   weatherWidget,
   towerWidget,

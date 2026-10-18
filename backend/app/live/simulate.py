@@ -8,8 +8,8 @@ thing (sped up), so the backend sees a session in progress. `--speed 0` writes e
 The messages follow the topics and shapes FastF1's parsers read (fastf1/_api.py): TimingData per
 timing point (sectors, lap times, lap count, pit in/out, speed traps, positions and gaps),
 TimingAppData stints, Position.z and CarData.z at 4 Hz, TrackStatus, RaceControlMessages,
-WeatherData, LapCount and the session status. What the archive does not have (positions before the
-start, cars in the garage) is not simulated.
+WeatherData, LapCount, ExtrapolatedClock and the session status. What the archive does not have
+(positions before the start, cars in the garage) is not simulated.
 """
 
 import argparse
@@ -59,6 +59,12 @@ class Update:
 def lap_time(seconds: float) -> str:
     minutes, rest = divmod(seconds, 60)
     return f"{int(minutes)}:{rest:06.3f}" if minutes else f"{rest:.3f}"
+
+
+def clock_time(seconds: float) -> str:
+    """4679.0 -> '01:17:59', as ExtrapolatedClock sends it."""
+    whole = round(seconds)
+    return f"{whole // 3600:02d}:{whole % 3600 // 60:02d}:{whole % 60:02d}"
 
 
 def gap(seconds: float) -> str:
@@ -152,6 +158,7 @@ class Simulation:
         out += self._race_control()
         out += self._weather()
         out += self._lap_count()
+        out += self._clock()
         out += self._samples()
         out += [
             Update(at, "Heartbeat", {"Utc": feed.format_utc(self.utc(at))})
@@ -362,6 +369,21 @@ class Simulation:
             }
             out.append(Update(at, "WeatherData", data))
         return out
+
+    def _clock(self) -> list[Update]:
+        """ExtrapolatedClock at each point of the archive's worked-out session clock."""
+        return [
+            Update(
+                p.t,
+                "ExtrapolatedClock",
+                {
+                    "Utc": feed.format_utc(self.utc(p.t)),
+                    "Remaining": clock_time(p.remaining),
+                    "Extrapolating": p.running,
+                },
+            )
+            for p in self.timeline.clock
+        ]
 
     def _lap_count(self) -> list[Update]:
         if self.timeline.kind != "race" or not self.timeline.total_laps:

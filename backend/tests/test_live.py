@@ -154,3 +154,23 @@ def test_samples_copy_is_cut_to_whole_samples() -> None:
     assert (list(copy.t), list(copy.values["speed"])) == ([1.0, 2.0], [100.0, 110.0])
     samples.add(4.0, {"speed": 0.0})  # the original still grows (no buffer is exported)
     assert copy.last == 2.0
+
+
+def test_clock_columns_merge_updates_into_the_state() -> None:
+    origin = datetime(2025, 9, 6, 14, 0, tzinfo=UTC)
+    at = lambda s: f"2025-09-06T14:{s // 60:02d}:{s % 60:02d}.000Z"  # noqa: E731
+    messages = [
+        feed.Message("ExtrapolatedClock", {"Utc": at(0), "Remaining": "00:18:00"}, None),
+        feed.Message("ExtrapolatedClock", {"Utc": at(30), "Extrapolating": True}, origin),
+        feed.Message("TimingData", {"Lines": {}}, origin),
+        feed.Message(
+            "ExtrapolatedClock",
+            {"Utc": at(330), "Remaining": "00:12:00", "Extrapolating": False},
+            origin,
+        ),
+    ]
+    assert convert.clock_columns(messages, origin) == {
+        "t": [0.0, 30.0, 330.0],
+        "remaining": [1080.0, 1080.0, 720.0],
+        "running": [False, True, False],
+    }

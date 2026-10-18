@@ -205,5 +205,34 @@ def weather_columns(session: fastf1.core.Session) -> dict[str, list]:
     }
 
 
+def _clock_seconds(value: Any) -> float | None:
+    """'01:17:59' -> 4679.0."""
+    try:
+        hours, minutes, seconds = str(value).split(":")
+        return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+    except ValueError:
+        return None
+
+
+def clock_columns(messages: list[Message], origin: datetime) -> dict[str, list]:
+    """F1's session clock (ExtrapolatedClock) as columns t, remaining, running. Each message is a
+    reference point: `Remaining` at `Utc`, counting down while `Extrapolating`. Updates only carry
+    what changed, so they are merged into the state before them."""
+    state: dict[str, Any] = {}
+    columns: dict[str, list] = {"t": [], "remaining": [], "running": []}
+    for message in messages:
+        if message.topic != "ExtrapolatedClock" or not isinstance(message.data, dict):
+            continue
+        state |= message.data
+        utc = parse_utc(str(state.get("Utc", "")))
+        remaining = _clock_seconds(state.get("Remaining"))
+        if utc is None or remaining is None:
+            continue
+        columns["t"].append(round(session_time(utc, origin), 3))
+        columns["remaining"].append(remaining)
+        columns["running"].append(bool(state.get("Extrapolating", False)))
+    return columns
+
+
 def session_time(utc: datetime, origin: datetime) -> float:
     return (utc - origin) / timedelta(seconds=1)

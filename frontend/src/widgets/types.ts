@@ -28,6 +28,9 @@ export type WidgetDef<C extends object> = {
   help: WidgetHelp;
   defaults: C;
   settings: Setting<C>[];
+  /** Size limits in px (the panel with its title bar), for small panels: dockview's minimum is
+   * 100 px otherwise. Stored with the panel in the layout. */
+  constraints?: { minimumHeight?: number; maximumHeight?: number };
   /** The panel moves with the session clock (replay, live); may depend on its settings. */
   followsClock?: boolean | ((config: C) => boolean);
   component: FunctionComponent<WidgetProps<C>>;

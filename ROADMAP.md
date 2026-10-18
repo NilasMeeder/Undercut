@@ -214,6 +214,8 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [x] Live telemetrie volgen (2026-10-18): FOLLOW per link-groep (`l`, de laps schuiven per lap mee,
       ook in replay) en de widget Live lap (de lap die bezig is, groeiend, met de live delta tegen de
       vorige of de beste lap). Getest met de simulator (Monza R) en in replay (Monza Q en R)
+- [x] Widget Clock (2026-10-18): sessieklok in rode cijfers, live F1's ExtrapolatedClock, anders
+      nagerekend uit Q-delen en rode vlaggen; race: racetijd en lap. In de Replay-preset bovenaan rechts
 - [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
 - [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
 

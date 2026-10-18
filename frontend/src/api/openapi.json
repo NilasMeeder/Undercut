@@ -1989,6 +1989,30 @@
         ],
         "title": "Circuit"
       },
+      "ClockPoint": {
+        "properties": {
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "remaining": {
+            "type": "number",
+            "title": "Remaining"
+          },
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          }
+        },
+        "type": "object",
+        "required": [
+          "t",
+          "remaining",
+          "running"
+        ],
+        "title": "ClockPoint",
+        "description": "F1's session clock from session time `t` on: `remaining` seconds, counting down if\n`running` (stopped under a red flag and between qualifying parts)."
+      },
       "ComparedLap": {
         "properties": {
           "driver": {
@@ -4221,6 +4245,13 @@
             },
             "type": "array",
             "title": "Sector Flags"
+          },
+          "clock": {
+            "items": {
+              "$ref": "#/components/schemas/ClockPoint"
+            },
+            "type": "array",
+            "title": "Clock"
           }
         },
         "type": "object",
@@ -4233,7 +4264,8 @@
           "lap_starts",
           "segments",
           "track_status",
-          "sector_flags"
+          "sector_flags",
+          "clock"
         ],
         "title": "SessionTimeline",
         "description": "What the session clock needs: its range, the laps and the track status over time."
