@@ -1585,6 +1585,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/sectors": {
+      "get": {
+        "summary": "Track Sectors",
+        "description": "Where sector 1 and 2 end along the lap, for the map.",
+        "operationId": "track_sectors_api_sessions__year___round___session__sectors_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackSectors"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/energy/session": {
       "get": {
         "summary": "Energy Session",
@@ -3321,6 +3389,13 @@
             "type": "array",
             "title": "Clipping"
           },
+          "deploying": {
+            "items": {
+              "$ref": "#/components/schemas/ClipStretch"
+            },
+            "type": "array",
+            "title": "Deploying"
+          },
           "clipped": {
             "type": "number",
             "title": "Clipped"
@@ -3351,6 +3426,7 @@
           "end_speed",
           "clip_at",
           "clipping",
+          "deploying",
           "clipped",
           "cost_speed",
           "cost_time",
@@ -6181,6 +6257,23 @@
           "current"
         ],
         "title": "TowerSector"
+      },
+      "TrackSectors": {
+        "properties": {
+          "boundaries": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Boundaries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "boundaries"
+        ],
+        "title": "TrackSectors",
+        "description": "Where the timing sectors end along the lap, for the map."
       },
       "TrackZone": {
         "properties": {

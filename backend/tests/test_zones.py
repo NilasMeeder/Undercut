@@ -1,6 +1,6 @@
 import numpy as np
 
-from app.zones import drs_zones
+from app.zones import drs_zones, sector_bounds
 
 LENGTH = 5800.0
 
@@ -40,3 +40,14 @@ def test_laps_of_another_length_are_scaled_to_the_lap() -> None:
     laps = [flap_lap([(3045, 3828)], length=5820.0) for _ in range(4)]
     ((start, end),) = drs_zones(laps, LENGTH)
     assert abs(start - 3045 * LENGTH / 5820) < 25 and abs(end - 3828 * LENGTH / 5820) < 25
+
+
+def test_sector_bounds_are_the_median_share_of_the_lap() -> None:
+    # 80 s over 5800 m at a constant speed: sector 1 ends at 25 s, sector 2 at 55 s.
+    time = np.linspace(0.0, 80.0, 400)
+    laps = [(time / 80.0 * length, time, 25.0, 30.0) for length in (5790.0, 5800.0, 5830.0)]
+    # On the map's lap length, whatever each lap measured.
+    assert sector_bounds(laps, 5793.0) == [round(5793.0 * 25 / 80, 1), round(5793.0 * 55 / 80, 1)]
+    assert sector_bounds([], 5793.0) == []
+    # Sector times past the end of the telemetry say nothing.
+    assert sector_bounds([(time, time, 50.0, 40.0)], 5793.0) == []

@@ -324,3 +324,20 @@ def test_run_across_the_line():
     assert (
         energy.across_line(energy.kinematics(lap()), energy.runs(energy.kinematics(lap()))) is None
     )
+
+
+def test_deploying_is_more_than_the_engine_alone():
+    env = envelope_of(lap(), lap(power=POWER * 0.98))
+    k, corner, after, run = straight_of(lap())
+    full = energy.analyse(k, corner, after, run, env, env)
+    # Full power: deploying from where power, not grip, limits (200 km/h) until it stops
+    # gaining at its top speed (~323 km/h after ~950 m).
+    [(start, end)] = full.deploying
+    assert 200 < float(np.interp(start, k.distance, k.speed)) < 215
+    assert 800 < end < 1100
+    # The same car on the engine alone (the MGU-K's share of the power gone) never deploys.
+    engine = POWER - energy.K_POWER / energy.MASS
+    k, corner, after, run = straight_of(lap(power=engine))
+    assert energy.analyse(k, corner, after, run, env, env).deploying == []
+    # Without the session's envelope nothing is said.
+    assert energy.analyse(k, corner, after, run, env).deploying == []

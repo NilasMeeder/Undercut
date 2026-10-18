@@ -375,6 +375,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/sectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Track Sectors
+         * @description Where sector 1 and 2 end along the lap, for the map.
+         */
+        get: operations["track_sectors_api_sessions__year___round___session__sectors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/energy/session": {
         parameters: {
             query?: never;
@@ -914,6 +934,8 @@ export interface components {
             clip_at: number | null;
             /** Clipping */
             clipping: components["schemas"]["ClipStretch"][];
+            /** Deploying */
+            deploying: components["schemas"]["ClipStretch"][];
             /** Clipped */
             clipped: number;
             /** Cost Speed */
@@ -1790,6 +1812,14 @@ export interface components {
             timing: "best" | "pb" | "none";
             /** Current */
             current: boolean;
+        };
+        /**
+         * TrackSectors
+         * @description Where the timing sectors end along the lap, for the map.
+         */
+        TrackSectors: {
+            /** Boundaries */
+            boundaries: number[];
         };
         /**
          * TrackZone
@@ -2678,6 +2708,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrackZones"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    track_sectors_api_sessions__year___round___session__sectors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackSectors"];
                 };
             };
             /** @description Validation Error */

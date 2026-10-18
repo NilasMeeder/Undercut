@@ -45,6 +45,7 @@ export type EnergyStraightLap = Schemas['EnergyStraightLap'];
 export type EnergyStraightStats = Schemas['EnergyStraightStats'];
 export type EnergySession = Schemas['EnergySession'];
 export type TrackZones = Schemas['TrackZones'];
+export type TrackSectors = Schemas['TrackSectors'];
 export type TrackZone = Schemas['TrackZone'];
 export type DriverEnergy = Schemas['DriverEnergy'];
 export type SessionReport = Schemas['SessionReport'];

@@ -160,7 +160,9 @@ def get_session(year: int, round_number: int, code: str) -> SessionEnergy:
     )
     analysed = {
         key: {
-            corner: energy.analyse(runs.kinematics, corner, start, run, envelopes.get(corner))
+            corner: energy.analyse(
+                runs.kinematics, corner, start, run, envelopes.get(corner), session_envelope
+            )
             for corner, start, run in runs.straights
             if corner in order
         }
@@ -191,7 +193,9 @@ def lap_straights(
     if known is not None:
         return known, runs.length
     straights = {
-        corner: energy.analyse(runs.kinematics, corner, start, run, result.envelopes.get(corner))
+        corner: energy.analyse(
+            runs.kinematics, corner, start, run, result.envelopes.get(corner), result.session
+        )
         for corner, start, run in runs.straights
         if corner in result.order
     }
@@ -237,6 +241,7 @@ def _straight_lap(row: energy.Straight, scale: float) -> EnergyStraightLap:
         end_speed=round(row.end_speed, 1),
         clip_at=None if row.clip_at is None else m(row.clip_at),
         clipping=[ClipStretch(start=m(a), end=m(b)) for a, b in row.clipping],
+        deploying=[ClipStretch(start=m(a), end=m(b)) for a, b in row.deploying],
         clipped=round(row.clipped * scale),
         cost_speed=round(row.clip_cost_speed, 1),
         cost_time=round(row.clip_cost_time, 3),

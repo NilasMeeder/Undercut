@@ -448,6 +448,14 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   helling op; in bochten doet hij wat de lap deed), tot het eind van vol gas, nooit sneller dan de
   top van de omhullende. Telt alleen als dat ≥ 3 km/h scheelt (anders zit de auto aan zijn
   luchtweerstand). Precisie: het venster van 1 s laat het clippunt tot ~40 m te laat beginnen.
+- **Inzet** (`energy.deploying`, `EnergyStraightLap.deploying`): waar een auto duidelijk meer wint
+  dan de motor alleen kan. Motor alleen = de omhullende van de **hele sessie** (alle straights:
+  volle inzet op die snelheid, waar dan ook gezien) min wat de MGU-K toevoegt, `K_POWER` /
+  (`MASS` × v) met 280 kW (bij 230 km/h ~9 tegen ~3,5 m/s², dus geen 350) en 800 kg, plus 1 m/s²
+  marge, minstens `FLAT`; pas vanaf 200 km/h (daaronder beperkt grip). Niet de omhullende van de
+  straight zelf: uit de Parabolica zet niemand in (3–4,7 m/s² bij 240 km/h), dan leek elke winst
+  inzet. Boven ~300 km/h wint de motor alleen niets meer, dus daar is elke winst de batterij.
+  Monza 2026 Q, RUS L16 →T1: inzet vanaf ~−100 m (a springt van 3 naar 6 m/s²) tot 370 m.
 - **Lift and coast**: ≥ 60 m van lift tot rem (gewoon van gas naar rem is ~30 m).
 - **Wat het niet weet**: slipstream en (race) overtake mode zitten in de omhullende, dus in een race
   lijkt iedereen meer te clippen; een zwakkere motor en minder inzet zijn niet te scheiden.
@@ -477,7 +485,14 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   bovenin de gear-chart (`ticks`). Alleen zonder DRS (2026+), zodat een oude sessie niet al zijn
   telemetrie hoeft te lezen.
 
-- **Zones op de kaart** (`zones.py`, `/zones`, Track map-instelling "Zones", standaard aan): een paarse
+- **Inzet op de kaart**: een zoombereik (klik op een straight in Energy) is op de Track map wit;
+  vanaf 2026 is het stuk van de eerste lap paars waar hij inzet en amber waar hij clipt
+  (`zoomPieces`, legenda rechtsonder). Nilas wil dat alleen op zo'n klik zien, niet standaard.
+- **Sectoren op de kaart** (`/sectors`, `zones.get_sectors`, Track map-instelling "Sectors",
+  standaard uit): streepjes waar S1 en S2 eindigen (mediaan over de beste laps van de 5 snelsten:
+  de afstand op hun sectortijd als deel van de lap, × de laplengte van de kaart), label S1/S2/S3
+  binnen de baan. Monza 2025 Q: 1894 en 3711 m.
+- **Zones op de kaart** (`zones.py`, `/zones`, Track map-instelling "Zones", standaard **uit**): een paarse
   streep net buiten de baan (`outwardNormals`: weg van het midden van het circuit). Tot 2025 de
   DRS-zones: waar ≥ 50% van de beste laps van de 8 snelsten de flap open heeft (`drs` is 0/1 in de
   data), ≥ 100 m; een race (en sprint) neemt ze uit Q (SQ), want daar gaat de flap alleen open

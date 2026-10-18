@@ -279,7 +279,15 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
 - [x] Zones op de Track map (2026-10-18, Nilas): paars de DRS-zones (tot 2025, een race uit Q) of
       de straights (2026), amber vanaf waar de sessie meestal clipt, en per vergeleken lap waar hij
       clipte. Getest op Monza 2025 Q en R (Pitwall, alle auto's) en Monza 2026 Q
-- [ ] Clipstukken in Live lap (de lap die bezig is)
+- [x] Inzet op de kaart (2026-10-18, Nilas): zones standaard uit; een straight aanklikken in
+      Energy kleurt het witte zoomstuk paars waar de eerste lap inzet en amber waar hij clipt.
+      "Inzet" is nu strenger: meer dan de motor alleen (sessie-omhullende min 280 kW MGU-K, vanaf
+      200 km/h), want Deploy > 0 gaf paars uit de Parabolica. Sectoren (S1/S2/S3) als optie op
+      de kaart. Getest op Monza 2026 Q (GAS L17: T7→T8, T9→T11) en Monza 2025 Q (DRS als optie)
+- [ ] Deploy-kanaal in Telemetry dezelfde regel geven (vult nu paars bij elke positieve waarde)
+- [ ] Inzet en clippunt nalopen met Nilas op een sessie (gevoel: paars en clippunt kloppen nog
+      niet overal)
+- [ ] Clipstukken in Live lap (de lap die bezig is); Nilas: niet standaard
 - [ ] Officiële straight-mode-zones per circuit (FIA-documenten, met de hand) naast de geschatte straights
 - [x] **Terugschakelen bij vol gas** (2026-10-18, Nilas' vraag of rpm meer zegt): rpm per
       versnelling ligt vast (8e ≈ 35, 7e ≈ 39,4, 6e ≈ 45 rpm per km/h), dus rpm alleen zegt weinig.

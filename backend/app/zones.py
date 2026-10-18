@@ -11,7 +11,7 @@ import numpy as np
 from app import analysis, energies, sessions
 from app.generations import session_cache
 from app.replay import driven
-from app.schemas import Lap, TrackZone, TrackZones
+from app.schemas import Lap, TrackSectors, TrackZone, TrackZones
 from app.sources import tracinginsights as ti
 
 DRS_LAPS = 8
@@ -30,6 +30,10 @@ STEP = 5.0
 
 DRS_SOURCES = {"R": ("Q",), "S": ("SQ", "Q"), "SS": ("SQ", "Q")}
 """Sessions where the flap only opens behind another car, and where to take the zones from."""
+
+
+SECTOR_LAPS = 5
+"""Best laps of this many drivers tell where the sectors end."""
 
 
 Flap = tuple[np.ndarray, np.ndarray]
@@ -133,3 +137,40 @@ def get_zones(year: int, round_number: int, code: str) -> TrackZones:
         return _straights(year, round_number, code)
     length = sessions.typical_lap_length(year, round_number, code)
     return _drs(year, round_number, code, length) if length else TrackZones(kind="none", zones=[])
+
+
+SectorLap = tuple[np.ndarray, np.ndarray, float, float]
+"""A lap's distance (m) and time into the lap (s) per sample, and its sector 1 and 2 times."""
+
+
+def sector_bounds(laps: list[SectorLap], length: float) -> list[float]:
+    """Where sector 1 and 2 end on a lap of `length`: per lap the distance at the end of each
+    sector as a share of the lap, the median over the laps."""
+    shares: list[tuple[float, float]] = []
+    for distance, time, s1, s2 in laps:
+        if len(distance) < 2 or distance[-1] <= 0 or s1 + s2 >= time[-1]:
+            continue
+        at = np.interp([s1, s1 + s2], time, distance) / distance[-1]
+        shares.append((float(at[0]), float(at[1])))
+    if not shares or length <= 0:
+        return []
+    return [round(float(np.median(column)) * length, 1) for column in zip(*shares, strict=True)]
+
+
+@session_cache(maxsize=8)
+def get_sectors(year: int, round_number: int, code: str) -> TrackSectors:
+    timed = [
+        lap
+        for lap in sessions.get_laps(year, round_number, code)
+        if lap.sector_1 is not None and lap.sector_2 is not None
+    ]
+    laps: list[SectorLap] = []
+    for lap in _best_laps(timed, SECTOR_LAPS):
+        try:
+            trace = sessions.get_trace(year, round_number, code, lap.driver, lap.lap)
+        except ti.SourceNotAvailable:
+            continue
+        assert lap.sector_1 is not None and lap.sector_2 is not None
+        laps.append((trace.distance, trace.time, lap.sector_1, lap.sector_2))
+    length = sessions.get_circuit(year, round_number, code).lap_length
+    return TrackSectors(boundaries=sector_bounds(laps, length))

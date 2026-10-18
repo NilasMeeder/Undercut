@@ -19,6 +19,12 @@ more than on the engine alone (at 230 km/h roughly 9 against 3.5 m/s² at Monza 
   and drag set the speed, and a projection does what the lap did;
 - deploy is the acceleration as a share of the envelope at that speed: 100% = as hard as the
   best laps there, 0 = not gaining, negative = losing speed at full throttle (harvesting);
+- deploying is gaining clearly more than the engine alone could: the session's envelope over
+  all straights (full deployment at that speed, wherever it was seen) less what the MGU-K adds
+  at that speed (K_POWER over mass × speed), at least FLAT, and only where power and not grip
+  sets the acceleration (from DEPLOY_MIN_SPEED). Not the straight's own envelope: where nobody
+  deploys (out of Parabolica) that one is the engine alone. Above ~300 km/h the engine alone
+  gains nothing, so any gain there is the battery;
 - a downshift at full throttle on a straight keeps the engine at or above 10,500 rpm, where the
   2026 fuel energy flow is at its maximum (below it falls by 0.27 MJ/h per rpm): in the data it
   comes when the car is losing speed at full throttle, near the end of a straight.
@@ -95,6 +101,22 @@ DEPLOY_MIN_STRETCH = 0.5
 
 DEPLOY_RANGE = (-100.0, 150.0)
 """Deploy (%) is clamped to this: beyond it the noise of the speed trace dominates."""
+
+K_POWER = 280_000.0
+"""W the MGU-K adds at the wheels, as the data shows it: at Monza 2026 at 230 km/h the best
+laps gain ~9 m/s² against ~3.5 on the engine alone, 5.5 × MASS × 64 m/s. The rules allow
+350 kW at the MGU-K; the drivetrain and the real mass take the rest."""
+
+MASS = 800.0
+"""kg: the 2026 minimum with the driver (768) plus some fuel."""
+
+DEPLOY_MARGIN = 1.0
+"""m/s² more than the engine alone before it counts as deploying: the speed trace is noisy and
+K_POWER and MASS are estimates."""
+
+DEPLOY_MIN_SPEED = 200.0
+"""km/h: slower, grip limits the acceleration with or without the battery, so the data cannot
+tell whether it deploys."""
 
 COAST = 60.0
 """Metres from lift to brake from which it is lift and coast (going from throttle to brake
@@ -412,6 +434,8 @@ class Straight:
     clip_cost_time: float
     downshifts: list[tuple[float, int, float]] = field(default_factory=list)
     """Downshifts at full throttle: (distance, gear after, km/h)."""
+    deploying: list[tuple[float, float]] = field(default_factory=list)
+    """Stretches gaining more than the engine alone could (the MGU-K deploying)."""
 
     @property
     def clipped(self) -> float:
@@ -484,6 +508,21 @@ def deploy(k: Kinematics, run: Run, reference: Envelope) -> np.ndarray:
     return np.where(judged, share, np.nan)
 
 
+def engine_only(full: Envelope, speed: np.ndarray) -> np.ndarray:
+    """m/s² the engine alone would give at `speed` (km/h): `full` (the session's envelope over
+    all straights, full deployment) less what the MGU-K adds at that speed."""
+    v = np.maximum(speed / KMH, 1.0)
+    return full.at(speed) - K_POWER / (MASS * v)
+
+
+def deploying(k: Kinematics, run: Run, full: Envelope) -> np.ndarray:
+    """Per point of the run: gaining clearly more than the engine alone could (at least FLAT),
+    where power sets the acceleration. An estimate: the mass and the MGU-K's power are assumed."""
+    speed = k.speed[run.start : run.end]
+    floor = np.maximum(engine_only(full, speed) + DEPLOY_MARGIN, FLAT)
+    return run.judged & (speed >= DEPLOY_MIN_SPEED) & (run.accel > floor)
+
+
 def _short(mask: np.ndarray, width: int) -> np.ndarray:
     """The True stretches of `mask` shorter than `width` points."""
     edges = np.flatnonzero(np.diff(np.concatenate(([0], mask.astype(np.int8), [0]))))
@@ -543,13 +582,24 @@ def _stretches(mask: np.ndarray, distance: np.ndarray) -> list[tuple[int, int]]:
 
 
 def analyse(
-    k: Kinematics, corner: str, after: str, run: Run, reference: Envelope | None
+    k: Kinematics,
+    corner: str,
+    after: str,
+    run: Run,
+    reference: Envelope | None,
+    full: Envelope | None = None,
 ) -> Straight:
-    """One straight of one lap against the straight's envelope (None: only what was measured)."""
+    """One straight of one lap against the straight's envelope (None: only what was measured),
+    and where it deploys against `full`, the session's envelope over all straights."""
     s, e = run.start, run.end
     d, t, v = k.distance[s:e], k.time[s:e], k.speed[s:e]
     peak = int(np.argmax(v))
     clip_at, clipping, clip_speed, clip_time = None, [], 0.0, 0.0
+    deploys = (
+        []
+        if full is None
+        else [(float(d[a]), float(d[b - 1])) for a, b in _stretches(deploying(k, run, full), d)]
+    )
 
     if reference is not None:
         # Not gaining, where the best on this straight still gained CLIP_MARGIN more.
@@ -577,6 +627,7 @@ def analyse(
         end_speed=float(v[-1]),
         clip_at=clip_at,
         clipping=clipping,
+        deploying=deploys,
         clip_cost_speed=clip_speed,
         clip_cost_time=clip_time,
         downshifts=downshifts(k, run),

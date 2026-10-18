@@ -57,6 +57,7 @@ from app.schemas import (
     TagCount,
     Telemetry,
     TimingState,
+    TrackSectors,
     TrackZones,
     View,
     ViewIn,
@@ -439,6 +440,12 @@ def session_report(year: int, round: int, session: SessionCode) -> SessionReport
 def track_zones(year: int, round: int, session: SessionCode) -> TrackZones:
     """DRS zones (until 2025) or the straights with where the session clips (2026), for the map."""
     return _guard(lambda: zones.get_zones(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/sectors")
+def track_sectors(year: int, round: int, session: SessionCode) -> TrackSectors:
+    """Where sector 1 and 2 end along the lap, for the map."""
+    return _guard(lambda: zones.get_sectors(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/energy/session")

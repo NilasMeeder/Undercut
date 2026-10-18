@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Circuit, Comparison, DriverInfo, TrackZones } from '@/api/client';
+import type {
+  Circuit,
+  Comparison,
+  DriverInfo,
+  EnergyComparison,
+  TrackSectors,
+  TrackZones,
+} from '@/api/client';
 import {
   useCircuit,
   useEnergy,
   useReplayPositions,
+  useSectors,
   useSessionDetail,
   useZones,
   type PositionTrack,
@@ -27,6 +35,8 @@ type Point = [number, number];
 type Along = { points: Point[]; distance: number[]; normals: Point[]; length: number };
 type Stretch = { start: number; end: number };
 type LapClips = { name: string; stretches: Stretch[] };
+/** The first compared lap's estimated deployment, for a zoomed stretch (2026). */
+type LapEnergy = { name: string; deploying: Stretch[]; clipping: Stretch[] };
 
 const NO_GHOSTS: GhostKind[] = [];
 
@@ -101,12 +111,19 @@ function offsetPath(along: Along, { start, end }: Stretch, offset: number): stri
 
 export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
   const circuit = useCircuit();
-  const { laps, data, styles } = useGroupComparison(group, { miniSectors: config.miniSectors });
+  const { laps, data, styles, detail } = useGroupComparison(group, {
+    miniSectors: config.miniSectors,
+  });
+  const zoom = useZoom(group);
   const zones = useZones(config.zones).data;
+  const sectors = useSectors(config.sectors).data;
   // Where each compared lap clipped (2026), on the first lap's scale like the comparison. A
   // disabled query still returns what another panel cached (Energy in 2025), hence `clips`.
   const clips = config.zones && config.cars === 'laps' && zones?.kind === 'straight';
-  const energy = useEnergy(laps, clips).data;
+  // From 2026 a zoomed stretch (a straight clicked in Energy) shows where the first lap deployed.
+  const onZoom = config.cars === 'laps' && detail?.has_drs === false && zoom != null;
+  const fetched = useEnergy(laps, clips || onZoom).data;
+  const energy = clips || onZoom ? fetched : undefined;
   const lapClips = useMemo(
     () =>
       clips
@@ -116,6 +133,11 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
           }))
         : undefined,
     [clips, energy]
+  );
+  const first = laps[0];
+  const lapEnergy = useMemo(
+    () => (onZoom && first ? energyOf(energy, first.driver, first.lap) : undefined),
+    [onZoom, energy, first]
   );
 
   if (circuit.error) return <PanelMessage>{circuit.error.message}</PanelMessage>;
@@ -129,6 +151,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         showMarks={config.markers}
         showGhosts={config.ghosts}
         zones={config.zones ? zones : undefined}
+        sectors={config.sectors ? sectors : undefined}
       />
     );
   return (
@@ -141,8 +164,65 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       showMarks={config.markers}
       zones={config.zones ? zones : undefined}
       lapClips={config.zones ? lapClips : undefined}
+      lapEnergy={lapEnergy}
+      sectors={config.sectors ? sectors : undefined}
     />
   );
+}
+
+/** The first lap's deploying and clipping stretches, once the energy query has that lap (it
+ * keeps the previous selection's data while a new one loads). */
+function energyOf(
+  energy: EnergyComparison | undefined,
+  driver: string,
+  lap: number
+): LapEnergy | undefined {
+  const found = energy?.laps[0];
+  if (!found || found.driver !== driver || found.lap !== lap) return undefined;
+  const straights = found.straights.flatMap((s) => (s ? [s] : []));
+  return {
+    name: `${driver} L${lap}`,
+    deploying: straights.flatMap((s) => s.deploying),
+    clipping: straights.flatMap((s) => s.clipping),
+  };
+}
+
+/** Within a stretch of a lap of `length`; one before the line (start < 0) or past it wraps. */
+function within(stretches: Stretch[], d: number, length: number): boolean {
+  return stretches.some(
+    ({ start, end }) =>
+      (d >= start && d <= end) ||
+      (start < 0 && d >= start + length) ||
+      (end > length && d <= end - length)
+  );
+}
+
+/** The zoomed range of the reference lap as pieces: white, or (with the lap's energy) purple
+ * where it deployed and amber where it clipped. */
+function zoomPieces(
+  distance: number[],
+  points: Point[],
+  [a, b]: [number, number],
+  energy: LapEnergy | undefined
+): { d: string; color: string }[] {
+  const from = indexAt(distance, a);
+  const to = indexAt(distance, b);
+  if (!energy) return [{ d: toPath(points.slice(from, to + 1)), color: COLORS.text }];
+  const length = distance[distance.length - 1];
+  const colorAt = (i: number) =>
+    within(energy.clipping, distance[i], length)
+      ? COLORS.clip
+      : within(energy.deploying, distance[i], length)
+        ? COLORS.ers
+        : COLORS.text;
+  const pieces: { d: string; color: string }[] = [];
+  let start = from;
+  for (let i = from + 1; i <= to + 1; i++) {
+    if (i <= to && colorAt(i) === colorAt(start)) continue;
+    pieces.push({ d: toPath(points.slice(start, Math.min(i, to) + 1)), color: colorAt(start) });
+    start = i;
+  }
+  return pieces;
 }
 
 /** Every car at the session clock. */
@@ -153,6 +233,7 @@ function ReplayMap({
   showMarks,
   showGhosts,
   zones,
+  sectors,
 }: {
   group: GroupId;
   circuit: Circuit;
@@ -160,6 +241,7 @@ function ReplayMap({
   showMarks: boolean;
   showGhosts: boolean;
   zones?: TrackZones;
+  sectors?: TrackSectors;
 }) {
   const { status, track, error } = useReplayPositions();
   const detail = useSessionDetail();
@@ -186,6 +268,7 @@ function ReplayMap({
       cars={track && detail.data ? { track, drivers: detail.data.drivers } : undefined}
       ghosts={ghosts}
       zones={zones}
+      sectors={sectors}
     />
   );
 }
@@ -202,6 +285,8 @@ function TrackMap({
   ghosts = NO_GHOSTS,
   zones,
   lapClips,
+  lapEnergy,
+  sectors,
 }: {
   group: GroupId;
   circuit: Circuit;
@@ -216,6 +301,8 @@ function TrackMap({
   zones?: TrackZones;
   /** Per compared lap, where it clipped. */
   lapClips?: LapClips[];
+  lapEnergy?: LapEnergy;
+  sectors?: TrackSectors;
 }) {
   const zoom = useZoom(group);
   const ghostsRef = useRef<SVGGElement>(null);
@@ -279,20 +366,13 @@ function TrackMap({
         color: styles[winner]?.color ?? COLORS.textDim,
       };
     });
-    const zoomed =
-      zoom &&
-      toPath(
-        points.slice(
-          indexAt(comparison.distance, zoom[0]),
-          indexAt(comparison.distance, zoom[1]) + 1
-        )
-      );
+    const zoomed = zoom ? zoomPieces(comparison.distance, points, zoom, lapEnergy) : null;
     return {
       sectors,
       zoomed,
       laps: comparison.laps.map((l) => l.x.map((x, i) => project(x, l.y[i], circuit.rotation))),
     };
-  }, [comparison, styles, circuit.rotation, zoom]);
+  }, [comparison, styles, circuit.rotation, zoom, lapEnergy]);
 
   // Cursor dots move imperatively: no React render per mouse move.
   useEffect(() => {
@@ -355,6 +435,7 @@ function TrackMap({
         </div>
       ) : null}
       {zones && zones.zones.length > 0 ? <ZoneLegend zones={zones} /> : null}
+      {lap?.zoomed && lapEnergy ? <EnergyLegend name={lapEnergy.name} /> : null}
       {cars ? (
         <div ref={emptyRef} hidden className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">
           No cars on track at the session clock
@@ -405,6 +486,9 @@ function TrackMap({
           </g>
         ))}
         {cars ? <SectorFlags along={geometry.along} unit={u} /> : null}
+        {sectors && sectors.boundaries.length > 0 ? (
+          <SectorLayer along={geometry.along} boundaries={sectors.boundaries} unit={u} />
+        ) : null}
         {lap?.sectors.map((s, i) => (
           <path
             key={i}
@@ -416,15 +500,16 @@ function TrackMap({
             opacity={lap.zoomed ? 0.35 : 1}
           />
         ))}
-        {lap?.zoomed ? (
+        {lap?.zoomed?.map((piece, i) => (
           <path
-            d={lap.zoomed}
+            key={i}
+            d={piece.d}
             fill="none"
-            stroke={COLORS.text}
+            stroke={piece.color}
             strokeWidth={u * 1.1}
             strokeLinecap="round"
           />
-        ) : null}
+        ))}
         {(showCorners ? geometry.corners : []).map((c) => (
           <text
             key={c.label}
@@ -610,6 +695,80 @@ function ZoneLegend({ zones }: { zones: TrackZones }) {
         </span>
       ) : null}
     </div>
+  );
+}
+
+function EnergyLegend({ name }: { name: string }) {
+  return (
+    <div className="absolute bottom-1 right-1.5 z-10 flex items-center gap-2.5 text-[10px] text-faint">
+      <span>{name}</span>
+      <span className="flex items-center gap-1">
+        <span className="h-[3px] w-3 bg-ers" />
+        Deploying (est.)
+      </span>
+      <span className="flex items-center gap-1">
+        <span className="h-[3px] w-3 bg-clip" />
+        Clipping
+      </span>
+    </div>
+  );
+}
+
+const SECTOR_TICK = 2.6;
+const SECTOR_LABEL = 5;
+
+/** The line and the ends of sector 1 and 2 as ticks across the track, each sector's name at
+ * its start just inside the track (corner numbers mostly sit outside). */
+function SectorLayer({
+  along,
+  boundaries,
+  unit,
+}: {
+  along: Along;
+  boundaries: number[];
+  unit: number;
+}) {
+  const at = (d: number) => {
+    const i = Math.min(indexAt(along.distance, d), along.points.length - 1);
+    return { point: along.points[i], normal: along.normals[i] };
+  };
+  return (
+    <g>
+      {[0, ...boundaries].map((d, n) => {
+        const {
+          point: [x, y],
+          normal: [nx, ny],
+        } = at(d);
+        const tick = unit * SECTOR_TICK;
+        return (
+          <g key={n}>
+            <line
+              x1={x - nx * tick}
+              y1={y - ny * tick}
+              x2={x + nx * tick}
+              y2={y + ny * tick}
+              stroke={COLORS.textDim}
+              strokeWidth={unit * 0.5}
+            >
+              <title>
+                {n === 0 ? 'Start/finish line' : `End of sector ${n} (${Math.round(d)} m)`}
+              </title>
+            </line>
+            <text
+              x={x - nx * unit * SECTOR_LABEL}
+              y={y - ny * unit * SECTOR_LABEL}
+              fill={COLORS.textFaint}
+              fontSize={unit * 2.4}
+              fontWeight={600}
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {`S${n + 1}`}
+            </text>
+          </g>
+        );
+      })}
+    </g>
   );
 }
 

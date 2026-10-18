@@ -287,6 +287,8 @@ class EnergyStraightLap(BaseModel):
     straight still gained (estimate); null if it does not clip."""
     clipping: list[ClipStretch]
     """Every stretch like that (it can gain again in between)."""
+    deploying: list[ClipStretch]
+    """Where it gains more than the engine alone could (estimate): the MGU-K is deploying."""
     clipped: float
     """Metres of clipping, all stretches together."""
     cost_speed: float
@@ -389,6 +391,14 @@ class TrackZones(BaseModel):
     source: str | None = None
     """The session the zones come from (a race takes its DRS zones from qualifying)."""
     zones: list[TrackZone]
+
+
+class TrackSectors(BaseModel):
+    """Where the timing sectors end along the lap, for the map."""
+
+    boundaries: list[float]
+    """Metres from the line where sector 1 and sector 2 end, on the circuit's lap length (the
+    scale of Circuit.track_distance). Empty without sector times or telemetry."""
 
 
 class Corner(BaseModel):
