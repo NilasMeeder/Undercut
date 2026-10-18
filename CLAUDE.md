@@ -23,6 +23,9 @@ control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen
 pitverlies-ghosts, allemaal op de sessieklok (zie "Strategie"). Fase 7 (live) is gebouwd en getest met
 de simulator; de echte test is de eerste sessie met Nilas' F1 TV-login (zie "Live" en ROADMAP.md).
 Live telemetrie volgen: FOLLOW per link-groep (`l`) en de widget Live lap (zie "Live lap en Follow").
+Verder in fase 7: Clock als digitale klok (lokale tijd op het circuit of sessieklok), late start
+(een opname die halverwege begint klopt vanaf de instap), de tower live uit TimingData, en REC in de
+topbalk om de recorder te starten of te laten wachten op de volgende sessie (zie "Live").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
