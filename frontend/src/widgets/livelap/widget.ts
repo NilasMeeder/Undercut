@@ -17,6 +17,9 @@ export const liveLapWidget = defineWidget<LiveLapConfig>({
       'at the car’s position, as on TV.',
     watch: [
       'Below zero (green): the lap is quicker than the reference so far; above (yellow): slower.',
+      '→ 1:18.862: what the lap is on course for, the reference lap time plus the delta at the ' +
+        'car (from 300 m into the lap). Against the previous lap in a race that is a guess at ' +
+        'this lap’s time; against the best lap in qualifying, the time he is heading for.',
       'Live the delta drifts a few hundredths: the distances of two laps differ by a few metres ' +
         'and the lap’s length is not known until it is finished. In a replay it is stretched like ' +
         'the Delta panel, so at the line it is the lap time difference.',

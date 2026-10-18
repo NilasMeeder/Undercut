@@ -131,6 +131,7 @@ export function LiveLapWidget({ group, config }: WidgetProps<LiveLapConfig>) {
   const elapsedRef = useRef<HTMLSpanElement>(null);
   const kmRef = useRef<HTMLSpanElement>(null);
   const gapRef = useRef<HTMLSpanElement>(null);
+  const predictedRef = useRef<HTMLSpanElement>(null);
 
   // Every frame: the lines up to where the car is at the clock, and the numbers there.
   const draw = useMemo(() => {
@@ -156,6 +157,13 @@ export function LiveLapWidget({ group, config }: WidgetProps<LiveLapConfig>) {
         data.out_lap || n < 0
           ? null
           : (data.delta.slice(0, n + 1).findLast((v) => v != null) ?? null);
+      // On course for: the reference lap plus the delta here (from 300 m, like the tower's Pred).
+      if (predictedRef.current) {
+        const lapTime = data.reference?.lap_time;
+        const far = n >= 0 && x[n] >= 300;
+        predictedRef.current.textContent =
+          gap != null && lapTime != null && far ? `→ ${formatLapTime(lapTime + gap)}` : '';
+      }
       if (gapRef.current) {
         gapRef.current.textContent = gap == null ? '' : formatGap(gap);
         gapRef.current.style.color =
@@ -192,6 +200,11 @@ export function LiveLapWidget({ group, config }: WidgetProps<LiveLapConfig>) {
             ? `vs L${data.reference.lap} ${formatLapTime(data.reference.lap_time)}`
             : 'no finished lap to compare'}
         </span>
+        <span
+          ref={predictedRef}
+          className="text-dim"
+          title="On course for: the reference lap time plus the delta at the car's position"
+        />
         <span
           className="min-w-[76px] text-right text-[18px] font-semibold leading-6"
           title="Time behind the reference lap at the car's position"

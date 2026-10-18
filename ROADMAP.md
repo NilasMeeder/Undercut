@@ -377,7 +377,7 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
 - [x] Voorspelde laptijd van de lap die bezig is (beste lap + delta tot nu), kolom Pred in de tower met
       de positie die het geeft (`/predictions`). Getest op Monza 2025 Q (NOR L20: 95% → 1:18.862,
       werkelijk 1:18.869; Q2: NOR P11 → 1:19.420 P9)
-- [ ] Voorspelde laptijd ook in Live lap
+- [x] Voorspelde laptijd ook in Live lap ("→ 1:18.582" naast de delta, vanaf 300 m)
 - [x] Presets Qualifying (Analyse) en Qualifying board (Pitwall) (2026-10-18). Getest op Monza 2025 Q
 - [x] Widget Mini-sectors (2026-10-18): per mini-sector de vergeleken laps, ideaal, LOST. Getest op
       Monza 2025 Q (VER L17 tegen NOR L20: 14/25 tegen 11/25)

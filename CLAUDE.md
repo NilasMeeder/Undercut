@@ -270,7 +270,8 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   plus de delta op dit punt (zoals Live lap, `lap_in_progress` met referentie "best"), en de positie
   die dat geeft tussen de beste laps van de rest. Niet op een out-lap, niet in de eerste 300 m,
   niet als hij al ≥ 1 s achter ligt (cool-down). Monza 2025 Q: NOR L20 op 95% 1:18.862, werkelijk
-  1:18.869. Frontend vraagt per hele seconde klok (`usePredictions`).
+  1:18.869. Frontend vraagt per hele seconde klok (`usePredictions`). Live lap toont hetzelfde per frame
+  ("→ 1:18.582" naast de delta: referentie + delta op de auto, vanaf 300 m).
 - **Sessieklok** (`SessionTimeline.clock`, widget Clock): punten (t, resterend, loopt). Live F1's eigen
   `ExtrapolatedClock` (`converted/clock.json`, `convert.clock_columns`: updates bevatten alleen wat
   verandert, dus samenvoegen met de toestand ervoor). Archief: nagerekend in `replay.session_clock`
