@@ -154,6 +154,11 @@ alle panelen meeloopt.
 - [x] Weer volgt de klok (kolom "Clock" met de waarde op t, witte streep in de sparklines)
 - [x] Gele sectoren uit race control op de kaart (met alle auto's) en de Track line, per marshal-sector
 - [ ] Auto's na de finish nog een uitlooplap tonen (de data stopt nu op de lijn)
+- [x] AT CLOCK (2026-10-18): Laps, Bests, Speed traps en Run timeline alleen tot de klok (paars/groen
+      zoals toen), schakelaar in de klokbalk (`c`) en per paneel te overschrijven; geselecteerde laps
+      die nog niet gereden zijn vaag in de topbalk. Getest op Monza Q (Session overview)
+- [ ] AT CLOCK ook voor Telemetry/Delta/Corners (een vage lijn voor een lap die nog niet gereden is)
+      en de Markers-lijst
 
 ## Fase 5 — Markeringen en opgeslagen views
 

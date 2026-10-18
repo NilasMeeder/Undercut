@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import type { Lap } from '@/api/client';
-import { useLaps, useSessionDetail } from '@/api/queries';
+import { useSessionDetail } from '@/api/queries';
 import { DriverCell, PanelMessage } from '@/components/data/bits';
 import { rowStyle, td, th } from '@/lib/table';
 import { bestLaps } from '@/lib/timing';
 import { cn } from '@/lib/utils';
 import { useLapSelection } from '@/store/groups';
 import type { WidgetProps } from '../types';
+import { useLapsAtClock } from '../useLapsAtClock';
 import type { SpeedTrapsConfig, Trap } from './widget';
 
 const TRAPS: { key: Trap; label: string }[] = [
@@ -42,7 +43,7 @@ function buildRows(laps: Lap[], source: SpeedTrapsConfig['source']): Row[] {
 }
 
 export function SpeedTrapsWidget({ group, config }: WidgetProps<SpeedTrapsConfig>) {
-  const laps = useLaps();
+  const laps = useLapsAtClock(config.scope);
   const detail = useSessionDetail();
   const { isSelected, toggle } = useLapSelection(group);
 

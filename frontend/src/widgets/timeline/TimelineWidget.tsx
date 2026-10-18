@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import type { DriverInfo, Lap } from '@/api/client';
-import { useLaps, useSessionDetail } from '@/api/queries';
+import { useSessionDetail } from '@/api/queries';
 import { PanelMessage } from '@/components/data/bits';
 import { formatLapTime } from '@/lib/format';
 import { bestLaps, classify, computeBests, COOL_DOWN, countsForBests } from '@/lib/timing';
 import { cn } from '@/lib/utils';
 import { GROUP_COLORS, useLapSelection } from '@/store/groups';
 import type { WidgetProps } from '../types';
+import { useLapsAtClock } from '../useLapsAtClock';
 import type { TimelineConfig } from './widget';
 
 type Kind = 'best' | 'pb' | 'slow' | 'cool' | 'in' | 'out' | 'deleted' | 'none';
@@ -109,7 +110,7 @@ function driverOrder(laps: Lap[], drivers: DriverInfo[]): string[] {
 }
 
 export function TimelineWidget({ group, config }: WidgetProps<TimelineConfig>) {
-  const laps = useLaps();
+  const laps = useLapsAtClock(config.scope);
   const detail = useSessionDetail();
   const { isSelected, toggle } = useLapSelection(group);
 

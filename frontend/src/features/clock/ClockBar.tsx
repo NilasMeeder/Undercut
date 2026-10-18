@@ -9,6 +9,7 @@ import { COLORS, TRACK_STATUS_COLORS } from '@/lib/colors';
 import { lapAt, markerLabel, markerLap } from '@/lib/markers';
 import { formatClock, TRACK_STATUS_LABEL } from '@/lib/replay';
 import { cn } from '@/lib/utils';
+import { useAtClock } from '@/store/atClock';
 import { clock, SPEEDS, useClockControls, useClockTime } from '@/store/clock';
 import { useDashboards } from '@/store/dashboards';
 import { editMarker, markNew } from '@/store/markerEditor';
@@ -244,6 +245,34 @@ function PositionsState() {
   );
 }
 
+/** The switch: laps, bests, speed traps and the run timeline only as far as the clock (c). */
+function AtClockSwitch() {
+  const on = useAtClock((s) => s.on);
+  const setOn = useAtClock((s) => s.setOn);
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => setOn(!on)}
+      title={
+        on
+          ? 'Only what had happened at the clock: laps, bests, speed traps and run timeline (c). ' +
+            'Click for the whole session. Panels can override this in their settings.'
+          : 'Showing the whole session in laps, bests, speed traps and run timeline. Click to show ' +
+            'only what had happened at the clock (c).'
+      }
+      className={cn(
+        'h-5 shrink-0 border px-1 text-[9px] font-semibold tracking-wider',
+        on
+          ? 'border-line-strong bg-raised text-text'
+          : 'border-transparent text-faint hover:text-text'
+      )}
+    >
+      AT CLOCK
+    </button>
+  );
+}
+
 const DELAYS = [0, 2, 5, 10, 15, 20, 30, 45, 60] as const;
 
 /** Live: back to the live edge, and how far behind it to play (to match the TV picture). */
@@ -303,6 +332,7 @@ function LiveControl() {
 function NothingFollows() {
   const tabs = useDashboards((s) => s.tabs);
   const active = useDashboards((s) => s.active);
+  useAtClock((s) => s.on); // analysis panels follow the clock when the switch is on
   const tab = tabs.find((t) => t.id === active);
   if (!tab || followsClock(tab)) return null;
   const openReplay = () => {
@@ -383,6 +413,7 @@ export function ClockBar() {
       >
         <Flag className="h-3 w-3" />
       </button>
+      <AtClockSwitch />
       <Readout timeline={timeline.data} marks={marks} />
       {playing ? <NothingFollows /> : null}
       <Scrubber timeline={timeline.data} marks={marks} />

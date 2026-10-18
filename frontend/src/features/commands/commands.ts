@@ -5,6 +5,7 @@ import { markDistance, markMoment } from '@/features/markers/actions';
 import { openView, sessionLabel } from '@/features/views/views';
 import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
+import { useAtClock } from '@/store/atClock';
 import { clock } from '@/store/clock';
 import { cursorBus } from '@/store/cursor';
 import { useGroups, type GroupId, type LapRef } from '@/store/groups';
@@ -132,6 +133,13 @@ export function buildCommands({ api, group, laps, views, saveView }: CommandCont
       key: 'M',
       keyLabel: '⇧M',
       run: markMoment,
+    },
+    {
+      id: 'at-clock',
+      section: 'Clock',
+      title: 'Only what had happened at the clock, or the whole session',
+      key: 'c',
+      run: () => useAtClock.getState().setOn(!useAtClock.getState().on),
     },
     {
       id: 'clock-toggle',

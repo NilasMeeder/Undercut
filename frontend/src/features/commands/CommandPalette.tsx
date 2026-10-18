@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLaps } from '@/api/queries';
 import { useViews } from '@/api/views';
 import { suggestName } from '@/features/views/views';
 import { useSaveCurrentView } from '@/features/views/hooks';
@@ -7,6 +6,7 @@ import { useActiveLinkGroup, useDashboardApi } from '@/dashboard/api';
 import { cn } from '@/lib/utils';
 import { GROUP_COLORS } from '@/store/groups';
 import { buildCommands, type Command } from './commands';
+import { useLapsAtClock } from '@/widgets/useLapsAtClock';
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -20,7 +20,8 @@ function isTyping(target: EventTarget | null): boolean {
 export function CommandPalette() {
   const api = useDashboardApi((s) => s.api);
   const group = useActiveLinkGroup();
-  const laps = useLaps();
+  // Stepping through laps stays within what had happened at the clock (when the switch is on).
+  const laps = useLapsAtClock('app');
   const views = useViews();
   const { save } = useSaveCurrentView();
   const [open, setOpen] = useState(false);

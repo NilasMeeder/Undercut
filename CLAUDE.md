@@ -203,6 +203,15 @@ loopt buiten React om, net als de cursorbus: `clock.subscribe` tikt elke frame t
 Bij het laden van een sessie staat de klok op het **einde**, zodat widgets die de klok volgen (race
 control) in analyse-modus gewoon alles tonen. Live (fase 7) wordt een andere bron voor dezelfde klok.
 
+**AT CLOCK** (schakelaar in de klokbalk, `c`, `store/atClock.ts`, standaard aan, localStorage
+`f1dash-at-clock`): Laps, Bests, Speed traps en Run timeline tonen dan alleen de laps die op de klok
+af zijn (`end_time ≤ t`), dus ook paars/groen en de theoretische beste zoals ze toen waren. Klok op
+het einde = alles (ook laps zonder eindtijd). Per paneel overschrijft "Laps shown" (`scope`:
+`app` = de schakelaar, `clock`, `session`) dat. Eén hook: `widgets/useLapsAtClock.ts` (zoals
+`useLaps`, maar rendert alleen opnieuw als er een lap bij komt of af gaat). De lap-commando's
+(`[` `]` `,` `.`, palette) blijven binnen die laps; een geselecteerde lap die nog niet gereden is
+blijft staan maar is vaag in de topbalk. Telemetry, Delta en Corners tonen wat geselecteerd is.
+
 Drie soorten replay-data, bewust gescheiden naar kosten:
 - **Tijdlijn** (`/timeline`): bereik, t0 (UTC), laps van de leider, Q-delen, track status. Klein, direct.
 - **Timing tower** (`/timing?t=`): uit de lapdata alleen, dus direct beschikbaar. Volgorde en gaps in een

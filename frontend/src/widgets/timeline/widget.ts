@@ -1,7 +1,8 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
+import { LAP_SCOPE_OPTIONS, scopeFollowsClock, type LapScope } from '../useLapsAtClock';
 
-export type TimelineConfig = { colours: 'live' | 'final' };
+export type TimelineConfig = { colours: 'live' | 'final'; scope: LapScope };
 
 export const timelineWidget = defineWidget<TimelineConfig>({
   id: 'timeline',
@@ -17,10 +18,13 @@ export const timelineWidget = defineWidget<TimelineConfig>({
       'IN and OUT are pit laps, grey times are cool-down laps (over 7% off the driver’s best). ' +
         'A struck-through time was deleted, usually for track limits.',
       'Few purple/green boxes late in a session often means the track or tyres stopped improving.',
+      'AT CLOCK in the clock bar (c): only the laps done at the session clock, with purple and ' +
+        'green as they were then; with the clock at the end that is the whole session. ' +
+        '“Laps shown” in the settings overrides it for this panel.',
     ],
     controls: 'Click a box to compare that lap in this link group. Hover for tyre details.',
   },
-  defaults: { colours: 'live' },
+  defaults: { colours: 'live', scope: 'app' },
   settings: [
     {
       key: 'colours',
@@ -31,6 +35,8 @@ export const timelineWidget = defineWidget<TimelineConfig>({
         { value: 'final', label: 'Final bests' },
       ],
     },
+    { key: 'scope', label: 'Laps shown', kind: 'choice', options: LAP_SCOPE_OPTIONS },
   ],
+  followsClock: (config) => scopeFollowsClock(config.scope),
   component: lazy(() => import('./TimelineWidget').then((m) => ({ default: m.TimelineWidget }))),
 });

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Lap } from '@/api/client';
-import { useLaps, useSessionDetail } from '@/api/queries';
+import { useSessionDetail } from '@/api/queries';
 import { DriverCell, PanelMessage } from '@/components/data/bits';
 import { formatGap, formatLapTime, formatSector } from '@/lib/format';
 import { rowStyle, td, th } from '@/lib/table';
@@ -8,6 +8,7 @@ import { bestLaps, computeBests, SECTORS, type Bests } from '@/lib/timing';
 import { cn } from '@/lib/utils';
 import { useLapSelection } from '@/store/groups';
 import type { WidgetProps } from '../types';
+import { useLapsAtClock } from '../useLapsAtClock';
 import type { BestsConfig } from './widget';
 
 type Row = {
@@ -31,7 +32,7 @@ function buildRows(laps: Lap[], bests: Bests, order: BestsConfig['order']): Row[
 }
 
 export function BestsWidget({ group, config }: WidgetProps<BestsConfig>) {
-  const laps = useLaps();
+  const laps = useLapsAtClock(config.scope);
   const detail = useSessionDetail();
   const { isSelected, toggle } = useLapSelection(group);
 

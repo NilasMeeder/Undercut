@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DriverInfo, Lap } from '@/api/client';
-import { useLaps, useSessionDetail } from '@/api/queries';
+import { useSessionDetail } from '@/api/queries';
 import { DriverCell, PanelMessage, TyreBadge } from '@/components/data/bits';
 import { rowStyle, td, th } from '@/lib/table';
 import { cn } from '@/lib/utils';
@@ -8,11 +8,13 @@ import { formatGap, formatLapTime, formatSector } from '@/lib/format';
 import { bestLaps, classify, computeBests, TIMING_TEXT, type Bests } from '@/lib/timing';
 import { useLapSelection, type GroupId } from '@/store/groups';
 import type { WidgetProps } from '../types';
+import { useLapsAtClock } from '../useLapsAtClock';
+import type { LapsConfig } from './widget';
 
 type View = 'classification' | 'laps';
 
-export function LapsWidget({ group }: WidgetProps<Record<string, never>>) {
-  const laps = useLaps();
+export function LapsWidget({ group, config }: WidgetProps<LapsConfig>) {
+  const laps = useLapsAtClock(config.scope);
   const detail = useSessionDetail();
   const [view, setView] = useState<View>('classification');
   const [driverFilter, setDriverFilter] = useState<string[]>([]);
