@@ -10,6 +10,8 @@ import {
   type Circuit,
   type Comparison,
   type Degradation,
+  type EnergyComparison,
+  type EnergySession,
   type Lap,
   type LapProgress,
   type PitWindow,
@@ -70,6 +72,23 @@ export function useComparison(laps: LapRef[], { step = 5, miniSectors = 25 }: Co
     placeholderData: keepPreviousData,
   });
 }
+
+/** Estimated energy deployment of the laps (2026): where they stop gaining at full throttle.
+ * The first request for a session reads the telemetry of all its clean laps (seconds). */
+export function useEnergy(laps: LapRef[], enabled = true) {
+  const key = useSessionKey();
+  const spec = laps.map((l) => `${l.driver}:${l.lap}`).join(',');
+  return useQuery({
+    queryKey: ['session', key, 'energy', spec],
+    queryFn: () => apiGet<EnergyComparison>(`${sessionPath(key!)}/energy?laps=${spec}`),
+    enabled: key != null && laps.length > 0 && enabled,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export const useEnergySession = (enabled = true) =>
+  useSessionQuery<EnergySession>('/energy/session', enabled);
 
 export type ProgressReference = 'previous' | 'best';
 

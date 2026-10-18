@@ -30,6 +30,9 @@ volgende fase voordat de vorige echt werkt.
   3 s omgezet met FastF1's parsers naar de archiefvorm, posities en telemetrie per lap, SSE naar de
   frontend, klok volgt live met vertraging, LIVE-knop. Getest met de simulator (Monza 2025 R en Q als
   feed); de echte test is de eerste sessie met de F1 TV-login (Austin FP1, vr 23 okt 17:30 UTC).
+- Fase 8 gebouwd (2026-10-18): energie-inzet 2026 geschat uit de versnelling bij vol gas tegen de
+  beste laps per straight (clipping en wat het kost), widget Energy, strookjes in de speed-chart.
+  Getest op Monza 2026 Q en R, Spa Q en Baku Q, en live met de simulator (Monza Q).
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
@@ -248,20 +251,27 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
 - [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
 
-## Fase 8 — Energie (2026) — volgende
+## Fase 8 — Energie (2026)
 
-Er is geen officieel kanaal voor batterij of inzet; de feed heeft alleen RPM, speed, gear, throttle,
-brake (en TracingInsights acc_x/y/z). Dus inschatten en eerlijk zeggen dat het een schatting is.
+Ontwerp: zie CLAUDE.md "Energie". Er is geen kanaal voor batterij of inzet; de feed heeft alleen
+speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen dat het een schatting is.
 
-- [ ] Ontwerp: per lap de rechte stukken (vol gas, geen rem), de versnelling als functie van de
-      snelheid a(v) tegen een omhullende (het beste wat in die sessie op die snelheid lukte = volle
-      inzet), "clipping" = vol gas maar geen snelheidswinst of verlies vóór het rempunt
-- [ ] Backend (pure numpy, getest) + endpoint; per lap en per straight: waar de inzet stopt, hoeveel
-      km/h of tijd dat kost, vergeleken met andere laps en drivers
-- [ ] Widget en/of banden in de speed-chart; live via de telemetrie per lap (Austin FP1)
-- [ ] Getest op 2026-sessies uit TracingInsights (t/m Singapore 2026)
+- [x] Ontwerp (2026-10-18): straights = vol gas ≥ 250 m, genoemd naar de bochten; a(v) uit de
+      snelheid, gecorrigeerd voor helling; omhullende per straight (per lap de mediaan per bin, over
+      de laps het 95e percentiel); bochten op vol gas niet beoordeeld; clipping = vol gas zonder winst
+      waar de omhullende nog wint, kost = de omhullende volgen tot de lift/rem
+- [x] Backend (pure numpy, 17 tests + 4 API-tests): `/energy?laps=` en `/energy/session`
+- [x] Widget Energy (LAPS en SESSION) en strookjes in de speed-chart met CLIP in de readout; Energy
+      als tab achter Corners in Engineer
+- [x] Getest op Monza 2026 Q en R, Spa Q (Raidillon/Blanchimont, helling), Baku Q (finish op het
+      rechte stuk) en live met de simulator (Monza Q: zelfde medianen als het archief)
+- [ ] Na Austin FP1: kloppen de getallen uit een echte opname (CarData 4 Hz, zoals de simulator)?
+- [ ] AT CLOCK voor Energy: SESSION en de omhullende alleen uit laps tot de klok
+- [ ] Slipstream uit de omhullende houden (`DistanceToDriverAhead` staat alleen in het archief)
+- [ ] Clipping per lap over een stint/race als lap-chart (waar spaart of oogst een driver, en wanneer)
+- [ ] Clipstukken op de Track map en in Live lap (de lap die bezig is)
 
-## Fase 9 — Twee werkplekken: Analyse en Pitwall
+## Fase 9 — Twee werkplekken: Analyse en Pitwall — volgende
 
 Nilas (2026-10-18): een duidelijkere scheiding tussen echte analyse na een sessie en een pitwall-bord
 voor live of om voor de lol terug te kijken.
@@ -295,9 +305,6 @@ voor live of om voor de lol terug te kijken.
   het toepassen van een preset, of een "groot"-variant per preset
 
 - Remwegen en corner-fases automatisch detecteren uit speed/throttle/brake (braking point, apex, exit)
-- Energie-inzet in 2026 inschatten uit speed-traces op straights (er is geen officieel kanaal; de
-  feed heeft alleen RPM, speed, gear, throttle, brake en DRS): vol gas maar geen snelheidswinst of
-  zelfs verlies aan het eind van een straight = de batterij is leeg ("clipping")
 - Team radio afspelen op de tijdlijn (OpenF1 heeft opnames)
 - Corner-analyse: min-speed, remwegen, apex-snelheid per bocht vergeleken
 - Gear-map / throttle-map op de track

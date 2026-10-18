@@ -30,9 +30,9 @@ from app.sources import tracinginsights as ti
 CLEAN_PACE = 1.07
 """Laps slower than this × the session's best clean lap say nothing about deployment."""
 
-MAIN_STRAIGHT_SHARE = 0.25
-"""A straight is shown if at least this share of the clean laps has it (a lift on the way to a
-corner makes an odd one in a few laps)."""
+MAIN_STRAIGHT_SHARE = 0.5
+"""A straight is shown if most clean laps have it: a lift on the way to a corner (Spa T9-10)
+makes a run into that corner in some laps only."""
 
 
 @dataclass(frozen=True)

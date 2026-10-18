@@ -14,6 +14,10 @@ export type ChartSeries = {
   width?: number;
 };
 
+/** A strip along the bottom of the plot from `start` to `end` (m), one lane per lap: where a lap
+ * does something worth seeing over distance (clipping), in the lap's colour. */
+export type ChartBand = { start: number; end: number; color: string; lane: number };
+
 type Props = {
   group: GroupId;
   /** [distance, ...one array per series] */
@@ -28,6 +32,7 @@ type Props = {
   marks?: DistanceMark[];
   /** Write the marker labels in this chart (the top one of a stack). */
   markLabels?: boolean;
+  bands?: ChartBand[];
 };
 
 const FONT = '10px system-ui, sans-serif';
@@ -35,6 +40,9 @@ const Y_AXIS_WIDTH = 42;
 const X_AXIS_HEIGHT = 18;
 const LABEL_HEIGHT = 14;
 const NO_MARKS: DistanceMark[] = [];
+const NO_BANDS: ChartBand[] = [];
+const BAND_HEIGHT = 3;
+const BAND_GAP = 1;
 let nextChartId = 0;
 
 /** Cut text to a width with an ellipsis (canvas maxWidth would squeeze it instead). */
@@ -90,6 +98,26 @@ function drawMarks(u: uPlot, marks: DistanceMark[], labels: boolean) {
   ctx.restore();
 }
 
+function drawBands(u: uPlot, bands: ChartBand[]) {
+  if (bands.length === 0) return;
+  const { ctx } = u;
+  const { left, top, width, height } = u.bbox;
+  const px = uPlot.pxRatio;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(left, top, width, height);
+  ctx.clip();
+  for (const band of bands) {
+    const x0 = u.valToPos(band.start, 'x', true);
+    const x1 = u.valToPos(band.end, 'x', true);
+    if (x1 < left || x0 > left + width) continue;
+    const y = top + height - (band.lane + 1) * (BAND_HEIGHT + BAND_GAP) * px;
+    ctx.fillStyle = band.color;
+    ctx.fillRect(x0, y, Math.max(x1 - x0, px), BAND_HEIGHT * px);
+  }
+  ctx.restore();
+}
+
 /**
  * A distance-based uPlot chart wired into its link group's cursor and zoom: hovering moves the
  * group cursor, drag-select zooms the whole group, double-click resets. Shift + drag or Shift + click
@@ -106,18 +134,21 @@ export function UPlotChart({
   yFormat,
   marks = NO_MARKS,
   markLabels = false,
+  bands = NO_BANDS,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<uPlot | null>(null);
   const marksRef = useRef(marks);
   const markLabelsRef = useRef(markLabels);
+  const bandsRef = useRef(bands);
 
-  // Markers change without rebuilding the chart: redraw with the new ones.
+  // Markers and bands change without rebuilding the chart: redraw with the new ones.
   useEffect(() => {
     marksRef.current = marks;
     markLabelsRef.current = markLabels;
+    bandsRef.current = bands;
     chartRef.current?.redraw(false);
-  }, [marks, markLabels]);
+  }, [marks, markLabels, bands]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -208,7 +239,12 @@ export function UPlotChart({
             u.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
           },
         ],
-        draw: [(u) => drawMarks(u, marksRef.current, markLabelsRef.current)],
+        draw: [
+          (u) => {
+            drawBands(u, bandsRef.current);
+            drawMarks(u, marksRef.current, markLabelsRef.current);
+          },
+        ],
       },
     };
 

@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import type uPlot from 'uplot';
-import type { ComparedLap } from '@/api/client';
+import type { ComparedLap, EnergyStraightLap } from '@/api/client';
 import { useDistanceMarks } from '@/api/markers';
-import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
+import { useEnergy } from '@/api/queries';
+import { UPlotChart, type ChartBand, type ChartSeries } from '@/components/chart/UPlotChart';
 import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
+import { COLORS } from '@/lib/colors';
 import { formatGap } from '@/lib/format';
 import { marksAt, type DistanceMark } from '@/lib/markers';
 import type { LapStyle } from '@/lib/timing';
@@ -82,6 +84,29 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
     step: config.step,
   });
   const marks = useDistanceMarks(group);
+  // Clipping only means something without DRS (2026 on): the battery is half the power.
+  const showClipping =
+    config.clipping && detail?.has_drs === false && config.channels.includes('speed');
+  const energy = useEnergy(laps, showClipping);
+
+  /** Per compared lap its clipping stretches (none while the estimate loads). */
+  const clips = useMemo(() => {
+    if (!data) return [];
+    const byLap = new Map(
+      (showClipping ? (energy.data?.laps ?? []) : []).map((lap) => [
+        `${lap.driver}:${lap.lap}`,
+        lap.straights.flatMap((s: EnergyStraightLap | null) => s?.clipping ?? []),
+      ])
+    );
+    return data.laps.map((lap) => byLap.get(`${lap.driver}:${lap.lap}`) ?? []);
+  }, [data, energy.data, showClipping]);
+  const bands = useMemo<ChartBand[]>(
+    () =>
+      clips.flatMap((stretches, lane) =>
+        stretches.map((s) => ({ ...s, color: styles[lane]?.color ?? COLORS.textDim, lane }))
+      ),
+    [clips, styles]
+  );
 
   const channels = useMemo(
     () =>
@@ -116,6 +141,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
         styles={styles}
         channels={channels}
         marks={marks}
+        clips={showClipping ? clips : null}
       />
       <div className="flex min-h-0 flex-1 flex-col">
         {charts.map(({ channel, data: chartData, series }, i) => (
@@ -135,6 +161,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
               showXAxis={i === charts.length - 1}
               marks={marks}
               markLabels={i === 0}
+              bands={channel.key === 'speed' ? bands : undefined}
             />
           </div>
         ))}
@@ -162,6 +189,7 @@ function Readout({
   styles,
   channels,
   marks,
+  clips,
 }: {
   group: GroupId;
   distance: number[];
@@ -169,6 +197,8 @@ function Readout({
   styles: LapStyle[];
   channels: Channel[];
   marks: DistanceMark[];
+  /** Per lap where it clips; null when not shown. */
+  clips: { start: number; end: number }[][] | null;
 }) {
   const cursor = useCursor(group);
   const frozen = useFrozen(group);
@@ -195,6 +225,7 @@ function Readout({
                 {c.short}
               </th>
             ))}
+            {clips ? <th className="w-10 px-1.5 text-left font-medium">Clip</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -213,6 +244,13 @@ function Readout({
                   </td>
                 );
               })}
+              {clips ? (
+                <td className="px-1.5 text-left text-[10px] font-semibold text-dim">
+                  {cursor != null && clips[n]?.some((s) => s.start <= cursor && cursor <= s.end)
+                    ? 'CLIP'
+                    : ''}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

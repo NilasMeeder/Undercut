@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met twintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Clock, Race control, Weather, Timing
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met eenentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Energy, Clock, Race control, Weather, Timing
 tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -26,7 +26,9 @@ Live telemetrie volgen: FOLLOW per link-groep (`l`) en de widget Live lap (zie "
 Verder in fase 7: Clock als digitale klok (lokale tijd op het circuit of sessieklok), late start
 (een opname die halverwege begint klopt vanaf de instap), de tower live uit TimingData met F1's
 mini-sectoren, en REC in de topbalk om de recorder te starten of te laten wachten op de volgende
-sessie (zie "Live").
+sessie (zie "Live"). Fase 8 (energie 2026) is gebouwd: waar een auto bij vol gas geen snelheid meer
+wint terwijl de beste laps op die straight dat wel deden (clipping), en wat dat kost; widget Energy
+en strookjes in de speed-chart (zie "Energie").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -64,6 +66,11 @@ Valkuilen bij het headless testen:
   opname; de backend ziet dat zelf. Zelfde preset `replay`; wacht op `LAP`, de LIVE-knop in de
   klokbalk heeft dan de title `Following the live feed`. Live-sessietijd loopt vanaf het geplande
   begin (Monza R: 13:00 UTC), niet vanaf het archief-t0: dezelfde lap heeft live een ander t.
+- Energie: Monza 2026 Q (ronde 13) is de vaste testsessie (`useDefaultSelection` kiest GAS L17 en
+  RUS L16). Controlegetallen: 97 schone laps, straights →T1, →T4, →T8, →T11; →T1 sessie 99% clip,
+  mediaan 393 m, 0,116 s; GAS L17 kost ≈0,15 s per lap (meest →T11, 394 m), RUS L16 ≈0,03 s. In
+  SESSION is COL de zuinigste (0,149 s/lap) en STR de duurste (1,295). Energy zit als tab achter
+  Corners in de preset Engineer; het (koude) eerste verzoek leest alle schone laps (~1 s Q, ~2 s R).
 - Markeringen: `keyboard.down('Shift')` en dan slepen of klikken in een `.u-over` (de grootste is de
   speed-chart); de editor heeft het placeholder `What happens here` en Enter slaat op. Een view openen
   via een link: `page.goto` naar alleen een andere hash herlaadt de pagina niet (dat vangt de
@@ -129,6 +136,9 @@ backend/app/replay.py      pure replay-logica: positiespoor (build_track), timin
                            track status uit race control
 backend/app/replays.py     replay per sessie: tijdlijn, timing-index, de bouwjob van het positiespoor (.npz)
 backend/app/progress.py    de lap die bezig is op t (replay: afgeknipt, live: uit het geheugen) en de live delta
+backend/app/energy.py      pure energie-logica (2026): kinematica op een tijdraster (a uit de snelheid, helling,
+                           dwarsversnelling), vol-gas-stukken, omhullende per straight, clipping en de kosten;
+                           energies.py: per sessie (schone laps, cache per lap die generaties overleeft)
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
                            pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
 backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
@@ -156,7 +166,8 @@ frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom
                            SC-banden, klok-lijn, labels, readout), data/bits.tsx (badges, swatches),
                            data/SegmentDisplay.tsx (7-segmentcijfers in SVG)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
-                           lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts,
+                           lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), energy.ts
+                           (zinnen en namen voor Energy), table.ts,
                            replay.ts (auto op t interpoleren, klokformaat, pit-ghosts), markers.ts (labels, plaats
                            als tekst), strategy.ts (cutoff, volgorde op t, lap-as, SC-banden)
 frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
@@ -390,6 +401,50 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   tonen geen delta. Referentie "Auto": vorige lap in een race, beste lap tot t in Q/FP (de lap ervoor
   is daar meestal een out- of cool-down lap). De frontend vraagt per hele seconde klok.
 
+## Energie (fase 8)
+
+Er is geen kanaal voor de batterij of de MGU-K, dus het is een schatting, en de UI zegt dat ook. Het
+idee: bij vol gas versnelt een auto zo hard als zijn vermogen toelaat, en met de MGU-K erbij is dat
+veel meer dan op de motor alleen (Monza 2026 bij 230 km/h ~9 tegen ~3,5 m/s²; boven ~300 km/h haalt
+de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde laps) en
+`energies.py` (per sessie). Wat er gebeurt:
+- **a uit de snelheid**: lap op een raster van 0,1 s, a = helling van een rechte lijn door de snelheid
+  over ±0,5 s, **binnen** het vol-gas-stuk (anders lekt het remmen erin en lijkt elke straight 40 m
+  te clippen), plus g × helling uit z (decimeters, over ±50 m), zodat een klim geen clipping is.
+  TracingInsights' `acc_x` is gewoon de afgeleide van speed en live ontbreekt hij: niet gebruiken.
+- **Straights**: vol gas (≥ 95%, geen rem, geen gat > 1 s in de data; dipjes < 0,3 s tellen niet) over
+  ≥ 250 m, genoemd naar de bocht waarvoor hij remt (`corners.json` geschaald naar de laplengte) en de
+  bocht waar hij begint. De vorige lap gaat er 3 km voor (negatieve afstand), zodat het rechte stuk
+  over de finish heel blijft (Baku: ~2,2 km tot de lijn); een stuk dat door de lijn wordt afgesneden
+  hoort bij de volgende lap. Een straight telt als ≥ 50% van de schone laps hem heeft (een lift
+  onderweg geeft anders een extra stukje, Spa T9–10).
+- **Bochten op vol gas niet beoordelen**: dwarsversnelling v² × kromming (uit x/y over ±30 m) > 10 m/s²
+  (Curva Grande, Raidillon, Blanchimont): daar bepalen grip en luchtweerstand de snelheid. Zonder dit
+  leek Raidillon 900 m clipping.
+- **Omhullende per straight**: per lap eerst de mediaan van a per snelheidsbin van 5 km/h (dat middelt
+  de ruis van hele km/h op 4 Hz uit), dan over de schone laps het 95e percentiel (min. 3 laps per
+  bin). De top eindigt op de hoogste gemeten snelheid. **Nooit lenen van andere straights**: op Baku
+  zet niemand de hele 2,2 km vol in, en de versnelling van een kort stuk op dezelfde snelheid gaf
+  een klif in de omhullende. Een 95e percentiel over losse samples zat 0,3–0,7 m/s² te hoog (ruis).
+- **Clipping**: a < 0,5 m/s² terwijl de omhullende ≥ 1 m/s² meer zegt, op beoordeelde punten, in
+  stukken ≥ 40 m. De kost: een auto die vanaf het eerste clippunt de omhullende volgt (dezelfde
+  helling op; in bochten doet hij wat de lap deed), tot het eind van vol gas, nooit sneller dan de
+  top van de omhullende. Telt alleen als dat ≥ 3 km/h scheelt (anders zit de auto aan zijn
+  luchtweerstand). Precisie: het venster van 1 s laat het clippunt tot ~40 m te laat beginnen.
+- **Lift and coast**: ≥ 60 m van lift tot rem (gewoon van gas naar rem is ~30 m).
+- **Wat het niet weet**: slipstream en (race) overtake mode zitten in de omhullende, dus in een race
+  lijkt iedereen meer te clippen; een zwakkere motor en minder inzet zijn niet te scheiden.
+- **Kosten en cache**: `get_session` leest alle schone laps (archief: eerst `ti.prefetch` in bulk;
+  een opname heeft ze al, dus geen prefetch naar TracingInsights). Het werk per lap (`_lap_runs`)
+  is een gewone `lru_cache` op (lap, laptijd, eindtijd), dus het overleeft de generaties van een live
+  sessie; per generatie alleen de omhullende en de analyse (~0,1 s voor een race).
+- **API**: `/energy?laps=` (zoals `/compare`: afstanden op de schaal van de eerste lap) en
+  `/energy/session` (per driver en straight de medianen over de schone laps).
+- **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen; SESSION: drivers ×
+  straights, kosten of meters). Telemetry: instelling "Clipping (2026)", strookjes van 3 px onderaan
+  de speed-chart (een rij per lap, in de lapkleur, `UPlotChart` `bands`) en CLIP in de readout. Alleen
+  zonder DRS (2026+), zodat een oude sessie niet al zijn telemetrie hoeft te lezen.
+
 ## Markeringen en views (fase 5)
 
 **Twee soorten markeringen** in één tabel, altijd per sessie (niet per circuit: layouts en afstanden
@@ -502,6 +557,8 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   de tijd per stuk via interpolatie op het afstandsgrid. Fastest = paars, PB = groen, rest = geel.
 - **Track map**: X/Y uit positiedata; rotatie via `session.get_circuit_info().rotation`.
   Corner-nummers ook uit `get_circuit_info().corners`.
+- **Positie**: x, y en z in het archief en live in **decimeters**. De 2026-telemetrie (archief en
+  live) heeft speed, throttle, brake, gear, rpm, x/y/z; `drs` is leeg.
 - **Teamkleuren** komen uit `drivers.json` (`tc`) → `DriverInfo.color`. Twee drivers van hetzelfde team:
   de tweede gestippeld.
 

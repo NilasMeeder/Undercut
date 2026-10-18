@@ -38,6 +38,13 @@ export type StintPace = Schemas['StintPace'];
 export type CompoundPace = Schemas['CompoundPace'];
 export type PitWindow = Schemas['PitWindow'];
 export type Duel = Schemas['Duel'];
+export type EnergyComparison = Schemas['EnergyComparison'];
+export type EnergyLap = Schemas['EnergyLap'];
+export type EnergyStraight = Schemas['EnergyStraight'];
+export type EnergyStraightLap = Schemas['EnergyStraightLap'];
+export type EnergyStraightStats = Schemas['EnergyStraightStats'];
+export type EnergySession = Schemas['EnergySession'];
+export type DriverEnergy = Schemas['DriverEnergy'];
 
 export class ApiError extends Error {
   readonly status: number;

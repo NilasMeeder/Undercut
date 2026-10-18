@@ -3,7 +3,7 @@ import { defineWidget } from '../types';
 
 export type ChannelKey = 'speed' | 'throttle' | 'brake' | 'gear' | 'rpm' | 'drs';
 
-export type TelemetryConfig = { channels: ChannelKey[]; step: number };
+export type TelemetryConfig = { channels: ChannelKey[]; step: number; clipping: boolean };
 
 export const telemetryWidget = defineWidget<TelemetryConfig>({
   id: 'telemetry',
@@ -17,6 +17,9 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
       'Braking points: the lap whose speed drops later brakes later, and usually gains into the corner.',
       'Minimum speed in a corner and how early throttle goes back to 100%: that decides the exit.',
       'Brake is on/off only (no pressure), and samples are ~4 Hz, so short lifts can be missed.',
+      'From 2026: strips along the bottom of the speed chart, one row per lap in its colour, ' +
+        'mark clipping: full throttle without gaining speed where the best laps on that straight ' +
+        'still did (the battery is not deploying). An estimate, see the Energy panel.',
     ],
     controls:
       'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset. ' +
@@ -24,7 +27,11 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
       'grey bands, fainter when they belong to a lap that is not selected. Click a marker to ' +
       'edit or delete it.',
   },
-  defaults: { channels: ['speed', 'throttle', 'brake', 'gear', 'rpm', 'drs'], step: 5 },
+  defaults: {
+    channels: ['speed', 'throttle', 'brake', 'gear', 'rpm', 'drs'],
+    step: 5,
+    clipping: true,
+  },
   settings: [
     {
       key: 'channels',
@@ -49,6 +56,7 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
         { value: 10, label: '10 m' },
       ],
     },
+    { key: 'clipping', label: 'Clipping (2026)', kind: 'toggle' },
   ],
   component: lazy(() => import('./TelemetryWidget').then((m) => ({ default: m.TelemetryWidget }))),
 });
