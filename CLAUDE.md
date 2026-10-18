@@ -32,7 +32,8 @@ strookjes in de speed-chart, kanaal Deploy en terugschakelen bij vol gas (zie "E
 gebouwd: twee werkplekken, Analyse en Pitwall, elk met eigen tabs, en het sessieverslag Report in de
 preset Debrief (zie "Werkplekken"). Fase 10 (2026-10-18): Q-cut en voorspelde laptijd in de tower,
 Qualifying-presets (Analyse en Pitwall), Mini-sectors, Tyre sets, Speed map, Teammates, Battles,
-Weekend en Release (zie ROADMAP.md fase 10 en de secties hieronder).
+Weekend en Release (zie ROADMAP.md fase 10 en de secties hieronder). Fase 11: de straight-mode-zones
+van de FIA (2026) op de kaart en in Telemetry/Delta (zie "Straight mode").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -148,6 +149,8 @@ backend/app/progress.py    de lap die bezig is op t (replay: afgeknipt, live: ui
 backend/app/energy.py      pure energie-logica (2026): kinematica op een tijdraster (a uit de snelheid, helling,
                            dwarsversnelling), vol-gas-stukken, omhullende per straight, clipping en de kosten;
                            energies.py: per sessie (schone laps, cache per lap die generaties overleeft)
+backend/app/straight_mode.py straight-mode-zones (2026): de FIA-punten uit straight_mode.json op de lap, eind
+                           waar de straight remt; sources/fia.py leest de FIA-kaart en schrijft die JSON
 backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
                            pure functies (long_runs, start_moves, stop_extremes, undercuts, flags) getest
@@ -217,8 +220,9 @@ opgeslagen (`backend/.cache/`), zodat elke sessie maar één keer van internet k
 Let op: FastF1's `session.load()` gooit **geen** exception als de bron faalt. Het logt alleen warnings,
 en daarna geeft `session.laps` een `DataNotLoadedError`.
 
-**2026-regels:** DRS bestaat niet meer (active aero + overtake mode). In de 2026-data is `drs` leeg
-(`null`), en er is geen kanaal voor wingstand of energie-inzet. Het DRS-kanaal dus alleen tonen als er data is.
+**2026-regels:** DRS bestaat niet meer (active aero + overtake mode). In de 2026-data is `drs` altijd 0
+(de backend maakt er `null` van), en er is geen kanaal voor wingstand of energie-inzet (F1 heeft ze
+na de wintertests uit de feed gehaald, FastF1 #861). Zie "Straight mode". Het DRS-kanaal dus alleen tonen als er data is.
 
 ## Replay (fase 4)
 
@@ -518,7 +522,7 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   data), ≥ 100 m; een race (en sprint) neemt ze uit Q (SQ), want daar gaat de flap alleen open
   achter een andere auto. Vanaf 2026 de straights van Energy (mediaan begin en eind; begin < 0 =
   vóór de lijn, de kaart knipt dat rond) met amber vanaf de mediaan van `clip_at` als ≥ 50% van de
-  schone laps clipt. De officiële straight-mode-zones staan niet in de data. Met vergeleken laps
+  schone laps clipt. De officiële straight-mode-zones staan apart (zie "Straight mode"). Met vergeleken laps
   daarbuiten een dun amber rijtje per lap waar die clipte (`/energy?laps=`, eerste lap het dichtst
   bij de baan). Let op: een uitgeschakelde TanStack-query geeft wel de cache van een ander paneel.
 
@@ -575,6 +579,39 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   2026. Race-momenten: start (≥ 3 plaatsen), snelste/traagste stop (groen, < 60 s), undercuts (achter
   binnen 3 s, eerst gestopt, de ander ≤ 4 laps later, na beider stops ervoor; op gaps, niet posities),
   SC/VSC/rood.
+
+## Straight mode (fase 11)
+
+Straight mode (2026, vervangt DRS): beide vleugels plat, voor iedereen op elke lap, alleen in de
+zones van de FIA; dicht aan het eind van de zone of bij remmen. Bij weinig grip (race control
+`LOW GRIP CONDITIONS` tot `NORMAL GRIP CONDITIONS`) alleen de voorvleugel en latere starts.
+Overtake mode is iets anders (MGU-K, binnen 1 s bij de detectielijn, `OVERTAKE ENABLED`).
+- **Niet in de data**, ook niet in de versnelling: getoetst op 2025 (het DRS-kanaal als waarheid);
+  het openen is per lap geen zichtbare sprong, en in 2026 is er geen "uit" om mee te vergelijken.
+  Zie ROADMAP fase 11.
+- **Bron**: per event het FIA-document "Competition Notes – Circuit Map" (fia.com/documents →
+  seizoen → event). `uv run python -m app.sources.fia 2026 18` (of `--all`) zoekt de nieuwste
+  kaart (`_v2`), leest de tabel met pypdf (dev-dependency) en schrijft `app/straight_mode.json`
+  (in git, per jaar en eventnaam: per zone het activatiepunt normaal en bij weinig grip als
+  bocht + meters, plus de overtake-punten als tekst). Varianten: "30m after T11 / Pit Exit",
+  "40m before T3 exit", "Exit T18" (= bij de bocht), "T1A-entry", n/a. Klopt het aantal niet
+  (de tekst mist soms de tabel: Oostenrijk, Hongarije), dan slaat het script het event over: met
+  de hand invullen van de tekening (pagina 2 van de PDF; `sips -s format png` maakt er een
+  plaatje van) en `note` erbij. Het script laat zulke events staan als het opnieuw faalt.
+- **Op de lap** (`straight_mode.py`, `/straight-mode`): bocht uit `corners.json` geschaald naar de
+  gewone laplengte + de meters (±50 m: welk punt van de bocht de FIA bedoelt weten we niet).
+  De tabel heeft geen eind: de straight van Energy waar het punt op ligt (of tot 300 m ervoor,
+  het punt ligt vaak in de uitgang van de bocht) eindigt waar de meeste laps remmen; eerder als
+  de volgende zone begint; een `end` in de JSON (van de tekening) wint: zones die vóór een
+  vlakke bocht stoppen (Spa A2 vóór Eau Rouge, A4 vóór T16). Dwarsversnelling werkt daar niet
+  voor: Baku's knik T20 en Monza's knik in A3 zitten midden in een zone. Zonder straight in de
+  data: 150 m vóór de volgende bocht (`end_source`).
+- **Frontend**: Track map "Straight mode zones (2026)" (standaard uit): grijze streep buiten de
+  baan, binnen als "Straights and clipping" ook aan staat, label A1… bij het begin, uitleg in de
+  `title`; weinig grip op de klok (`useLowGripAtClock`, rendert alleen bij een wissel). Telemetry
+  en Delta "Straight mode zones (2026)" (standaard aan, alleen 2026): vlak achter de lijnen
+  (`UPlotChart` `zones`, `COLORS.aeroFill`), naam rechts bovenin; weinig grip volgens de start
+  van de eerste lap; een zone over de lijn ook aan het eind van de lap.
 
 ## Bandensets (fase 10)
 

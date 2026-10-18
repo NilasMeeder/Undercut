@@ -21,6 +21,7 @@ from app import (
     sessions,
     setups,
     store,
+    straight_mode,
     strategies,
     strategy,
     tyres,
@@ -59,6 +60,7 @@ from app.schemas import (
     SessionReport,
     SessionTimeline,
     SetupMap,
+    StraightMode,
     TagCount,
     Teammates,
     Telemetry,
@@ -504,6 +506,13 @@ def session_report(year: int, round: int, session: SessionCode) -> SessionReport
 def track_zones(year: int, round: int, session: SessionCode) -> TrackZones:
     """DRS zones (until 2025) or the straights with where the session clips (2026), for the map."""
     return _guard(lambda: zones.get_zones(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/straight-mode")
+def straight_mode_zones(year: int, round: int, session: SessionCode) -> StraightMode:
+    """Straight-mode zones (2026) from the FIA's circuit map, ended where the session brakes, and
+    when race control declared low-grip conditions."""
+    return _guard(lambda: straight_mode.get_straight_mode(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/sectors")

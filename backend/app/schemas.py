@@ -414,6 +414,45 @@ class TrackZones(BaseModel):
     zones: list[TrackZone]
 
 
+class StraightModeZone(BaseModel):
+    """Where straight mode (2026, both wings flat) may be used. Distances in metres from the line
+    on a lap of the session's usual length; a start below zero runs on from the previous lap."""
+
+    label: str
+    """'A1', 'A2'… as on the FIA's circuit map."""
+    start: float
+    """The FIA's activation point (a corner's position plus the metres after it: ±50 m)."""
+    end: float
+    end_source: Literal["braking", "next_zone", "drawing", "next_corner"]
+    """The FIA's table gives no end: where most clean laps brake (the straight in Energy), where
+    the next zone starts, read off the FIA's drawing by hand (before a flat-out corner, Spa's Eau
+    Rouge), or without a straight in the data 150 m before the next corner."""
+    activation: str
+    """As the FIA writes it: '30m after T11 / Pit Exit'."""
+    low_grip_start: float | None
+    """In low-grip conditions (only the front wing): a later start, or null for no zone."""
+    low_grip_activation: str | None
+
+
+class TimeRange(BaseModel):
+    start: float
+    """Session time (s)."""
+    end: float | None
+    """Session time (s); null while it lasts."""
+
+
+class StraightMode(BaseModel):
+    """Straight-mode zones of the event (2026) from the FIA's circuit map; empty without one."""
+
+    source: str | None
+    """URL of the FIA's circuit map."""
+    length: float
+    """The lap length the distances are on (the session's usual lap; the map's differs)."""
+    zones: list[StraightModeZone]
+    low_grip: list[TimeRange]
+    """When race control declared low-grip conditions: the low-grip zones apply then."""
+
+
 class TrackSectors(BaseModel):
     """Where the timing sectors end along the lap, for the map."""
 

@@ -1,0 +1,909 @@
+{
+  "2026": {
+    "Australian Grand Prix": {
+      "round": 1,
+      "source": "https://www.fia.com/system/files/decision-document/2026_australian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_quarantine_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "14",
+            "metres": 50.0,
+            "text": "50m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 100.0,
+            "text": "100m after T14"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "2",
+            "metres": 20.0,
+            "text": "20m after T2"
+          },
+          "low_grip": {
+            "corner": "2",
+            "metres": 45.0,
+            "text": "45m after T2"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "5",
+            "metres": 85.0,
+            "text": "85m after T5"
+          },
+          "low_grip": {
+            "corner": "5",
+            "metres": 125.0,
+            "text": "125m after T5"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "8",
+            "metres": 35.0,
+            "text": "35m after T8"
+          },
+          "low_grip": null
+        },
+        {
+          "label": "A5",
+          "normal": {
+            "corner": "10",
+            "metres": 60.0,
+            "text": "60m after T10"
+          },
+          "low_grip": null
+        }
+      ],
+      "overtake": [
+        "Entry T14",
+        "15m after T13",
+        "120m before T1",
+        "140m before T9",
+        "120m before T6"
+      ]
+    },
+    "Chinese Grand Prix": {
+      "round": 2,
+      "source": "https://www.fia.com/system/files/decision-document/2026_chinese_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_battery_containment_area_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "16",
+            "metres": 100.0,
+            "text": "100m after T16"
+          },
+          "low_grip": {
+            "corner": "16",
+            "metres": 150.0,
+            "text": "150m after T16"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "4",
+            "metres": 60.0,
+            "text": "60m after T4"
+          },
+          "low_grip": {
+            "corner": "4",
+            "metres": 100.0,
+            "text": "100m after T4"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "10",
+            "metres": 100.0,
+            "text": "100m after T10"
+          },
+          "low_grip": {
+            "corner": "10",
+            "metres": 140.0,
+            "text": "140m after T10"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "13",
+            "metres": 60.0,
+            "text": "60m after T13"
+          },
+          "low_grip": {
+            "corner": "13",
+            "metres": 130.0,
+            "text": "130m after T13"
+          }
+        }
+      ],
+      "overtake": [
+        "100m after T16",
+        "Entry T16"
+      ]
+    },
+    "Japanese Grand Prix": {
+      "round": 3,
+      "source": "https://www.fia.com/system/files/decision-document/2026_japanese_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_battery_containment_area_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "18",
+            "metres": 0.0,
+            "text": "Exit T18"
+          },
+          "low_grip": {
+            "corner": "18",
+            "metres": 100.0,
+            "text": "100m after T18"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "14",
+            "metres": 0.0,
+            "text": "Exit T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 70.0,
+            "text": "70m after T14"
+          }
+        }
+      ],
+      "overtake": [
+        "Apex T18",
+        "Exit T17"
+      ]
+    },
+    "Miami Grand Prix": {
+      "round": 4,
+      "source": "https://www.fia.com/system/files/decision-document/2026_miami_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "19",
+            "metres": 0.0,
+            "text": "Exit T19"
+          },
+          "low_grip": {
+            "corner": "19",
+            "metres": 70.0,
+            "text": "70m after T19"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "8",
+            "metres": 165.0,
+            "text": "165m after T8"
+          },
+          "low_grip": null
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "16",
+            "metres": 90.0,
+            "text": "90m after T16"
+          },
+          "low_grip": {
+            "corner": "16",
+            "metres": 150.0,
+            "text": "150m after T16"
+          }
+        }
+      ],
+      "overtake": [
+        "10m after T18",
+        "20m after T17"
+      ]
+    },
+    "Canadian Grand Prix": {
+      "round": 5,
+      "source": "https://www.fia.com/system/files/decision-document/2026_canadian_grand_prix_-_competition_notes_-_circuit_map_v2.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "14",
+            "metres": 100.0,
+            "text": "100m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 160.0,
+            "text": "160m after T14"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "7",
+            "metres": 50.0,
+            "text": "50m after T7"
+          },
+          "low_grip": {
+            "corner": "7",
+            "metres": 110.0,
+            "text": "110m after T7"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "9",
+            "metres": 60.0,
+            "text": "60m after T9"
+          },
+          "low_grip": null
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "11",
+            "metres": 30.0,
+            "text": "30m after T11"
+          },
+          "low_grip": {
+            "corner": "11",
+            "metres": 120.0,
+            "text": "120m after T11"
+          }
+        }
+      ],
+      "overtake": [
+        "70m after T14",
+        "Entry T13"
+      ]
+    },
+    "Monaco Grand Prix": {
+      "round": 6,
+      "source": "https://www.fia.com/system/files/decision-document/2026_monaco_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [],
+      "overtake": []
+    },
+    "Barcelona Grand Prix": {
+      "round": 7,
+      "source": "https://www.fia.com/system/files/decision-document/2026_barcelona-catalunya_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_and_emergency_exits_map.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "14",
+            "metres": 45.0,
+            "text": "45m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 85.0,
+            "text": "85m after T14"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "3",
+            "metres": -40.0,
+            "text": "40m before T3 exit"
+          },
+          "low_grip": {
+            "corner": "3",
+            "metres": 0.0,
+            "text": "T3 exit"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "5",
+            "metres": 90.0,
+            "text": "90m after T5"
+          },
+          "low_grip": {
+            "corner": "5",
+            "metres": 90.0,
+            "text": "90m after T5"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "9",
+            "metres": 40.0,
+            "text": "40m after T9"
+          },
+          "low_grip": {
+            "corner": "9",
+            "metres": 90.0,
+            "text": "90m after T9"
+          }
+        }
+      ],
+      "overtake": [
+        "Entry T14",
+        "Apex T13"
+      ]
+    },
+    "Austrian Grand Prix": {
+      "round": 8,
+      "source": "https://www.fia.com/system/files/decision-document/2026_austrian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "note": "Entered by hand from the drawing: the PDF's text misses the table.",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "10",
+            "metres": 110.0,
+            "text": "110m after T10"
+          },
+          "low_grip": {
+            "corner": "10",
+            "metres": 160.0,
+            "text": "160m after T10"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "1",
+            "metres": 110.0,
+            "text": "110m after T1"
+          },
+          "low_grip": {
+            "corner": "1",
+            "metres": 170.0,
+            "text": "170m after T1"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "3",
+            "metres": 90.0,
+            "text": "90m after T3"
+          },
+          "low_grip": {
+            "corner": "3",
+            "metres": 160.0,
+            "text": "160m after T3"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "8",
+            "metres": 10.0,
+            "text": "10m after T8"
+          },
+          "low_grip": {
+            "corner": "8",
+            "metres": 60.0,
+            "text": "60m after T8"
+          }
+        }
+      ],
+      "overtake": []
+    },
+    "British Grand Prix": {
+      "round": 9,
+      "source": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "18",
+            "metres": 65.0,
+            "text": "65m after T18"
+          },
+          "low_grip": {
+            "corner": "18",
+            "metres": 115.0,
+            "text": "115m after T18"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "5",
+            "metres": 55.0,
+            "text": "55m after T5"
+          },
+          "low_grip": {
+            "corner": "5",
+            "metres": 115.0,
+            "text": "115m after T5"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "7",
+            "metres": 155.0,
+            "text": "155m after T7"
+          },
+          "low_grip": null
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "14",
+            "metres": 65.0,
+            "text": "65m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 125.0,
+            "text": "125m after T14"
+          }
+        }
+      ],
+      "overtake": [
+        "95m after T17",
+        "Exit of T17"
+      ]
+    },
+    "Belgian Grand Prix": {
+      "round": 10,
+      "source": "https://www.fia.com/system/files/decision-document/2026_belgian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "19",
+            "metres": 190.0,
+            "text": "190m after T19"
+          },
+          "low_grip": {
+            "corner": "19",
+            "metres": 240.0,
+            "text": "240m after T19"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "1",
+            "metres": 140.0,
+            "text": "140m after T1"
+          },
+          "low_grip": {
+            "corner": "1",
+            "metres": 195.0,
+            "text": "195m after T1"
+          },
+          "end": {
+            "corner": "2",
+            "metres": -200.0,
+            "text": "~200m before T2 (drawing)"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "4",
+            "metres": 60.0,
+            "text": "60m after T4"
+          },
+          "low_grip": {
+            "corner": "4",
+            "metres": 360.0,
+            "text": "360m after T4"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "15",
+            "metres": 140.0,
+            "text": "140m after T15"
+          },
+          "low_grip": {
+            "corner": "15",
+            "metres": 190.0,
+            "text": "190m after T15"
+          },
+          "end": {
+            "corner": "16",
+            "metres": -180.0,
+            "text": "~180m before T16 (drawing)"
+          }
+        },
+        {
+          "label": "A5",
+          "normal": {
+            "corner": "17",
+            "metres": 80.0,
+            "text": "80m after T17"
+          },
+          "low_grip": {
+            "corner": "17",
+            "metres": 110.0,
+            "text": "110m after T17"
+          }
+        }
+      ],
+      "overtake": [
+        "130m after T19",
+        "Entry T19"
+      ]
+    },
+    "Hungarian Grand Prix": {
+      "round": 11,
+      "source": "https://www.fia.com/system/files/decision-document/2026_hungarian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "note": "Entered by hand from the drawing: the PDF's text misses zone A2 (T1A).",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "14",
+            "metres": 40.0,
+            "text": "40m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 100.0,
+            "text": "100m after T14"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "1A",
+            "metres": 30.0,
+            "text": "30m after T1A-entry"
+          },
+          "low_grip": {
+            "corner": "1A",
+            "metres": 100.0,
+            "text": "100m after T1A-entry"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "3",
+            "metres": 50.0,
+            "text": "50m after T3"
+          },
+          "low_grip": {
+            "corner": "3",
+            "metres": 80.0,
+            "text": "80m after T3"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "11",
+            "metres": 60.0,
+            "text": "60m after T11"
+          },
+          "low_grip": {
+            "corner": "11",
+            "metres": 90.0,
+            "text": "90m after T11"
+          }
+        }
+      ],
+      "overtake": []
+    },
+    "Dutch Grand Prix": {
+      "round": 12,
+      "source": "https://www.fia.com/system/files/decision-document/2026_dutch_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_and_emergency_exits_map.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "14",
+            "metres": 20.0,
+            "text": "20m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 80.0,
+            "text": "80m after T14"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "10",
+            "metres": 50.0,
+            "text": "50m after T10"
+          },
+          "low_grip": {
+            "corner": "10",
+            "metres": 120.0,
+            "text": "120m after T10"
+          }
+        }
+      ],
+      "overtake": [
+        "45m after T14-entry",
+        "10m before T13"
+      ]
+    },
+    "Italian Grand Prix": {
+      "round": 13,
+      "source": "https://www.fia.com/system/files/decision-document/2026_italian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "11",
+            "metres": 30.0,
+            "text": "30m after T11 / Pit Exit"
+          },
+          "low_grip": {
+            "corner": "11",
+            "metres": 100.0,
+            "text": "100m after T11 / Pit Exit"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "3",
+            "metres": 70.0,
+            "text": "70m after T3"
+          },
+          "low_grip": {
+            "corner": "3",
+            "metres": 110.0,
+            "text": "110m after T3"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "7",
+            "metres": 170.0,
+            "text": "170m after T7"
+          },
+          "low_grip": {
+            "corner": "7",
+            "metres": 230.0,
+            "text": "230m after T7"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "10",
+            "metres": 130.0,
+            "text": "130m after T10"
+          },
+          "low_grip": {
+            "corner": "10",
+            "metres": 180.0,
+            "text": "180m after T10"
+          }
+        }
+      ],
+      "overtake": [
+        "T11",
+        "Entry T11"
+      ]
+    },
+    "Spanish Grand Prix": {
+      "round": 14,
+      "source": "https://www.fia.com/system/files/decision-document/2026_spanish_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_and_emergency_exits_map.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "22",
+            "metres": 100.0,
+            "text": "100m after T22"
+          },
+          "low_grip": {
+            "corner": "22",
+            "metres": 130.0,
+            "text": "130m after T22"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "3",
+            "metres": 40.0,
+            "text": "40m after T3"
+          },
+          "low_grip": {
+            "corner": "3",
+            "metres": 90.0,
+            "text": "90m after T3"
+          }
+        }
+      ],
+      "overtake": [
+        "20m after T22",
+        "Entry T22"
+      ]
+    },
+    "Azerbaijan Grand Prix": {
+      "round": 15,
+      "source": "https://www.fia.com/system/files/decision-document/2026_azerbaijan_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "19",
+            "metres": 45.0,
+            "text": "45m after T19"
+          },
+          "low_grip": {
+            "corner": "20",
+            "metres": 45.0,
+            "text": "45m after T20"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "2",
+            "metres": 110.0,
+            "text": "110m after T2"
+          },
+          "low_grip": {
+            "corner": "2",
+            "metres": 160.0,
+            "text": "160m after T2"
+          }
+        }
+      ],
+      "overtake": [
+        "20m before T17",
+        "90m after T16"
+      ]
+    },
+    "Bahrain Grand Prix": {
+      "round": 16,
+      "source": "https://www.fia.com/system/files/decision-document/2026_bahrain_grand_prix_in_malaysia_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "15",
+            "metres": 65.0,
+            "text": "65m after T15"
+          },
+          "low_grip": {
+            "corner": "15",
+            "metres": 85.0,
+            "text": "85m after T15"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "3",
+            "metres": 10.0,
+            "text": "10m after T3"
+          },
+          "low_grip": {
+            "corner": "3",
+            "metres": 50.0,
+            "text": "50m after T3"
+          }
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "8",
+            "metres": 65.0,
+            "text": "65m after T8"
+          },
+          "low_grip": {
+            "corner": "8",
+            "metres": 95.0,
+            "text": "95m after T8"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "14",
+            "metres": 65.0,
+            "text": "65m after T14"
+          },
+          "low_grip": {
+            "corner": "14",
+            "metres": 80.0,
+            "text": "80m after T14"
+          }
+        }
+      ],
+      "overtake": [
+        "T15 Exit",
+        "45m before T15 Exit"
+      ]
+    },
+    "Singapore Grand Prix": {
+      "round": 17,
+      "source": "https://www.fia.com/system/files/decision-document/2026_singapore_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_and_emergency_exits_map.pdf",
+      "zones": [
+        {
+          "label": "A1",
+          "normal": {
+            "corner": "19",
+            "metres": 30.0,
+            "text": "30m after T19"
+          },
+          "low_grip": {
+            "corner": "19",
+            "metres": 90.0,
+            "text": "90m after T19"
+          }
+        },
+        {
+          "label": "A2",
+          "normal": {
+            "corner": "5",
+            "metres": 50.0,
+            "text": "50m after T5"
+          },
+          "low_grip": null
+        },
+        {
+          "label": "A3",
+          "normal": {
+            "corner": "9",
+            "metres": 70.0,
+            "text": "70m after T9"
+          },
+          "low_grip": {
+            "corner": "9",
+            "metres": 120.0,
+            "text": "120m after T9"
+          }
+        },
+        {
+          "label": "A4",
+          "normal": {
+            "corner": "13",
+            "metres": 115.0,
+            "text": "115m after T13"
+          },
+          "low_grip": {
+            "corner": "13",
+            "metres": 165.0,
+            "text": "165m after T13"
+          }
+        },
+        {
+          "label": "A5",
+          "normal": {
+            "corner": "15",
+            "metres": 70.0,
+            "text": "70m after T15"
+          },
+          "low_grip": {
+            "corner": "15",
+            "metres": 90.0,
+            "text": "90m after T15"
+          }
+        }
+      ],
+      "overtake": [
+        "30m after T17",
+        "Entry T17"
+      ]
+    }
+  }
+}

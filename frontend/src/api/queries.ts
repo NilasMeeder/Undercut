@@ -12,6 +12,7 @@ import {
   type Degradation,
   type EnergyComparison,
   type EnergySession,
+  type StraightMode,
   type TrackSectors,
   type TrackZones,
   type TyreWeekend,
@@ -113,6 +114,9 @@ export const useTeammates = () => useSessionQuery<Teammates>('/teammates');
 /** Every driver from the first practice up to this session. */
 export const useWeekend = () => useSessionQuery<WeekendOverview>('/weekend');
 export const useSectors = (enabled = true) => useSessionQuery<TrackSectors>('/sectors', enabled);
+/** Straight-mode zones (2026) from the FIA's circuit map, and when low grip applied. */
+export const useStraightMode = (enabled = true) =>
+  useSessionQuery<StraightMode>('/straight-mode', enabled);
 
 export type ProgressReference = 'previous' | 'best';
 

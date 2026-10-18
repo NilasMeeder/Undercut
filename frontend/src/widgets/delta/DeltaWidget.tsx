@@ -7,6 +7,7 @@ import { formatGap } from '@/lib/format';
 import { lengthOff } from '@/lib/insights';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
+import { useStraightModeZones } from '../useStraightModeZones';
 import type { DeltaConfig } from './widget';
 
 const deltaFormat = (v: number) =>
@@ -14,8 +15,10 @@ const deltaFormat = (v: number) =>
 
 /** Time behind the reference lap (the first selected) along the lap; above zero = slower. */
 export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
-  const { laps, data, styles, error } = useGroupComparison(group, { step: config.step });
+  const { laps, data, styles, detail, error } = useGroupComparison(group, { step: config.step });
   const marks = useDistanceMarks(group);
+  // Straight mode replaced DRS in 2026.
+  const zones = useStraightModeZones(data, config.straightMode && detail?.has_drs === false);
 
   const chart = useMemo(() => {
     if (!data) return null;
@@ -69,6 +72,7 @@ export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
         showXAxis
         marks={marks}
         markLabels
+        zones={zones}
       />
     </div>
   );

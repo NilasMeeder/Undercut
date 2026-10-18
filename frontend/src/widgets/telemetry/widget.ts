@@ -3,7 +3,12 @@ import { defineWidget } from '../types';
 
 export type ChannelKey = 'speed' | 'throttle' | 'brake' | 'gear' | 'rpm' | 'drs' | 'deploy';
 
-export type TelemetryConfig = { channels: ChannelKey[]; step: number; clipping: boolean };
+export type TelemetryConfig = {
+  channels: ChannelKey[];
+  step: number;
+  clipping: boolean;
+  straightMode: boolean;
+};
 
 export const telemetryWidget = defineWidget<TelemetryConfig>({
   id: 'telemetry',
@@ -28,6 +33,10 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
         'where the best laps still did, so it can stay just above zero). Dark amber below zero: ' +
         'losing speed at full throttle, the battery harvesting ("super clipping"). Empty off ' +
         'the throttle, in fast corners and near top speed.',
+      'Straight mode zones (2026): a faint band behind the lines where the wings may go flat ' +
+        '(A1, A2… as on the FIA’s circuit map; in low grip the later low-grip starts). The ' +
+        'start is the FIA’s activation point (±50 m), the end where most laps brake. Whether ' +
+        'a car actually used it is not in the data.',
       'Triangles at the top of the gear chart: a downshift at full throttle above 200 km/h. ' +
         'In 2026 that keeps the engine above 10,500 rpm, where the fuel flow is at its maximum, ' +
         'while the car loses speed harvesting. Some teams do it, others let the rpm drop.',
@@ -42,6 +51,7 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
     channels: ['speed', 'throttle', 'brake', 'gear', 'rpm', 'drs', 'deploy'],
     step: 5,
     clipping: true,
+    straightMode: true,
   },
   settings: [
     {
@@ -69,6 +79,7 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
       ],
     },
     { key: 'clipping', label: 'Clipping and downshifts (2026)', kind: 'toggle' },
+    { key: 'straightMode', label: 'Straight mode zones (2026)', kind: 'toggle' },
   ],
   component: lazy(() => import('./TelemetryWidget').then((m) => ({ default: m.TelemetryWidget }))),
 });

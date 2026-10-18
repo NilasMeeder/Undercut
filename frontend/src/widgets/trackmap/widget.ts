@@ -9,6 +9,7 @@ export type TrackMapConfig = {
   ghosts: boolean;
   drs: boolean;
   straights: boolean;
+  straightMode: boolean;
   sectors: boolean;
 };
 
@@ -36,6 +37,13 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
         'purple stripe (an estimate: the official straight-mode zones are not in the data), ' +
         'amber over it from where most laps of the session start to clip. With compared laps, a ' +
         'thin amber row per lap shows where that lap clipped (the first lap nearest the track).',
+      'Straight mode zones (off by default, 2026): a grey stripe outside the track (inside when the ' +
+        'straights and clipping are on) where the ' +
+        'wings may go flat (straight mode replaced DRS: every driver, every lap, no gap needed). ' +
+        'The start is the FIA’s activation point from its circuit map (±50 m); the FIA gives no ' +
+        'end, so a zone ends where most laps brake, or where the next zone starts. When race ' +
+        'control declares low-grip conditions (at the clock), the later low-grip starts. Not in ' +
+        'the data: whether a car actually used it is not visible.',
       'Sectors (off by default): where sector 1 and 2 end, from the quickest laps’ sector times.',
       'Pit ghosts (all cars): for each driver selected in this link group, a hollow ring where he ' +
         'would be now had he stopped (PIT: green-flag pit loss; SC, dashed: under a safety car), ' +
@@ -50,6 +58,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     ghosts: true,
     drs: false,
     straights: false,
+    straightMode: false,
     sectors: false,
   },
   settings: [
@@ -77,6 +86,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     { key: 'markers', label: 'Markers', kind: 'toggle' },
     { key: 'drs', label: 'DRS zones (until 2025)', kind: 'toggle' },
     { key: 'straights', label: 'Straights and clipping (2026)', kind: 'toggle' },
+    { key: 'straightMode', label: 'Straight mode zones (2026)', kind: 'toggle' },
     { key: 'sectors', label: 'Sectors', kind: 'toggle' },
     { key: 'ghosts', label: 'Pit stop ghosts (all cars)', kind: 'toggle' },
   ],

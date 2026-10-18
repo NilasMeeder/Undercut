@@ -427,8 +427,24 @@ dan pas bouwen.
       (Monza −116 m, Zandvoort −205 m, bij alle teams) maar die liggen niet op de FIA-punten
       (Monza A1 ligt ~470 m eerder): waarschijnlijk inzet. Lap 1 (geen straight mode) vergelijken
       lukt niet: daar zet iedereen vol in en rijdt in de slipstream.
-- [ ] Daarna kiezen: zones met de hand per circuit, uit de data, of geschat; en waar het komt
-      (kaart-optie zoals DRS zones, kanaal in Telemetry, Energy)
+- [x] Gekozen (Nilas, optie A): de zones van de FIA per event, uit de kaart gelezen en nagekeken
+- [x] `app/sources/fia.py`: haalt de kaart van fia.com, leest de tabel (pypdf) en schrijft
+      `app/straight_mode.json` (in git). 2026 t/m Singapore staat erin; Oostenrijk en Hongarije
+      met de hand van de tekening (de tekst mist de tabel); Spa A2 en A4 met een eind van de
+      tekening (vóór Eau Rouge en T16)
+- [x] `/straight-mode`: per zone begin (FIA-punt), eind (remmen, de volgende zone, de tekening of
+      geschat) en het begin bij weinig grip; perioden van weinig grip uit race control
+- [x] Track map "Straight mode zones (2026)" (grijze streep, A1…; bij weinig grip op de klok de
+      latere starts), band achter de lijnen in Telemetry en Delta (standaard aan, alleen 2026)
+- [ ] Austin (ronde 18): de kaart komt meestal do/vr. Dan `uv run python -m app.sources.fia 2026 18`,
+      nakijken tegen de tekening (bochtnummers, een zone die vóór een vlakke bocht stopt: `end`
+      met de hand), committen. Daarna Mexico, São Paulo, Las Vegas, Qatar, Abu Dhabi net zo
+- [ ] Na Austin FP1: in de ruwe opname kijken of er een nieuw CarData-kanaal of topic is (aero,
+      ERS) en of race control iets over straight mode zegt
+- [ ] Weinig grip in de UI nog niet gezien: Zandvoort R had het alleen vóór de start (buiten de
+      tijdlijn). Bij een natte sessie nakijken
+- [ ] Later (optie B): overtake mode (detectie- en activatielijn uit dezelfde kaart, ENABLED/
+      DISABLED uit race control, wie binnen 1 s zit bij de detectielijn)
 
 ## Later / backlog
 
@@ -441,6 +457,10 @@ dan pas bouwen.
       - het is alleen nodig voor sessies die nog niet in TracingInsights staan
 
 ## Ideeën (later, misschien)
+
+- **Corners live** (Nilas, 2026-10-18): Corners ook als live view, zoals Live lap: de bochten van
+  de lap die nu bezig is vergeleken met de beste of de vorige lap (keuze, zoals de referentie van
+  Live lap), per bocht bijgewerkt zodra de auto erdoor is
 
 - **Automatische analyses** (Nilas, 2026-10-18): na (of tijdens) een sessie zelf analyses laten
   draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten

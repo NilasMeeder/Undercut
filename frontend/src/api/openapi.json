@@ -1940,6 +1940,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/straight-mode": {
+      "get": {
+        "summary": "Straight Mode Zones",
+        "description": "Straight-mode zones (2026) from the FIA's circuit map, ended where the session brakes, and\nwhen race control declared low-grip conditions.",
+        "operationId": "straight_mode_zones_api_sessions__year___round___session__straight_mode_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StraightMode"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/sectors": {
       "get": {
         "summary": "Track Sectors",
@@ -6345,6 +6413,112 @@
         ],
         "title": "StintPace"
       },
+      "StraightMode": {
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "length": {
+            "type": "number",
+            "title": "Length"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/StraightModeZone"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "low_grip": {
+            "items": {
+              "$ref": "#/components/schemas/TimeRange"
+            },
+            "type": "array",
+            "title": "Low Grip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "length",
+          "zones",
+          "low_grip"
+        ],
+        "title": "StraightMode",
+        "description": "Straight-mode zones of the event (2026) from the FIA's circuit map; empty without one."
+      },
+      "StraightModeZone": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "end_source": {
+            "type": "string",
+            "enum": [
+              "braking",
+              "next_zone",
+              "drawing",
+              "next_corner"
+            ],
+            "title": "End Source"
+          },
+          "activation": {
+            "type": "string",
+            "title": "Activation"
+          },
+          "low_grip_start": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Grip Start"
+          },
+          "low_grip_activation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Grip Activation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "start",
+          "end",
+          "end_source",
+          "activation",
+          "low_grip_start",
+          "low_grip_activation"
+        ],
+        "title": "StraightModeZone",
+        "description": "Where straight mode (2026, both wings flat) may be used. Distances in metres from the line\non a lap of the session's usual length; a start below zero runs on from the previous lap."
+      },
       "TagCount": {
         "properties": {
           "tag": {
@@ -6634,6 +6808,31 @@
         ],
         "title": "Telemetry",
         "description": "One lap, columnar, at the source sample rate (~4 Hz car data merged with position)."
+      },
+      "TimeRange": {
+        "properties": {
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "TimeRange"
       },
       "TimingState": {
         "properties": {

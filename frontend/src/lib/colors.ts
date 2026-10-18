@@ -15,6 +15,8 @@ export const COLORS = {
   clip: '#ffa62b',
   /** Markers: neutral, they are notes and carry no timing meaning. */
   markerFill: 'rgba(232, 232, 236, 0.08)',
+  /** Straight-mode zones (2026) behind the charts: fainter than a marker, information only. */
+  aeroFill: 'rgba(232, 232, 236, 0.04)',
 } as const;
 
 /** Track flags keep their real-world colours; anything else (chequered, clear) stays neutral. */

@@ -4,6 +4,7 @@ import type {
   Comparison,
   DriverInfo,
   EnergyComparison,
+  StraightMode,
   TrackSectors,
   TrackZones,
 } from '@/api/client';
@@ -13,6 +14,7 @@ import {
   useReplayPositions,
   useSectors,
   useSessionDetail,
+  useStraightMode,
   useZones,
   type PositionTrack,
 } from '@/api/queries';
@@ -20,6 +22,7 @@ import { useDistanceMarks } from '@/api/markers';
 import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import type { DistanceMark } from '@/lib/markers';
+import { activeZones, describeZone, useLowGripAtClock } from '@/lib/straightMode';
 import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom, useZoomKind } from '@/store/cursor';
@@ -126,6 +129,8 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       ? fetchedZones
       : undefined;
   const sectors = useSectors(config.sectors).data;
+  const fetchedStraightMode = useStraightMode(config.straightMode).data;
+  const straightMode = config.straightMode ? fetchedStraightMode : undefined;
   // Where each compared lap clipped (2026), on the first lap's scale like the comparison. A
   // disabled query still returns what another panel cached (Energy in 2025), hence `clips`.
   const clips = config.cars === 'laps' && zones?.kind === 'straight';
@@ -161,6 +166,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         showMarks={config.markers}
         showGhosts={config.ghosts}
         zones={zones}
+        straightMode={straightMode}
         sectors={config.sectors ? sectors : undefined}
       />
     );
@@ -173,6 +179,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       showCorners={config.corners}
       showMarks={config.markers}
       zones={zones}
+      straightMode={straightMode}
       lapClips={lapClips}
       lapEnergy={lapEnergy}
       sectors={config.sectors ? sectors : undefined}
@@ -243,6 +250,7 @@ function ReplayMap({
   showMarks,
   showGhosts,
   zones,
+  straightMode,
   sectors,
 }: {
   group: GroupId;
@@ -251,6 +259,7 @@ function ReplayMap({
   showMarks: boolean;
   showGhosts: boolean;
   zones?: TrackZones;
+  straightMode?: StraightMode;
   sectors?: TrackSectors;
 }) {
   const { status, track, error } = useReplayPositions();
@@ -278,6 +287,7 @@ function ReplayMap({
       cars={track && detail.data ? { track, drivers: detail.data.drivers } : undefined}
       ghosts={ghosts}
       zones={zones}
+      straightMode={straightMode}
       sectors={sectors}
     />
   );
@@ -294,6 +304,7 @@ function TrackMap({
   cars,
   ghosts = NO_GHOSTS,
   zones,
+  straightMode,
   lapClips,
   lapEnergy,
   sectors,
@@ -309,6 +320,8 @@ function TrackMap({
   /** Pit stop ghosts of the drivers selected in the group (with all cars). */
   ghosts?: GhostKind[];
   zones?: TrackZones;
+  /** Straight-mode zones (2026), inside the track. */
+  straightMode?: StraightMode;
   /** Per compared lap, where it clipped. */
   lapClips?: LapClips[];
   lapEnergy?: LapEnergy;
@@ -322,6 +335,7 @@ function TrackMap({
   const selected = useGroupLaps(group);
   const highlight = useMemo(() => new Set(selected.map((l) => l.driver)), [selected]);
   const marks = useDistanceMarks(group);
+  const lowGrip = useLowGripAtClock(straightMode);
 
   const geometry = useMemo(() => {
     const outline = circuit.track_x.map((x, i) => project(x, circuit.track_y[i], circuit.rotation));
@@ -444,7 +458,12 @@ function TrackMap({
           {note ?? 'Mini-sectors: fastest lap colours the track'}
         </div>
       ) : null}
-      {zones && zones.zones.length > 0 ? <ZoneLegend zones={zones} /> : null}
+      {(zones && zones.zones.length > 0) || straightMode ? (
+        <div className="absolute bottom-1 left-1.5 z-10 flex flex-col gap-0.5 text-[10px] text-faint">
+          {straightMode ? <StraightModeLegend data={straightMode} lowGrip={lowGrip} /> : null}
+          {zones && zones.zones.length > 0 ? <ZoneLegend zones={zones} /> : null}
+        </div>
+      ) : null}
       {lap?.zoomed && lapEnergy ? <EnergyLegend name={lapEnergy.name} /> : null}
       {cars ? (
         <div ref={emptyRef} hidden className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">
@@ -461,6 +480,15 @@ function TrackMap({
         />
         {zones ? (
           <ZoneLayer along={geometry.along} zones={zones} lapClips={lapClips} unit={u} />
+        ) : null}
+        {straightMode ? (
+          <StraightModeLayer
+            along={geometry.along}
+            data={straightMode}
+            lowGrip={lowGrip}
+            inside={zones != null && zones.zones.length > 0}
+            unit={u}
+          />
         ) : null}
         {markShapes.map((m) => (
           <g key={m.id} opacity={m.dim ? 0.45 : 1}>
@@ -691,7 +719,7 @@ function ZoneLegend({ zones }: { zones: TrackZones }) {
   const session = useSelection((s) => s.session);
   const clips = zones.zones.some((z) => z.clip_at != null);
   return (
-    <div className="absolute bottom-1 left-1.5 z-10 flex items-center gap-2.5 text-[10px] text-faint">
+    <div className="flex items-center gap-2.5">
       <span className="flex items-center gap-1">
         <span className="h-[3px] w-3 bg-ers" />
         {zones.kind === 'drs'
@@ -705,6 +733,76 @@ function ZoneLegend({ zones }: { zones: TrackZones }) {
         </span>
       ) : null}
     </div>
+  );
+}
+
+const STRAIGHT_MODE_OFFSET = 2.1;
+const STRAIGHT_MODE_WIDTH = 0.7;
+
+/** Straight-mode zones (2026) as a grey stripe outside the track like the DRS zones were, or
+ * inside it when the straights and clipping are shown outside; the zone's name at its start. In
+ * low grip (race control, at the clock) the later low-grip starts. */
+function StraightModeLayer({
+  along,
+  data,
+  lowGrip,
+  inside,
+  unit,
+}: {
+  along: Along;
+  data: StraightMode;
+  lowGrip: boolean;
+  inside: boolean;
+  unit: number;
+}) {
+  // The zones are on the session's lap, the map on the outline's length.
+  const scale = data.length > 0 ? along.length / data.length : 1;
+  const side = inside ? -1 : 1;
+  const offset = side * unit * STRAIGHT_MODE_OFFSET;
+  return (
+    <g strokeLinecap="butt" strokeLinejoin="round" fill="none">
+      {activeZones(data, lowGrip).map((zone) => {
+        const start = zone.start * scale;
+        const i = indexAt(along.distance, start < 0 ? start + along.length : start);
+        const [x, y] = along.points[i];
+        const [nx, ny] = along.normals[i];
+        return (
+          <g key={zone.label}>
+            <title>{describeZone(zone, lowGrip)}</title>
+            <path
+              d={offsetPath(along, { start, end: zone.end * scale }, offset)}
+              stroke={COLORS.textDim}
+              strokeWidth={unit * STRAIGHT_MODE_WIDTH}
+            />
+            <text
+              x={x + side * nx * unit * 4.5}
+              y={y + side * ny * unit * 4.5}
+              fill={COLORS.textFaint}
+              fontSize={unit * 2.2}
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {zone.label}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function StraightModeLegend({ data, lowGrip }: { data: StraightMode; lowGrip: boolean }) {
+  return (
+    <span className="flex items-center gap-1">
+      <span className="h-[2px] w-3 bg-dim" />
+      {data.zones.length === 0
+        ? data.source
+          ? 'No straight-mode zones here (FIA map)'
+          : 'No FIA straight-mode zones for this event'
+        : lowGrip
+          ? 'Straight mode (FIA), low grip: front wing only'
+          : 'Straight mode zones (FIA)'}
+    </span>
   );
 }
 

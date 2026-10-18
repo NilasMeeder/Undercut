@@ -475,6 +475,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/straight-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Straight Mode Zones
+         * @description Straight-mode zones (2026) from the FIA's circuit map, ended where the session brakes, and
+         *     when race control declared low-grip conditions.
+         */
+        get: operations["straight_mode_zones_api_sessions__year___round___session__straight_mode_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/sectors": {
         parameters: {
             query?: never;
@@ -1848,6 +1869,44 @@ export interface components {
             end_lap: number;
             fit: components["schemas"]["DegFit"] | null;
         };
+        /**
+         * StraightMode
+         * @description Straight-mode zones of the event (2026) from the FIA's circuit map; empty without one.
+         */
+        StraightMode: {
+            /** Source */
+            source: string | null;
+            /** Length */
+            length: number;
+            /** Zones */
+            zones: components["schemas"]["StraightModeZone"][];
+            /** Low Grip */
+            low_grip: components["schemas"]["TimeRange"][];
+        };
+        /**
+         * StraightModeZone
+         * @description Where straight mode (2026, both wings flat) may be used. Distances in metres from the line
+         *     on a lap of the session's usual length; a start below zero runs on from the previous lap.
+         */
+        StraightModeZone: {
+            /** Label */
+            label: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /**
+             * End Source
+             * @enum {string}
+             */
+            end_source: "braking" | "next_zone" | "drawing" | "next_corner";
+            /** Activation */
+            activation: string;
+            /** Low Grip Start */
+            low_grip_start: number | null;
+            /** Low Grip Activation */
+            low_grip_activation: string | null;
+        };
         /** TagCount */
         TagCount: {
             /** Tag */
@@ -1926,6 +1985,13 @@ export interface components {
             x: number[];
             /** Y */
             y: number[];
+        };
+        /** TimeRange */
+        TimeRange: {
+            /** Start */
+            start: number;
+            /** End */
+            end: number | null;
         };
         /**
          * TimingState
@@ -3173,6 +3239,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrackZones"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    straight_mode_zones_api_sessions__year___round___session__straight_mode_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StraightMode"];
                 };
             };
             /** @description Validation Error */

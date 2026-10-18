@@ -19,6 +19,7 @@
   --pw-text-dim: #a0a0aa;
   --pw-text-faint: #63636d;
   --pw-marker-fill: rgb(232 232 236 / 0.08);
+  --pw-aero-fill: rgb(232 232 236 / 0.04);
 
   --pw-best: #b46cff;
   --pw-pb: #34d36e;
@@ -51,6 +52,7 @@
   --color-dim: var(--pw-text-dim);
   --color-faint: var(--pw-text-faint);
   --color-marker-fill: var(--pw-marker-fill);
+  --color-aero-fill: var(--pw-aero-fill);
   --color-best: var(--pw-best);
   --color-pb: var(--pw-pb);
   --color-slow: var(--pw-slow);
