@@ -395,6 +395,24 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
       hij nu of over w s gaat, eerste vrije moment. Getest op Monza 2025 Q3
 - [ ] Release: het einde van de sessie meenemen (op tijd over de lijn), en kalibreren op Austin
 
+## Fase 11 — Straight mode (2026)
+
+Nilas (2026-10-18): in 2026 vervangt active aero de DRS; op aangewezen stukken mag de auto in
+"straight mode" (vleugels plat, minder luchtweerstand). Dat willen we kunnen zien. Eerst uitzoeken,
+dan pas bouwen.
+
+- [ ] Uitzoeken: hoe straight mode werkt in de regels van 2026 (wanneer aan/uit, wie, overal of
+      alleen in zones; verschil met overtake mode), en waar de zones per circuit staan
+      (FIA-documenten per event, of elders)
+- [ ] Uitzoeken: staat er iets van in de data (TracingInsights 2026, de live-feed: CarData-kanalen,
+      race control-berichten over zones of "straight mode enabled/disabled")? De `drs`-kolom is in
+      2026 leeg
+- [ ] Uitzoeken: is het te zien in de telemetrie (meer topsnelheid of versnelling op hoge snelheid
+      in een zone dan erbuiten, zoals de omhullende van Energy), en hoe scheid je dat van inzet
+      en clipping?
+- [ ] Daarna kiezen: zones met de hand per circuit, uit de data, of geschat; en waar het komt
+      (kaart-optie zoals DRS zones, kanaal in Telemetry, Energy)
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
