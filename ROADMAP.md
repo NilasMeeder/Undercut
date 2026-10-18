@@ -220,8 +220,14 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [x] Tower live direct uit TimingData (2026-10-18): F1's volgorde, gaps, intervallen en status over
       de tower uit de laps (`live/tower.py`), ook meteen bij een late opname. Getest met de simulator
       (Monza R met `--join`, Q2)
-- [ ] Tower: F1's mini-sectoren (`Segments`, de gekleurde streepjes van de officiële timing) en
-      `Catching`, nu niet gebruikt
+- [x] Tower: F1's mini-sectoren (2026-10-18): `Segments` uit TimingData als streepjes onder de
+      sectortijden (paars/groen/geel/pitstraat), live en in de replay van een opname
+      (`converted/segments.json`); de simulator verzint ze uit de telemetrie. Getest met de
+      simulator (Monza R live en met `--join`, Q als klare opname) en FP2 uit het archief (geen)
+- [ ] Na Austin FP1: kloppen de statuscodes, hoeveel segmenten per sector, en wanneer wist F1 ze
+      (bij de lijn of bij het eerste segment, zoals de simulator)? Staat er "Unknown segment
+      status" in de log?
+- [ ] Tower: `Catching` (F1's "loopt in op de auto ervoor"), nu niet gebruikt
 - [x] Live telemetrie volgen (2026-10-18): FOLLOW per link-groep (`l`, de laps schuiven per lap mee,
       ook in replay) en de widget Live lap (de lap die bezig is, groeiend, met de live delta tegen de
       vorige of de beste lap). Getest met de simulator (Monza R) en in replay (Monza Q en R)

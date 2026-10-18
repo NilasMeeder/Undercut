@@ -19,6 +19,27 @@ const STATUS_LABEL: Partial<Record<TowerRow['status'], string>> = {
   in_lap: 'IN',
 };
 
+type Segment = TowerRow['segments'][number][number];
+
+const SEGMENT_BG: Record<Segment, string> = {
+  best: 'bg-best',
+  pb: 'bg-pb',
+  slow: 'bg-slow',
+  pit: 'bg-pit',
+  none: 'bg-line-strong',
+};
+
+/** F1's mini-sectors of one sector: a bar per segment along the bottom of the cell. */
+function SegmentBars({ segments }: { segments: Segment[] }) {
+  return (
+    <span className="absolute inset-x-1.5 bottom-0 flex h-[2px] gap-px">
+      {segments.map((s, i) => (
+        <span key={i} className={cn('min-w-0 flex-1', SEGMENT_BG[s])} />
+      ))}
+    </span>
+  );
+}
+
 function gapText(seconds: number | null, lapsDown: number): string {
   if (lapsDown > 0) return `+${lapsDown} LAP${lapsDown > 1 ? 'S' : ''}`;
   return formatGap(seconds);
@@ -65,6 +86,8 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
 
   const show = new Set(config.columns);
   const race = state.kind === 'race';
+  // Only a live recording has them (F1's own timing), the archive does not.
+  const segments = show.has('segments') && state.rows.some((r) => r.segments.length > 0);
   const head = (label: string, title?: string, align = 'text-right') => (
     <th className={cn(th, align)} title={title}>
       {label}
@@ -142,10 +165,14 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
                           key={k}
                           className={cn(
                             td,
+                            segments && 'relative',
                             s.current && !out ? TIMING_TEXT[s.timing] : 'text-faint'
                           )}
                         >
                           {formatSector(s.time)}
+                          {segments && !out && row.segments[k] ? (
+                            <SegmentBars segments={row.segments[k]} />
+                          ) : null}
                         </td>
                       ))
                     : null}

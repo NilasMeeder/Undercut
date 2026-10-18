@@ -278,6 +278,10 @@ class LiveSession:
         self.write_telemetry(final=True)
         if self.track.count > 0 and self.outline is not None:
             replays.save_track(self.track_path(), self.track.to_track(self.codes, self.outline))
+        if segments := self.tower.segment_columns(self.codes):
+            # F1's mini-sectors exist only in the feed: kept for the replay of the recording.
+            raw = json.dumps(segments, separators=(",", ":")).encode()
+            ti.write_gzip(self.out / "segments.json.gz", raw)
         self.timing, self.track, self.finished = [], LiveTrack(), True
         self.tower = FeedTower()
         self.finished_size = self.size()

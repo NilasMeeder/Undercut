@@ -1417,6 +1417,8 @@ export interface components {
             pit_stops: number;
             /** Eliminated */
             eliminated: boolean;
+            /** Segments */
+            segments: ("best" | "pb" | "slow" | "pit" | "none")[][];
         };
         /** TowerSector */
         TowerSector: {

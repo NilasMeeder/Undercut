@@ -4990,6 +4990,23 @@
           "eliminated": {
             "type": "boolean",
             "title": "Eliminated"
+          },
+          "segments": {
+            "items": {
+              "items": {
+                "type": "string",
+                "enum": [
+                  "best",
+                  "pb",
+                  "slow",
+                  "pit",
+                  "none"
+                ]
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Segments"
           }
         },
         "type": "object",
@@ -5010,7 +5027,8 @@
           "compound",
           "tyre_age",
           "pit_stops",
-          "eliminated"
+          "eliminated",
+          "segments"
         ],
         "title": "TowerRow"
       },

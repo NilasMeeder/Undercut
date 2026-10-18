@@ -127,11 +127,22 @@ def get_timing_index(year: int, round_number: int, code: str) -> replay.TimingIn
     )
 
 
+@session_cache(maxsize=8)
+def _segment_history(year: int, round_number: int, code: str) -> tower.SegmentHistory | None:
+    """F1's mini-sectors of a finished recording (only the feed has them)."""
+    event, session = sessions.folders(year, round_number, code)
+    columns = ti.live_file(year, event, session, "segments.json")
+    return tower.SegmentHistory(columns) if columns else None
+
+
 def timing_state(year: int, round_number: int, code: str, t: float) -> TimingState:
     state = replay.timing_state(get_timing_index(year, round_number, code), t)
     live = _live(year, round_number, code)
     if live is None or not live.tower.changes:
-        return state
+        history = _segment_history(year, round_number, code)
+        if history is None:
+            return state
+        return tower.with_segments(state, history.at(t), history.next_change(t))
     # Live: F1's own order, gaps and status from the feed (the laps run a few seconds behind).
     segment = state.segment
     part = int(segment[-1]) - 1 if segment and segment[-1].isdigit() else None

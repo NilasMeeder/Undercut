@@ -279,3 +279,53 @@ def test_feed_tower_lays_f1s_order_and_gaps_over_the_laps() -> None:
 
     later = tower.overlay(state, feed_tower.at(101.5), codes, None, None)
     assert [row.driver for row in later.rows][:2] == ["NOR", "VER"]
+
+
+def test_feed_tower_keeps_f1s_mini_sectors() -> None:
+    feed_tower = tower.FeedTower()
+    # The state lists the segments, updates send one at a time as dicts.
+    state_sectors = [
+        {"Segments": [{"Status": 2049}, {"Status": 2051}]},
+        {"Segments": [{"Status": 2048}, {"Status": 0}]},
+        {"Segments": [{"Status": 0}]},
+    ]
+    feed_tower.add_timing(-1e6, {"Lines": {"1": {"Sectors": state_sectors}}})
+    feed_tower.add_timing(
+        10.0, {"Lines": {"1": {"Sectors": {"1": {"Segments": {"1": {"Status": 2064}}}}}}}
+    )
+    feed_tower.add_timing(
+        11.0, {"Lines": {"1": {"Sectors": {"2": {"Segments": {"2": {"Status": 2052}}}}}}}
+    )
+    assert feed_tower.at(5.0)["1"].segments == "gp|y-|-"
+    assert feed_tower.at(10.5)["1"].segments == "gp|yi|-"
+    assert feed_tower.at(11.0)["1"].segments == "gp|yi|--y"  # unknown code: read as flags
+    assert feed_tower.next_change(10.0) == 11.0
+
+    state = TimingState(
+        time=11.0,
+        valid_from=0.0,
+        valid_until=60.0,
+        kind="practice",
+        lap=None,
+        total_laps=None,
+        segment=None,
+        cutoff=None,
+        track_status="green",
+        rows=[tower_row("VER", 1)],
+    )
+    out = tower.overlay(state, feed_tower.at(11.0), {"1": "VER"})
+    assert out.rows[0].segments == [["pb", "best"], ["slow", "pit"], ["none", "none", "slow"]]
+
+    # After the recording: kept per driver code, laid over the tower from the laps.
+    history = tower.SegmentHistory(feed_tower.segment_columns({"1": "VER"}))
+    assert history.at(10.5)["VER"] == "gp|yi|-"
+    earlier = state.model_copy(update={"time": 10.5})
+    replayed = tower.with_segments(earlier, history.at(10.5), history.next_change(10.5))
+    assert replayed.rows[0].segments[1] == ["slow", "pit"]
+    assert replayed.valid_until == 11.0
+
+
+def test_decode_segments() -> None:
+    assert tower.decode_segments(None) == []
+    assert tower.decode_segments("p-|i") == [["best", "none"], ["pit"]]
+    assert tower.segment_class(2051) == "best" and tower.segment_class(0) == "none"

@@ -24,8 +24,9 @@ pitverlies-ghosts, allemaal op de sessieklok (zie "Strategie"). Fase 7 (live) is
 de simulator; de echte test is de eerste sessie met Nilas' F1 TV-login (zie "Live" en ROADMAP.md).
 Live telemetrie volgen: FOLLOW per link-groep (`l`) en de widget Live lap (zie "Live lap en Follow").
 Verder in fase 7: Clock als digitale klok (lokale tijd op het circuit of sessieklok), late start
-(een opname die halverwege begint klopt vanaf de instap), de tower live uit TimingData, en REC in de
-topbalk om de recorder te starten of te laten wachten op de volgende sessie (zie "Live").
+(een opname die halverwege begint klopt vanaf de instap), de tower live uit TimingData met F1's
+mini-sectoren, en REC in de topbalk om de recorder te starten of te laten wachten op de volgende
+sessie (zie "Live").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -324,6 +325,16 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   status; sectoren, banden en paars/groen blijven uit de laps. `valid_until` = de volgende wijziging
   in de feed (min. 0,25 s). Na afloop alleen de laps (zoals het archief). De simulator stuurt in Q/FP
   posities en verschillen uit de archief-tower (race: bij de lijn, zoals altijd).
+- **Mini-sectoren** (F1's `Segments` in TimingData, de streepjes van de officiële timing):
+  `FeedTower` houdt per auto de status per segment bij (toestand als lijsten, updates als dicts per
+  segment) als string per sector (`"ygp|y--|---"`, `tower.encode_segments`); `TowerRow.segments`.
+  Codes: 2048 geel, 2049 groen (PB), 2051 paars, 2064 pitstraat, 0 nog niet gereden; onbekende
+  codes als bits gelezen en één keer gelogd. Na afloop `converted/segments.json` (`finish`), zodat
+  de replay van een opname ze ook heeft (`replays._segment_history`, `tower.with_segments`); het
+  archief heeft ze niet. Frontend: streepjes van 2 px onder de sectortijden (kolom `segments`).
+  De simulator verzint ze uit de telemetrie (elke sector in gelijke stukken van ~260 m, statussen
+  in tijdsvolgorde over alle auto's, het eerste segment van een nieuwe lap wist de rest); wanneer
+  F1 ze echt wist en hoeveel segmenten per sector het zijn, zien we pas bij een echte opname.
 - **Live of klaar**: een opname is live als hij de laatste 2 minuten is geschreven en F1 hem niet
   heeft afgesloten (`Finalised`/`Ends`; de heartbeats gaan door). Daarna één laatste omzetting,
   telemetrie, npz, en het geheugen gaat vrij. Groeit een klare opname weer (`grows_again`: de

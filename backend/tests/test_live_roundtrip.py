@@ -13,7 +13,7 @@ import pytest
 from fastf1.events import EventSchedule
 
 from app import replays, schedule, sessions
-from app.live import convert, feed, simulate
+from app.live import convert, feed, simulate, tower
 from app.schemas import EventInfo, SessionInfo
 from app.sources import tracinginsights as ti
 
@@ -93,6 +93,20 @@ def race_laps() -> dict[str, list[Any]]:
     return cols
 
 
+LAP_LENGTH = 5000.0
+
+
+def lap_telemetry(laps: dict[str, list[Any]]) -> dict[str, Any]:
+    """<DRV>/<lap>_tel.json: time and distance at a constant speed (the simulator's mini-sectors
+    come from them)."""
+    out = {}
+    for driver, lap, time in zip(laps["drv"], laps["lap"], laps["time"], strict=True):
+        steps = [i / 10 for i in range(11)]
+        tel = {"time": [time * f for f in steps], "distance": [LAP_LENGTH * f for f in steps]}
+        out[f"{driver}/{lap}_tel.json"] = {"tel": tel}
+    return out
+
+
 ARCHIVE = {
     "session_laptimes.json": race_laps(),
     "drivers.json": {
@@ -116,6 +130,7 @@ ARCHIVE = {
         ]
     },
 }
+ARCHIVE |= lap_telemetry(ARCHIVE["session_laptimes.json"])
 
 
 @pytest.fixture
@@ -223,3 +238,23 @@ def test_a_recording_that_starts_late_numbers_laps_as_f1(
     sectors = {(d, n): (a, b) for d, n, a, b in by_lap}
     assert sectors[("VER", 4)] == (round(59.2 * 0.33, 3), round(59.2 * 0.34, 3))
     assert pits(out)[("NOR", 4)][1] == pytest.approx(NOR_STOP + 18.0, abs=0.5)
+
+
+def test_the_simulator_sends_mini_sectors_as_f1(archive: None) -> None:
+    sim = simulate.Simulation(2025, 1, "R")
+    feed_tower = tower.FeedTower()
+    for at, line in simulate.lines(sim):
+        message = feed.parse_line(line)
+        if message is not None and message.topic == "TimingData":
+            feed_tower.add_timing(at, message.data)
+    ver_lap_2 = START + FIRST["VER"] + LAPS["VER"][0]
+    # VER's lap 2 is the fastest so far everywhere: all purple, until his lap 3 clears them.
+    segments = tower.decode_segments(feed_tower.at(ver_lap_2 + 0.5)["1"].segments)
+    assert [len(row) for row in segments] == [6, 7, 6]
+    assert {s for row in segments for s in row} == {"best"}
+    # NOR's in-lap ends in the pit lane (in at -5 s), and his out-lap starts in it (out at +18 s,
+    # a segment takes ~4.2 s).
+    in_lap = tower.decode_segments(feed_tower.at(NOR_STOP + 0.5)["4"].segments)
+    assert in_lap[2][-2:] == ["pit", "pit"] and in_lap[2][-3] != "pit"
+    out_lap = tower.decode_segments(feed_tower.at(NOR_STOP + 15.0)["4"].segments)
+    assert out_lap[0] == ["pit"] * 3 + ["none"] * 3

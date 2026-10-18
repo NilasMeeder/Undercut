@@ -3,6 +3,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+# Inputs may leave out fields with a default; responses always have them (required in the TS types).
+_RESPONSE_DEFAULTS = ConfigDict(json_schema_serialization_defaults_required=True)
+
 SessionCode = Literal["FP1", "FP2", "FP3", "SQ", "SS", "S", "Q", "R"]
 
 
@@ -372,6 +375,9 @@ class ReplayPositions(BaseModel):
 
 CarStatus = Literal["running", "out_lap", "in_lap", "pit", "garage", "retired", "finished"]
 TimingClass = Literal["best", "pb", "none"]
+SegmentClass = Literal["best", "pb", "slow", "pit", "none"]
+"""One of F1's mini-sectors (TimingData Segments): overall best, personal best, neither, driven
+in the pit lane, or not yet driven on this lap."""
 
 
 class TowerSector(BaseModel):
@@ -405,6 +411,10 @@ class TowerRow(BaseModel):
     pit_stops: int
     eliminated: bool
     """Qualifying: knocked out in an earlier part."""
+    segments: list[list[SegmentClass]] = Field(default_factory=list)
+    """F1's own mini-sectors per sector as the official timing shows them, for the lap in
+    progress; only in live recordings (empty for the archive)."""
+    model_config = _RESPONSE_DEFAULTS
 
 
 class TimingState(BaseModel):
@@ -426,9 +436,6 @@ class TimingState(BaseModel):
 
 
 MarkerKind = Literal["distance", "time"]
-
-# Inputs may leave out fields with a default; responses always have them (required in the TS types).
-_RESPONSE_DEFAULTS = ConfigDict(json_schema_serialization_defaults_required=True)
 
 
 class MarkerIn(BaseModel):

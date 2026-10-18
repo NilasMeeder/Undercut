@@ -6,7 +6,8 @@ writes the messages F1 would have streamed into the session's live recording, pa
 thing (sped up), so the backend sees a session in progress. `--speed 0` writes everything at once.
 
 The messages follow the topics and shapes FastF1's parsers read (fastf1/_api.py): TimingData per
-timing point (sectors, lap times, lap count, pit in/out, speed traps, positions and gaps),
+timing point (sectors, lap times, lap count, pit in/out, speed traps, positions and gaps) and per
+mini-sector (Segments, made up from the telemetry: F1's timing loops are not in the archive),
 TimingAppData stints, Position.z and CarData.z at 4 Hz, TrackStatus, RaceControlMessages,
 WeatherData, LapCount, ExtrapolatedClock and the session status. What the archive does not have
 (positions before the start, cars in the garage) is not simulated.
@@ -36,6 +37,9 @@ BATCH = 1.0
 HEARTBEAT = 15.0
 MAX_GAP = 2.0
 """Telemetry gaps longer than this (garage, missing laps) are not filled in."""
+SEGMENT_LENGTH = 260.0
+"""Metres per simulated mini-sector (F1 has some 6-10 per sector, at its timing loops)."""
+SEGMENT_STATUS = {"slow": 2048, "pb": 2049, "best": 2051, "pit": 2064}
 
 STATUS_CODES = {
     "green": ("1", "AllClear"),
@@ -87,6 +91,8 @@ class Simulation:
         self.started = self.timeline.start
         self.end = self.timeline.end
         self.grid = replays.starting_grid(*self.key)
+        self.paths: dict[tuple[str, int], tuple[np.ndarray, np.ndarray]] = {}
+        """(driver, lap) -> time since the lap start and distance, filled by _telemetry."""
 
     def utc(self, at: float) -> datetime:
         return self.t0 + timedelta(seconds=at)
@@ -161,6 +167,7 @@ class Simulation:
         out += self._clock()
         out += self._standings()
         out += self._samples()
+        out += self._segments()  # after _samples: it reads the telemetry
         out += [
             Update(at, "Heartbeat", {"Utc": feed.format_utc(self.utc(at))})
             for at in np.arange(self.begin + HEARTBEAT, self.end + 30, HEARTBEAT)
@@ -476,6 +483,92 @@ class Simulation:
                 out.append(Update(at + 0.01, "CarData.z", feed.deflate({"Entries": car_data})))
         return out
 
+    def _segments(self) -> list[Update]:
+        """F1's mini-sectors: each sector split into equal parts of the lap distance, with the
+        status F1 gives the moment a car passes the end of one (overall best, personal best,
+        neither, pit lane). Passing the first one of a lap clears the rest of the lap before."""
+        bounds = self._segment_bounds()
+        if bounds is None:
+            return []
+        passages: list[tuple[float, str, int, int, float | None]] = []
+        for lap in self.laps:
+            number = self.number.get(lap.driver)
+            path = self.paths.get((lap.driver, lap.lap))
+            if number is None or path is None or lap.start_time is None or not replay.driven(lap):
+                continue  # a car that did not start has a lap without times (and telemetry)
+            time, distance = path
+            reach = np.maximum.accumulate(distance)
+            ends = np.interp(np.concatenate(bounds) * reach[-1], reach, time)
+            if lap.end_time is not None:
+                ends[-1] = lap.end_time - lap.start_time
+            starts = np.concatenate([[0.0], ends[:-1]])
+            index = [(k, j) for k, row in enumerate(bounds) for j in range(len(row))]
+            for (k, j), begin, end in zip(index, starts, ends, strict=True):
+                at = lap.start_time + float(end)
+                # The lap of a car leaving the pits starts at the pit exit: its first segment
+                # is still the pit lane.
+                left_pit = lap.pit_out_time is not None and (at < lap.pit_out_time or k == j == 0)
+                in_pit = left_pit or (lap.pit_in_time is not None and at > lap.pit_in_time)
+                passages.append((at, number, k, j, None if in_pit else float(end - begin)))
+        passages.sort(key=lambda p: p[0])
+        overall: dict[tuple[int, int], float] = {}
+        own: dict[tuple[str, int, int], float] = {}
+        out = []
+        for at, number, k, j, seconds in passages:
+            if seconds is None:
+                status = SEGMENT_STATUS["pit"]
+            elif seconds < overall.get((k, j), math.inf):
+                status = SEGMENT_STATUS["best"]
+            elif seconds < own.get((number, k, j), math.inf):
+                status = SEGMENT_STATUS["pb"]
+            else:
+                status = SEGMENT_STATUS["slow"]
+            if seconds is not None:
+                overall[(k, j)] = min(overall.get((k, j), math.inf), seconds)
+                own[(number, k, j)] = min(own.get((number, k, j), math.inf), seconds)
+            sectors: dict[str, Any] = {str(k): {"Segments": {str(j): {"Status": status}}}}
+            if (k, j) == (0, 0):  # a new lap: the bars of the lap before go
+                for kk, row in enumerate(bounds):
+                    segments = sectors.setdefault(str(kk), {"Segments": {}})["Segments"]
+                    for jj in range(len(row)):
+                        segments.setdefault(str(jj), {"Status": 0})
+            out.append(Update(at, "TimingData", {"Lines": {number: {"Sectors": sectors}}}))
+        return out
+
+    def _segment_bounds(self) -> list[np.ndarray] | None:
+        """Per sector the ends of its mini-sectors as a fraction of the lap, from the fastest lap
+        with both sector times and telemetry."""
+        laps = sorted(
+            (lap for lap in self.laps if lap.lap_time is not None),
+            key=lambda lap: lap.lap_time or math.inf,
+        )
+        for lap in laps:
+            path = self.paths.get((lap.driver, lap.lap))
+            if (
+                path is None
+                or lap.start_time is None
+                or None
+                in (
+                    lap.sector_1_end,
+                    lap.sector_2_end,
+                )
+            ):
+                continue
+            time, distance = path
+            reach = np.maximum.accumulate(distance)
+            length = float(reach[-1])
+            sector_ends = [
+                float(np.interp(end - lap.start_time, time, reach)) / length
+                for end in (lap.sector_1_end or 0.0, lap.sector_2_end or 0.0)
+            ] + [1.0]
+            bounds, begin = [], 0.0
+            for end in sector_ends:
+                count = max(3, round((end - begin) * length / SEGMENT_LENGTH))
+                bounds.append(np.linspace(begin, end, count + 1)[1:])
+                begin = end
+            return bounds
+        return None
+
     def _telemetry(self, driver: str) -> dict[str, np.ndarray] | None:
         year, event, session = self.key[0], self.event, self.session
         parts: dict[str, list[np.ndarray]] = {}
@@ -487,6 +580,9 @@ class Simulation:
             except ti.SourceNotAvailable:
                 continue
             parts.setdefault("time", []).append(lap.start_time + np.asarray(tel["time"], float))
+            if tel.get("distance"):
+                path = np.asarray(tel["time"], float), np.asarray(tel["distance"], float)
+                self.paths[(driver, lap.lap)] = path
             for key in ("x", "y", "z", "speed", "rpm", "gear", "throttle", "brake", "drs"):
                 values = tel.get(key) or [0] * len(tel["time"])
                 parts.setdefault(key, []).append(

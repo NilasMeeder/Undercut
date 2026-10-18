@@ -5,19 +5,81 @@ laps runs up to ~4 s behind, and a recording that started late has no laps (no o
 for a car until it crosses a timing line. TimingData has F1's own order, gaps and intervals the
 moment they change, and its state at subscription has them for every car. Sectors, tyres and
 purple/green stay from the laps, where they mean what they mean in the archive.
+
+F1's mini-sectors (Segments, the coloured bars of the official timing) exist only in the feed.
+Each has a status: 2048 neither, 2049 personal best, 2051 overall best, 2064 pit lane, 0 not yet
+driven. After a recording they are kept in converted/segments.json, so its replay has them too.
 """
 
+import logging
 import re
 from bisect import bisect_right
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.schemas import CarStatus, TimingState, TowerRow, TowerSector
+from app.schemas import CarStatus, SegmentClass, TimingState, TowerRow, TowerSector
+
+log = logging.getLogger(__name__)
 
 MIN_VALID = 0.25
 """Seconds a tower answer stays valid at least: the feed changes many times a second."""
 
 _FLAGS = {"InPit": "in_pit", "Retired": "retired", "Stopped": "stopped", "KnockedOut": "out"}
+
+_SEGMENT_STATUS: dict[int, SegmentClass] = {
+    0: "none",
+    2048: "slow",
+    2049: "pb",
+    2051: "best",
+    2064: "pit",
+}
+_SEGMENT_CHAR: dict[SegmentClass, str] = {
+    "none": "-",
+    "slow": "y",
+    "pb": "g",
+    "best": "p",
+    "pit": "i",
+}
+_CHAR_SEGMENT = {char: name for name, char in _SEGMENT_CHAR.items()}
+_unknown_statuses: set[int] = set()
+
+
+def segment_class(status: int) -> SegmentClass:
+    """F1's segment status as a class. Unknown codes are read as flags (2048 = driven, +1 personal
+    best, +2 overall best, +16 pit lane) and logged once: the recording keeps the raw codes."""
+    if status in _SEGMENT_STATUS:
+        return _SEGMENT_STATUS[status]
+    if status not in _unknown_statuses:
+        _unknown_statuses.add(status)
+        log.info("Unknown segment status %s", status)
+    if not status & 2048:
+        return "none"
+    if status & 16:
+        return "pit"
+    return "best" if status & 2 else "pb" if status & 1 else "slow"
+
+
+def encode_segments(statuses: list[list[int]]) -> str:
+    """Per sector one character per segment, sectors split by "|": "ygp|y-|--"."""
+    return "|".join("".join(_SEGMENT_CHAR[segment_class(s)] for s in row) for row in statuses)
+
+
+def decode_segments(text: str | None) -> list[list[SegmentClass]]:
+    if not text:
+        return []
+    return [[_CHAR_SEGMENT.get(c, "none") for c in part] for part in text.split("|")]
+
+
+def _items(value: Any) -> list[tuple[int, Any]]:
+    """F1 sends arrays in its state as lists, in updates as dicts keyed "0", "1", ..."""
+    pairs = value.items() if isinstance(value, dict) else enumerate(value or [])
+    out = []
+    for key, item in pairs:
+        try:
+            out.append((int(key), item))
+        except (TypeError, ValueError):
+            continue
+    return out
 
 
 @dataclass
@@ -40,6 +102,8 @@ class CarFeed:
     """Qualifying: knocked out."""
     compound: str | None = None
     tyre_age: int | None = None
+    segments: str | None = None
+    """F1's mini-sectors of the lap in progress, see encode_segments."""
 
 
 @dataclass
@@ -68,6 +132,8 @@ class FeedTower:
     def __init__(self) -> None:
         self.cars: dict[str, dict[str, _Log]] = {}
         self.changes: list[float] = []
+        self._segments: dict[str, list[list[int]]] = {}
+        """Car number -> the raw segment statuses per sector now (updates send only changes)."""
 
     def _set(self, number: str, name: str, at: float, value: Any) -> None:
         changed = self.cars.setdefault(number, {}).setdefault(name, _Log()).add(at, value)
@@ -108,6 +174,35 @@ class FeedTower:
             for key, name in (("NumberOfLaps", "laps"), ("NumberOfPitStops", "pit_stops")):
                 if isinstance(line.get(key), int):
                     self._set(number, name, at, line[key])
+            if line.get("Sectors"):
+                self._add_segments(number, at, line["Sectors"])
+
+    def _add_segments(self, number: str, at: float, sectors: Any) -> None:
+        current = self._segments.setdefault(number, [[], [], []])
+        changed = False
+        for k, sector in _items(sectors):
+            if not 0 <= k < 3 or not isinstance(sector, dict):
+                continue
+            row = current[k]
+            for j, segment in _items(sector.get("Segments")):
+                status = segment.get("Status") if isinstance(segment, dict) else None
+                if not isinstance(status, int) or j < 0 or j > 64:
+                    continue
+                row.extend([0] * (j + 1 - len(row)))
+                row[j] = status
+                changed = True
+        if changed:
+            self._set(number, "segments", at, encode_segments(current))
+
+    def segment_columns(self, codes: dict[str, str]) -> dict[str, dict[str, list]]:
+        """Every change of the mini-sectors per driver code: {"VER": {"t": [..], "s": [..]}}."""
+        out = {}
+        for number, logs in list(self.cars.items()):
+            changes = logs.get("segments")
+            if changes is not None and number in codes:
+                times = [round(t, 3) for t in changes.times]
+                out[codes[number]] = {"t": times, "s": list(changes.values)}
+        return out
 
     def add_tyres(self, at: float, data: dict[str, Any]) -> None:
         """A TimingAppData message: the compound and age of the newest stint."""
@@ -139,6 +234,7 @@ class FeedTower:
                 out=bool(value.get("out")),
                 compound=value.get("compound"),
                 tyre_age=value.get("tyre_age"),
+                segments=value.get("segments"),
             )
             for name, v in value.items():
                 if name.startswith("q") and name.endswith("_fastest"):
@@ -150,6 +246,44 @@ class FeedTower:
     def next_change(self, t: float) -> float | None:
         i = bisect_right(self.changes, t)
         return self.changes[i] if i < len(self.changes) else None
+
+
+class SegmentHistory:
+    """The mini-sectors of a finished recording (FeedTower.segment_columns), per driver code."""
+
+    def __init__(self, columns: dict[str, dict[str, list]]) -> None:
+        self.drivers: dict[str, _Log] = {}
+        changes: set[float] = set()
+        for driver, values in columns.items():
+            self.drivers[driver] = _Log(times=list(values["t"]), values=list(values["s"]))
+            changes.update(values["t"])
+        self.changes = sorted(changes)
+
+    def at(self, t: float) -> dict[str, str | None]:
+        return {driver: changes.at(t) for driver, changes in self.drivers.items()}
+
+    def next_change(self, t: float) -> float | None:
+        i = bisect_right(self.changes, t)
+        return self.changes[i] if i < len(self.changes) else None
+
+
+def with_segments(
+    state: TimingState, segments: dict[str, str | None], next_change: float | None
+) -> TimingState:
+    """`state` with the mini-sectors of a finished recording (the rest is from the laps)."""
+    rows = [
+        row.model_copy(update={"segments": decode_segments(segments.get(row.driver))})
+        for row in state.rows
+    ]
+    valid_until = _until(state, next_change)
+    return state.model_copy(update={"rows": rows, "valid_until": valid_until})
+
+
+def _until(state: TimingState, next_change: float | None) -> float | None:
+    if next_change is None:
+        return state.valid_until
+    soon = max(next_change, state.time + MIN_VALID)
+    return soon if state.valid_until is None else min(state.valid_until, soon)
 
 
 _SECONDS = re.compile(r"\+?(?:(\d+):)?(\d+(?:\.\d+)?)")
@@ -228,6 +362,7 @@ def overlay(
             row.compound, row.tyre_age = car.compound, car.tyre_age
         if car.out:
             row.eliminated = True
+        row.segments = decode_segments(car.segments)
         if state.kind == "quali":
             gap, interval = car.parts.get(part or 0, (None, None))
         else:
@@ -236,10 +371,7 @@ def overlay(
     lap = state.lap
     if state.kind == "race" and rows and state.total_laps:
         lap = min(rows[0].laps + 1, state.total_laps)
-    valid_until = state.valid_until
-    if next_change is not None:
-        soon = max(next_change, state.time + MIN_VALID)
-        valid_until = soon if valid_until is None else min(valid_until, soon)
+    valid_until = _until(state, next_change)
     return state.model_copy(update={"rows": rows, "lap": lap, "valid_until": valid_until})
 
 
