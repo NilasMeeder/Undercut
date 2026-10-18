@@ -253,8 +253,14 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
   draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten
   (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag
 
+- **Presets naar schermgrootte** (Nilas, 2026-10-18): op een groot scherm (curved monitor thuis)
+  meer panelen in de presets dan op de MacBook, bv. kiezen op `window.innerWidth`/`screen.width` bij
+  het toepassen van een preset, of een "groot"-variant per preset
+
 - Remwegen en corner-fases automatisch detecteren uit speed/throttle/brake (braking point, apex, exit)
-- Energie-inzet in 2026 inschatten uit speed-traces op straights (er is geen officieel kanaal)
+- Energie-inzet in 2026 inschatten uit speed-traces op straights (er is geen officieel kanaal; de
+  feed heeft alleen RPM, speed, gear, throttle, brake en DRS): vol gas maar geen snelheidswinst of
+  zelfs verlies aan het eind van een straight = de batterij is leeg ("clipping")
 - Team radio afspelen op de tijdlijn (OpenF1 heeft opnames)
 - Corner-analyse: min-speed, remwegen, apex-snelheid per bocht vergeleken
 - Gear-map / throttle-map op de track
