@@ -40,6 +40,9 @@ type Props = {
   markLabels?: boolean;
   bands?: ChartBand[];
   ticks?: ChartTick[];
+  /** Set to the uPlot instance while it exists: for a caller that updates the data every frame
+   * (`setData(data, false)`) instead of rebuilding the chart. */
+  chartRef?: { current: uPlot | null };
 };
 
 const FONT = '10px system-ui, sans-serif';
@@ -180,6 +183,7 @@ export function UPlotChart({
   markLabels = false,
   bands = NO_BANDS,
   ticks = NO_TICKS,
+  chartRef: outerRef,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<uPlot | null>(null);
@@ -304,6 +308,7 @@ export function UPlotChart({
 
     const chart = new uPlot(opts, data, container);
     chartRef.current = chart;
+    if (outerRef) outerRef.current = chart;
 
     const onDoubleClick = () => cursorBus.setZoom(group, null);
     // Pointer events come before uPlot's mouse events, so `marking` is set when the drag ends.
@@ -351,9 +356,10 @@ export function UPlotChart({
       chart.over.removeEventListener('pointerdown', onPointerDown);
       chart.over.removeEventListener('click', onClick);
       chartRef.current = null;
+      if (outerRef?.current === chart) outerRef.current = null;
       chart.destroy();
     };
-  }, [group, data, series, yRange, yTicks, showXAxis, yFormat]);
+  }, [group, data, series, yRange, yTicks, showXAxis, yFormat, outerRef]);
 
   return (
     <div className="relative min-h-0 flex-1">

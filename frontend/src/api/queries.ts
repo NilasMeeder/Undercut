@@ -99,13 +99,15 @@ export type ProgressReference = 'previous' | 'best';
 
 /** The lap a driver is on at session time `t` (whole seconds, so a playing clock asks about once
  * a second); the previous answer stays on screen while the next one loads. */
+/** The lap `driver` is on at `t`, asked per whole second (or to the millisecond: `precise`). */
 export function useLapProgress(
   driver: string | undefined,
   t: number,
-  reference: ProgressReference
+  reference: ProgressReference,
+  precise = false
 ) {
   const key = useSessionKey();
-  const at = Math.floor(t);
+  const at = precise ? Math.round(t * 1000) / 1000 : Math.floor(t);
   return useQuery({
     queryKey: ['session', key, 'lap-progress', driver, at, reference],
     queryFn: () =>
