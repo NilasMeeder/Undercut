@@ -7,6 +7,7 @@ import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
 import { useAtClock } from '@/store/atClock';
 import { clock } from '@/store/clock';
+import { useDashboards } from '@/store/dashboards';
 import { cursorBus } from '@/store/cursor';
 import { useGroups, type GroupId, type LapRef } from '@/store/groups';
 import { WIDGETS } from '@/widgets/registry';
@@ -133,6 +134,16 @@ export function buildCommands({ api, group, laps, views, saveView }: CommandCont
       key: 'M',
       keyLabel: '⇧M',
       run: markMoment,
+    },
+    {
+      id: 'workspace',
+      section: 'Dashboards',
+      title: 'Switch between Analysis and Pitwall',
+      key: 'w',
+      run: () => {
+        const { workspace, setWorkspace } = useDashboards.getState();
+        setWorkspace(workspace === 'pitwall' ? 'analysis' : 'pitwall');
+      },
     },
     {
       id: 'at-clock',

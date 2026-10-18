@@ -14,6 +14,9 @@ import { GroupBar } from '@/features/session/GroupBar';
 import { SessionPicker } from '@/features/session/SessionPicker';
 import { useDefaultSelection } from '@/features/session/useDefaultSelection';
 import { useSessionKey } from '@/store/selection';
+import { useDashboards } from '@/store/dashboards';
+import { PitwallControls, WorkspaceSwitch } from '@/features/workspace/Workspace';
+import { useWorkspaceClock } from '@/features/workspace/useWorkspaceClock';
 
 export default function App() {
   const session = useSessionKey();
@@ -21,11 +24,14 @@ export default function App() {
   useSessionClock();
   useLiveSession();
   useViewFromUrl();
+  useWorkspaceClock();
+  const pitwall = useDashboards((s) => s.workspace === 'pitwall');
+  const editing = useDashboards((s) => s.editing);
 
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-8 shrink-0 items-center gap-3 border-b border-line bg-header px-2">
-        <span className="text-[11px] font-semibold tracking-[0.15em] text-dim">PITWALL</span>
+        <WorkspaceSwitch />
         <SessionPicker />
         <GroupBar />
         <LiveBadge />
@@ -33,8 +39,9 @@ export default function App() {
         <RecorderMenu />
         {session ? <CommandPalette /> : null}
         {session ? <DashboardTabs /> : null}
-        {session ? <ViewsMenu /> : null}
-        {session ? <LayoutMenu /> : null}
+        {session && !pitwall ? <ViewsMenu /> : null}
+        {session && (!pitwall || editing) ? <LayoutMenu /> : null}
+        {session && pitwall ? <PitwallControls /> : null}
       </header>
       <main className="min-h-0 flex-1">
         {session ? (

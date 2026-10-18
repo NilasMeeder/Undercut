@@ -1,5 +1,6 @@
 import type { DockviewApi, SerializedDockview } from 'dockview-react';
-import type { DashboardTab } from '@/store/dashboards';
+import type { DashboardTab, Workspace } from '@/store/dashboards';
+import { useSelection } from '@/store/selection';
 import type { GroupId } from '@/store/groups';
 import { WIDGETS_BY_ID } from '@/widgets/registry';
 import { resolveConfig, type WidgetConfig } from '@/widgets/types';
@@ -114,6 +115,69 @@ function replay(api: DockviewApi) {
   clock.group.api.setSize({ height: 64 });
 }
 
+/** Screen widths (px) where the pitwall board gets fewer or more panels. */
+const NARROW = 1700;
+const WIDE = 2400;
+
+/**
+ * Preset: the board for live or watching back. The tower big on the left, the map with every car
+ * in the middle, the clock and race control on the right, the track line along the bottom. Gaps
+ * in a race, otherwise the live lap. How much fits depends on the screen: a laptop gets tabs, a
+ * wide screen everything side by side.
+ */
+function pitwall(api: DockviewApi) {
+  const width = window.innerWidth;
+  const race = ['R', 'S'].includes(useSelection.getState().session ?? '');
+  const tower = addWidget(api, 'tower', 'blue', undefined, { size: 'fit' });
+  const map = addWidget(
+    api,
+    'trackmap',
+    'blue',
+    { referencePanel: tower, direction: 'right' },
+    { cars: 'all' }
+  );
+  const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
+  const clock = addWidget(api, 'clock', 'blue', { referencePanel: feed, direction: 'above' });
+  const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
+
+  if (width < NARROW) {
+    // Laptop: what does not fit is a tab next to the map.
+    if (race) addWidget(api, 'gaps', 'blue', { referencePanel: map, direction: 'within' });
+    addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'within' });
+    addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
+    map.api.setActive();
+    feed.api.setActive();
+    tower.group.api.setSize({ width: Math.round(width * 0.4) });
+    feed.group.api.setSize({ width: 300 });
+  } else {
+    const under = addWidget(api, race ? 'gaps' : 'livelap', 'blue', {
+      referencePanel: map,
+      direction: 'below',
+    });
+    if (width >= WIDE) {
+      // Wide: the live lap and the positions get their own space, weather under race control.
+      if (race) {
+        addWidget(api, 'livelap', 'blue', { referencePanel: under, direction: 'right' });
+        addWidget(api, 'positions', 'blue', { referencePanel: under, direction: 'within' });
+        under.api.setActive();
+      }
+      addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'below' });
+      feed.group.api.setSize({ width: 460 });
+    } else {
+      if (race) addWidget(api, 'livelap', 'blue', { referencePanel: under, direction: 'within' });
+      addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
+      under.api.setActive();
+      feed.api.setActive();
+      feed.group.api.setSize({ width: 360 });
+    }
+    tower.group.api.setSize({ width: Math.min(Math.round(width * 0.34), 900) });
+    // The middle column is the screen minus the bars and the track line.
+    map.group.api.setSize({ height: Math.round((window.innerHeight - 210) * 0.55) });
+  }
+  clock.group.api.setSize({ height: 64 });
+  line.group.api.setSize({ height: 120 });
+}
+
 /** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */
 function strategy(api: DockviewApi) {
   const stints = addWidget(api, 'stints', 'blue');
@@ -142,36 +206,56 @@ export const PRESETS = [
     id: 'quali-duel',
     title: 'Quali duel',
     description: 'Two laps: laps, delta, telemetry, map',
+    workspaces: ['analysis'],
     apply: qualiDuel,
   },
   {
     id: 'engineer',
     title: 'Engineer',
     description: 'Dense: every analysis panel around one comparison',
+    workspaces: ['analysis'],
     apply: engineer,
   },
   {
     id: 'overview',
     title: 'Session overview',
     description: 'Run timeline, bests, speed traps, race control, weather',
+    workspaces: ['analysis'],
     apply: overview,
+  },
+  {
+    id: 'pitwall',
+    title: 'Pitwall',
+    description:
+      'The board: tower, every car on the map, clock, race control, gaps or live lap, track line; fits the screen',
+    workspaces: ['pitwall'],
+    apply: pitwall,
   },
   {
     id: 'replay',
     title: 'Replay',
     description:
       'Timing tower, every car on the map, the live lap and the track line, with the clock',
+    workspaces: ['pitwall'],
     apply: replay,
   },
   {
     id: 'strategy',
     title: 'Strategy',
     description: 'Stints, gaps, positions, race pace, pit window and pit ghosts on the map',
+    workspaces: ['analysis', 'pitwall'],
     apply: strategy,
   },
 ] as const;
 
 export type PresetId = (typeof PRESETS)[number]['id'];
+
+/** The presets offered in a workspace, its own first. */
+export function presetsFor(workspace: Workspace) {
+  const own = PRESETS.filter((p) => (p.workspaces as readonly Workspace[]).includes(workspace));
+  const other = PRESETS.filter((p) => !(p.workspaces as readonly Workspace[]).includes(workspace));
+  return { own, other };
+}
 
 export function applyPreset(api: DockviewApi, id: PresetId) {
   api.clear();
@@ -188,7 +272,7 @@ export function validLayout(layout: unknown): SerializedDockview | null {
 }
 
 /** Presets with a panel that moves with the session clock, for a tab that has no layout yet. */
-const CLOCK_PRESETS: ReadonlySet<PresetId> = new Set(['overview', 'replay', 'strategy']);
+const CLOCK_PRESETS: ReadonlySet<PresetId> = new Set(['overview', 'pitwall', 'replay', 'strategy']);
 
 /** Whether any panel of a dashboard tab moves with the session clock. */
 export function followsClock(tab: DashboardTab): boolean {

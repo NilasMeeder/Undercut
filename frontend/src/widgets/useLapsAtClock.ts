@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import type { Lap } from '@/api/client';
 import { useLaps } from '@/api/queries';
-import { useAtClock } from '@/store/atClock';
+import { atClockOn, useAtClockOn } from '@/store/atClock';
 import { clock } from '@/store/clock';
 
 /** Which laps a panel shows: as the switch in the clock bar says, always only the laps done at
@@ -15,7 +15,7 @@ export const LAP_SCOPE_OPTIONS: { value: LapScope; label: string }[] = [
 ];
 
 /** Whether a panel with this scope shows the session up to the clock (outside React too). */
-export function scopeFollowsClock(scope: LapScope, switchOn = useAtClock.getState().on): boolean {
+export function scopeFollowsClock(scope: LapScope, switchOn = atClockOn()): boolean {
   return scope === 'clock' || (scope === 'app' && switchOn);
 }
 
@@ -43,7 +43,7 @@ const noSubscription = () => () => {};
  */
 export function useLapsAtClock(scope: LapScope = 'app') {
   const query = useLaps();
-  const switchOn = useAtClock((s) => s.on);
+  const switchOn = useAtClockOn();
   const applies = scopeFollowsClock(scope, switchOn);
   const ends = useMemo(
     () =>

@@ -7,7 +7,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
  *
  * Live: the end of the range moves with the newest data (`setLiveEdge`). Following live, the clock
  * plays at 1× a set delay behind that edge; any seek, pause or speed change stops following, and
- * `goLive` picks it up again.
+ * `goLive` picks it up again. A paused clock at the end stays at the end (analysis: everything).
  *
  * Outside React state, like the cursor bus: while playing it ticks every animation frame, and maps
  * update imperatively via subscribe(). Tables re-render at a set rate with useClockTime().
@@ -88,6 +88,11 @@ function start() {
   frame = requestAnimationFrame(tick);
 }
 
+/** Standing still at the end: a longer range (live) takes the clock along. */
+function atEnd(): boolean {
+  return !controls.playing && controls.range != null && time >= controls.range[1] - 0.001;
+}
+
 /** Stop following live (any user action on the clock). */
 function unfollow() {
   if (controls.following) controls = { ...controls, following: false };
@@ -137,6 +142,7 @@ export const clock = {
   /** The same session with a longer range (new laps while live): time and play state stay. */
   setRange(range: [number, number]) {
     const end = controls.live ? Math.max(range[1], controls.range?.[1] ?? range[1]) : range[1];
+    if (atEnd()) time = end;
     setControls({ range: [range[0], end] });
   },
   /** Live: the newest data is at `edge` (null = the session is not live, or no longer). */
@@ -148,6 +154,7 @@ export const clock = {
     const range: [number, number] = controls.range
       ? [controls.range[0], Math.max(controls.range[1], edge)]
       : [edge, edge];
+    if (atEnd()) time = range[1];
     controls = { ...controls, live: true, range };
     if (controls.following) {
       const target = edge - controls.delay;

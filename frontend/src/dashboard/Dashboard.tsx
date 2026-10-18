@@ -52,9 +52,20 @@ const components = Object.fromEntries(
   })
 );
 
+/** On the pitwall the board is locked unless editing. */
+const useLocked = () => useDashboards((s) => s.workspace === 'pitwall' && !s.editing);
+
 /** Tab: link-group square (click to cycle groups), title, close. */
 function PanelTab({ api, params }: IDockviewPanelHeaderProps<PanelParams>) {
   const group: GroupId = params.group ?? 'blue';
+  const locked = useLocked();
+  if (locked)
+    return (
+      <div className="flex h-full items-center gap-1.5 pl-1.5 pr-2 text-[11px]">
+        <span className="h-2.5 w-2.5 shrink-0" style={{ background: GROUP_COLORS[group] }} />
+        <span className="truncate">{api.title}</span>
+      </div>
+    );
   return (
     <div className="flex h-full items-center gap-1.5 pl-1.5 pr-1 text-[11px]">
       <button
@@ -138,7 +149,11 @@ function useGroupLocation(group: DockviewGroupPanel) {
 }
 
 /** Title-bar buttons of a tab group; help and settings act on the visible panel. */
-function GroupActions({ containerApi, group, activePanel }: IDockviewHeaderActionsProps) {
+function GroupActions(props: IDockviewHeaderActionsProps) {
+  return useLocked() ? null : <EditableGroupActions {...props} />;
+}
+
+function EditableGroupActions({ containerApi, group, activePanel }: IDockviewHeaderActionsProps) {
   const params = usePanelParams(activePanel);
   const location = useGroupLocation(group);
   const widget = activePanel ? WIDGETS_BY_ID.get(activePanel.api.component) : undefined;
@@ -240,6 +255,7 @@ export function Dashboard() {
   const setApi = useDashboardApi((s) => s.setApi);
   const active = useDashboards((s) => s.active);
   const reload = useDashboards((s) => s.reload);
+  const locked = useLocked();
 
   const onReady = useCallback(
     (event: DockviewReadyEvent) => {
@@ -271,6 +287,8 @@ export function Dashboard() {
       rightHeaderActionsComponent={GroupActions}
       watermarkComponent={EmptyDashboard}
       onReady={onReady}
+      locked={locked}
+      disableDnd={locked}
     />
   );
 }

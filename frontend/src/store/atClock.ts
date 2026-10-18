@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useDashboards } from './dashboards';
 
 /**
  * The switch in the clock bar: show only what had happened at the session clock (laps, bests,
@@ -20,3 +21,14 @@ export const useAtClock = create<AtClockState>()(
     { name: 'f1dash-at-clock' }
   )
 );
+
+/** The switch as it applies: on the pitwall always on. */
+export function atClockOn(): boolean {
+  return useAtClock.getState().on || useDashboards.getState().workspace === 'pitwall';
+}
+
+export function useAtClockOn(): boolean {
+  const on = useAtClock((s) => s.on);
+  const pitwall = useDashboards((s) => s.workspace === 'pitwall');
+  return on || pitwall;
+}

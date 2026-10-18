@@ -9,7 +9,7 @@ import { COLORS, TRACK_STATUS_COLORS } from '@/lib/colors';
 import { lapAt, markerLabel, markerLap } from '@/lib/markers';
 import { formatClock, TRACK_STATUS_LABEL } from '@/lib/replay';
 import { cn } from '@/lib/utils';
-import { useAtClock } from '@/store/atClock';
+import { useAtClock, useAtClockOn } from '@/store/atClock';
 import { clock, SPEEDS, useClockControls, useClockTime } from '@/store/clock';
 import { useDashboards } from '@/store/dashboards';
 import { editMarker, markNew } from '@/store/markerEditor';
@@ -249,6 +249,8 @@ function PositionsState() {
 function AtClockSwitch() {
   const on = useAtClock((s) => s.on);
   const setOn = useAtClock((s) => s.setOn);
+  // The pitwall always shows the session as far as the clock.
+  if (useDashboards((s) => s.workspace === 'pitwall')) return null;
   return (
     <button
       type="button"
@@ -327,29 +329,29 @@ function LiveControl() {
 
 /**
  * Playing on a dashboard where no panel follows the clock (the analysis presets) shows nothing
- * moving, so say so, with a way to the Replay dashboard (an existing tab, or a new one).
+ * moving, so say so, with a way to the pitwall (its board, or a new one there).
  */
 function NothingFollows() {
   const tabs = useDashboards((s) => s.tabs);
   const active = useDashboards((s) => s.active);
-  useAtClock((s) => s.on); // analysis panels follow the clock when the switch is on
+  const workspace = useDashboards((s) => s.workspace);
+  useAtClockOn(); // analysis panels follow the clock when the switch is on
   const tab = tabs.find((t) => t.id === active);
   if (!tab || followsClock(tab)) return null;
-  const openReplay = () => {
-    const { activate, add } = useDashboards.getState();
-    const replay = tabs.find((t) => t.preset === 'replay' && followsClock(t));
-    if (replay) activate(replay.id);
-    else add('Replay', 'replay');
+  const openPitwall = () => {
+    const { add, setWorkspace } = useDashboards.getState();
+    if (workspace === 'pitwall') add('Pitwall', 'pitwall');
+    else setWorkspace('pitwall');
   };
   return (
     <span className="flex shrink-0 items-center gap-1.5 text-faint">
       No panel here follows the clock
       <button
         type="button"
-        onClick={openReplay}
+        onClick={openPitwall}
         className="border border-line-strong px-1.5 text-text hover:bg-raised"
       >
-        Open Replay
+        Open Pitwall
       </button>
     </span>
   );

@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Lap, TimingState, TowerRow } from '@/api/client';
 import { useLaps, useSessionDetail, useTimingState } from '@/api/queries';
 import { DriverCell, PanelMessage, TyreBadge } from '@/components/data/bits';
@@ -66,6 +67,46 @@ function Header({ state }: { state: TimingState }) {
   );
 }
 
+/** Never blow the tower up more than this: past it the rows are just big, not easier to read. */
+const MAX_ZOOM = 2.4;
+
+/**
+ * Size "fit": scale the table (CSS zoom) so it fills the panel, the smaller of the width and the
+ * height. 1 when compact, or when the table does not fit anyway (then it scrolls).
+ */
+function useFitZoom(fit: boolean, rows: number) {
+  // A callback ref: the box only exists once the timing has loaded.
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  const table = useRef<HTMLTableElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    if (!box) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
+    );
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [box]);
+  const [zoom, setZoom] = useState(1);
+  useLayoutEffect(() => {
+    const t = table.current;
+    if (!fit || !t || size.width === 0) {
+      setZoom(1);
+      return;
+    }
+    // The rect is zoomed; divided by the zoom it is the table's own size.
+    const rect = t.getBoundingClientRect();
+    const current = Number(t.style.zoom) || 1;
+    const natural = { width: rect.width / current, height: rect.height / current };
+    const next = Math.min(
+      Math.max(Math.min(size.width / natural.width, size.height / natural.height), 1),
+      MAX_ZOOM
+    );
+    setZoom((z) => (Math.abs(z - next) > 0.01 ? next : z));
+  }, [fit, size.width, size.height, rows]);
+  return { box: setBox, table, zoom };
+}
+
 /** The lap a row click compares: the latest lap in a race, the best lap otherwise. */
 function lapFor(row: TowerRow, kind: TimingState['kind'], laps: Lap[]): number | null {
   if (kind === 'race') return row.laps > 0 ? row.laps : null;
@@ -79,6 +120,7 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   const laps = useLaps();
   const selected = new Set(useGroupLaps(group).map((l) => l.driver));
   const toggleLap = useGroups((s) => s.toggleLap);
+  const { box, table, zoom } = useFitZoom(config.size === 'fit', timing.data?.rows.length ?? 0);
 
   if (timing.error) return <PanelMessage>{timing.error.message}</PanelMessage>;
   const state = timing.data;
@@ -97,8 +139,15 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   return (
     <div className="flex h-full flex-col">
       <Header state={state} />
-      <div className="min-h-0 flex-1 overflow-auto">
-        <table className="w-full whitespace-nowrap text-[11px] tabular-nums">
+      <div ref={box} className="min-h-0 flex-1 overflow-auto">
+        <table
+          ref={table}
+          className={cn(
+            'whitespace-nowrap text-[11px] tabular-nums',
+            config.size === 'fit' ? 'w-auto' : 'w-full'
+          )}
+          style={config.size === 'fit' ? { zoom } : undefined}
+        >
           <thead>
             <tr>
               {head('P')}

@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import { defineWidget } from '../types';
 
 export type TowerColumn = 'interval' | 'best' | 'last' | 'sectors' | 'segments' | 'tyre' | 'stops';
-export type TowerConfig = { columns: TowerColumn[] };
+export type TowerConfig = { columns: TowerColumn[]; size: 'compact' | 'fit' };
 
 export const towerWidget = defineWidget<TowerConfig>({
   id: 'tower',
@@ -29,7 +29,10 @@ export const towerWidget = defineWidget<TowerConfig>({
       'Play, pause and scrub with the clock bar (Space, ← →). Click a row to compare that driver’s ' +
       'latest lap (race) or best lap (qualifying) in this link group.',
   },
-  defaults: { columns: ['interval', 'best', 'last', 'sectors', 'segments', 'tyre', 'stops'] },
+  defaults: {
+    columns: ['interval', 'best', 'last', 'sectors', 'segments', 'tyre', 'stops'],
+    size: 'compact',
+  },
   settings: [
     {
       key: 'columns',
@@ -43,6 +46,15 @@ export const towerWidget = defineWidget<TowerConfig>({
         { value: 'segments', label: 'Mini-sectors under the sectors (live recordings)' },
         { value: 'tyre', label: 'Tyre' },
         { value: 'stops', label: 'Pit stops (race) / laps' },
+      ],
+    },
+    {
+      key: 'size',
+      label: 'Size',
+      kind: 'choice',
+      options: [
+        { value: 'compact', label: 'Compact' },
+        { value: 'fit', label: 'Fill the panel (pitwall)' },
       ],
     },
   ],

@@ -287,18 +287,42 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
       leeg in snelle bochten. Clipstrookjes in de speed-chart zijn nu amber (Nilas: deploy paars,
       clipping een eigen kleur)
 
-## Fase 9 — Twee werkplekken: Analyse en Pitwall — volgende
+## Fase 9 — Twee werkplekken: Analyse en Pitwall — bezig
 
 Nilas (2026-10-18): een duidelijkere scheiding tussen echte analyse na een sessie en een pitwall-bord
 voor live of om voor de lol terug te kijken.
 
-- [ ] **Pitwall**: schermvullend bord dat speelt (tower groot, kaart, Track line, klok, race control,
-      gaps, Live lap), AT CLOCK altijd aan, weinig knoppen; ook goed op een tweede scherm
-- [ ] **Analyse**: klok standaard op het einde, analyse-presets, en een **sessieverslag** met
-      suggesties waar naar te kijken (zie "Automatische analyses" bij Ideeën): per driver waar de tijd
-      zit, long runs vs short runs in FP, degradatie samengevat, opvallende momenten; klik = de
-      vergelijking openen
-- [ ] Wisselen tussen de twee in de topbalk; tabs en presets per werkplek
+Ontwerp (2026-10-18):
+- **Een werkplek heeft eigen tabs**, geen modus over dezelfde tabs: een analyse-layout hoort niet
+  te spelen en een bord niet vol telemetrie te staan. `DashboardTab.workspace`, per werkplek een
+  actieve tab. Bestaande tabs: preset `replay` → Pitwall, de rest → Analyse. Elke werkplek houdt
+  minstens één tab.
+- **Wisselen** links in de topbalk (ANALYSIS | PITWALL, sneltoets `w`). De keuze is per venster
+  (`?ws=pitwall` in de URL, anders de laatste), zodat een tweede venster op een tweede scherm
+  Pitwall kan zijn terwijl het eerste Analyse blijft. Elk venster heeft toch al zijn eigen klok.
+- **Klok per werkplek**: Pitwall houdt zijn eigen stand (en speelt door); Analyse springt bij
+  binnenkomst naar het einde (een keer, daarna mag je scrubben). Live blijft een klok die op het
+  einde staat daar staan als er data bijkomt.
+- **Pitwall**: AT CLOCK altijd aan (de schakelaar verdwijnt), panelen op slot (niet slepen, geen
+  +/tandwiel/(i) in de titelbalken; knop EDIT ontgrendelt), topbalk zonder groepen, views en
+  layout-menu; knoppen voor schermvullend en "open in een nieuw venster". Presets: **Pitwall**
+  (nieuw: tower groot, kaart met alle auto's, Track line, Clock, race control, Gaps, Live lap) met
+  een indeling naar schermbreedte (smal < 1700 px, normaal, breed ≥ 2400 px), Replay en Strategy.
+- **Analyse**: presets Quali duel, Engineer, Session overview, Strategy en **Debrief** (nieuw:
+  Report naast Delta, Telemetry en de kaart). **Report** (sessieverslag, `/report`): de backend
+  zoekt de punten, de frontend maakt er zinnen van; klik = laps in de groep zetten (en zoomen op
+  de bocht/straight) of de klok naar het moment. Onderdelen: waar de tijd zit (beste lap per
+  driver tegen de snelste, grootste bochtverlies), long runs tegen short runs (FP), degradatie per
+  compound en de uitschieters, clipping (2026, uit Energy), opvallende momenten in een race
+  (snelste/traagste stop, posities gewonnen in lap 1, undercuts die lukten, SC/rode vlag).
+
+- [x] Werkplekken (2026-10-18): eigen tabs, wisselen in de topbalk (`w`), per venster (`?ws=`),
+      klok per werkplek. Getest in headless Chrome (Monza 2025 R: Pitwall op lap 22, `w` → Analyse
+      op 53/53, terug → lap 22)
+- [x] Pitwall (2026-10-18): preset per schermbreedte (1440, 1920, 2560 getest), op slot met EDIT,
+      AT CLOCK altijd aan, schermvullend, nieuw venster; tower-instelling "Size: fill the panel"
+- [ ] Analyse: klok op het einde, Debrief-preset
+- [ ] Report (sessieverslag) met klik = vergelijking openen
 
 ## Later / backlog
 

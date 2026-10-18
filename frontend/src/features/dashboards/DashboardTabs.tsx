@@ -2,15 +2,59 @@ import { useRef, useState } from 'react';
 import { LayoutGrid, Plus, X } from 'lucide-react';
 import { useDashboardApi } from '@/dashboard/api';
 import { HeaderMenu } from '@/dashboard/HeaderMenu';
-import { applyPreset, PRESETS, validLayout, type PresetId } from '@/dashboard/layout';
+import { applyPreset, PRESETS, presetsFor, validLayout, type PresetId } from '@/dashboard/layout';
 import { cn } from '@/lib/utils';
-import { useDashboards, type DashboardTab } from '@/store/dashboards';
+import { tabWorkspace, useDashboards, type DashboardTab } from '@/store/dashboards';
 
 const menuItem = 'block w-full px-2 py-1 text-left hover:bg-raised';
 
-/** Dashboard tabs in the top bar: each has its own layout. Double-click a tab to rename it. */
+type Preset = (typeof PRESETS)[number];
+
+/** A workspace's own presets, then the others under a faint heading. */
+function PresetList({
+  heading,
+  onPick,
+  disabled = false,
+}: {
+  heading: string;
+  onPick: (preset: Preset) => void;
+  disabled?: boolean;
+}) {
+  const workspace = useDashboards((s) => s.workspace);
+  const { own, other } = presetsFor(workspace);
+  const item = (p: Preset) => (
+    <button
+      key={p.id}
+      type="button"
+      disabled={disabled}
+      className={menuItem}
+      onClick={() => onPick(p)}
+    >
+      <div className="text-text">{p.title}</div>
+      <div className="text-[10px] text-faint">{p.description}</div>
+    </button>
+  );
+  return (
+    <>
+      <div className="px-2 pb-0.5 pt-1 text-[10px] uppercase text-faint">{heading}</div>
+      {own.map(item)}
+      {other.length > 0 ? (
+        <>
+          <div className="px-2 pb-0.5 pt-1.5 text-[10px] uppercase text-faint">
+            From the other workspace
+          </div>
+          {other.map(item)}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/** Dashboard tabs of this workspace in the top bar: each has its own layout. Double-click a tab
+ * to rename it. */
 export function DashboardTabs() {
-  const { tabs, active, activate, rename, remove, add } = useDashboards();
+  const { tabs: all, active, activate, rename, remove, add, workspace } = useDashboards();
+  const tabs = all.filter((t) => tabWorkspace(t) === workspace);
   const [editing, setEditing] = useState<string | null>(null);
 
   return (
@@ -67,23 +111,13 @@ export function DashboardTabs() {
       <HeaderMenu icon={<Plus className="h-3.5 w-3.5" />} title="New dashboard" align="right">
         {(close) => (
           <div className="py-0.5">
-            <div className="px-2 pb-0.5 pt-1 text-[10px] uppercase text-faint">
-              New dashboard from
-            </div>
-            {PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={menuItem}
-                onClick={() => {
-                  close();
-                  add(p.title, p.id);
-                }}
-              >
-                <div className="text-text">{p.title}</div>
-                <div className="text-[10px] text-faint">{p.description}</div>
-              </button>
-            ))}
+            <PresetList
+              heading="New dashboard from"
+              onPick={(p) => {
+                close();
+                add(p.title, p.id);
+              }}
+            />
           </div>
         )}
       </HeaderMenu>
@@ -108,6 +142,8 @@ function parseExport(text: string): Omit<DashboardTab, 'id'>[] | null {
         name: d.name,
         layout: validLayout(d.layout),
         preset: (presets.includes(d.preset) ? d.preset : 'quali-duel') as PresetId,
+        workspace:
+          d.workspace === 'pitwall' || d.workspace === 'analysis' ? d.workspace : undefined,
       }));
   } catch {
     return null;
@@ -131,7 +167,12 @@ export function LayoutMenu() {
     const file: ExportFile = {
       app: 'f1dash',
       version: 1,
-      dashboards: tabs.map(({ name, layout, preset }) => ({ name, layout, preset })),
+      dashboards: tabs.map((t) => ({
+        name: t.name,
+        layout: t.layout,
+        preset: t.preset,
+        workspace: tabWorkspace(t),
+      })),
     };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(file, null, 1)], { type: 'application/json' })
@@ -164,24 +205,14 @@ export function LayoutMenu() {
       <HeaderMenu icon={<LayoutGrid className="h-3.5 w-3.5" />} title="Layout" width="w-72">
         {(close) => (
           <div className="py-0.5">
-            <div className="px-2 pb-0.5 pt-1 text-[10px] uppercase text-faint">
-              Replace this dashboard with
-            </div>
-            {PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                disabled={!api}
-                className={menuItem}
-                onClick={() => {
-                  close();
-                  if (api) applyPreset(api, p.id);
-                }}
-              >
-                <div className="text-text">{p.title}</div>
-                <div className="text-[10px] text-faint">{p.description}</div>
-              </button>
-            ))}
+            <PresetList
+              heading="Replace this dashboard with"
+              disabled={!api}
+              onPick={(p) => {
+                close();
+                if (api) applyPreset(api, p.id);
+              }}
+            />
             <div className="my-0.5 border-t border-line" />
             <button
               type="button"
