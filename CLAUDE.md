@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met achtentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met negenentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -538,6 +538,15 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
 - **Qualifying board** (Pitwall, `quali-board`): tower (fit, met Cut en Pred), kaart met alle auto's
   en Live lap, Clock op de sessieklok (`mode: 'session'`, tijd over), Race control, Run timeline,
   Track line.
+- **Release** (widget `release`, `lib/release.ts`, alleen frontend): voor de eerste driver van de
+  groep: als hij nu (of over w s) de pit uit gaat, begint zijn push op t + w + zijn typische
+  out-lap (pit-uit tot de lijn). Elke auto op de baan (status uit de tower, lap-voortgang uit het
+  positiespoor) gaat door op het tempo van zijn lap: push = zijn beste, cool-down (lap na een
+  push-lap ≤ 103%) en out-lap = de typische van de sessie; daarna out → push → cool. Conflicten:
+  een cool-down vóór hem die hij tijdens zijn lap inhaalt (constant tempo), een push < 2 s achter
+  hem, < 0,8 s voor hem. Balk = de komende 2:30 (groen vrij, amber niet). Ook in replay een
+  voorspelling; auto's in de garage weet hij niet. Monza 2025 Q3 (16:59:11): vijf auto's op een
+  out-lap, VER nu = 6,4 s achter NOR, vrij.
 - **Mini-sectors** (widget `minisectors`): `/compare`'s `mini_sectors` als tabel, per mini-sector de
   bochten erin (`circuit.corners` geschaald naar de laplengte), paars de snelste, de rest +gap;
   onderaan lap, LOST (tegen de ideale combinatie) en hoe vaak de snelste. Hover = cursor, klik = zoom.

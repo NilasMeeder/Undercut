@@ -253,6 +253,7 @@ function qualiBoard(api: DockviewApi) {
   );
   const runs = addWidget(api, 'timeline', 'blue', { referencePanel: feed, direction: 'below' });
   addWidget(api, 'tyres', 'blue', { referencePanel: runs, direction: 'within' });
+  addWidget(api, 'release', 'blue', { referencePanel: runs, direction: 'within' });
   runs.api.setActive();
   const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
   if (width < NARROW) {

@@ -391,7 +391,9 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
       en tot erop. Getest op Monza 2025 R (lap 22: HAM op RUS +0,128 s/lap, binnen 1 s over 8 laps)
 - [x] Weekendoverzicht (2026-10-18, widget Weekend, `/weekend`): plaatsen per sessie, langste long run,
       racetempo. Getest op Monza 2025 R
-- [ ] Q-releasemoment: waar je uitkomt als je nu de pit uit gaat, verkeer op een snelle ronde
+- [x] Q-releasemoment (2026-10-18, widget Release in het Qualifying board): verkeer op de push-lap als
+      hij nu of over w s gaat, eerste vrije moment. Getest op Monza 2025 Q3
+- [ ] Release: het einde van de sessie meenemen (op tijd over de lijn), en kalibreren op Austin
 
 ## Later / backlog
 
