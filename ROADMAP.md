@@ -401,15 +401,32 @@ Nilas (2026-10-18): in 2026 vervangt active aero de DRS; op aangewezen stukken m
 "straight mode" (vleugels plat, minder luchtweerstand). Dat willen we kunnen zien. Eerst uitzoeken,
 dan pas bouwen.
 
-- [ ] Uitzoeken: hoe straight mode werkt in de regels van 2026 (wanneer aan/uit, wie, overal of
-      alleen in zones; verschil met overtake mode), en waar de zones per circuit staan
-      (FIA-documenten per event, of elders)
-- [ ] Uitzoeken: staat er iets van in de data (TracingInsights 2026, de live-feed: CarData-kanalen,
-      race control-berichten over zones of "straight mode enabled/disabled")? De `drs`-kolom is in
-      2026 leeg
-- [ ] Uitzoeken: is het te zien in de telemetrie (meer topsnelheid of versnelling op hoge snelheid
-      in een zone dan erbuiten, zoals de omhullende van Energy), en hoe scheid je dat van inzet
-      en clipping?
+- [x] Uitzoeken: de regels (2026-10-18). Sporting B7.1 ("Driver Adjustable Bodywork"): straight
+      mode = beide vleugels plat; de driver zet hem aan met een knop als de ECU het toestaat, alleen
+      helemaal binnen een Activation Zone; dicht aan het eind van de zone (en volgens de pers bij
+      remmen), wisselen ≤ 400 ms. Iedereen, elke lap, geen gat-regel, ook in Q. Niet van de grid
+      naar T1 (afspraak teams, feb 2026). Weinig grip (regen): de race director staat alleen
+      "partial" toe (voorvleugel) in eigen Low Grip-zones, die later beginnen. Overtake mode (B7.2)
+      is iets anders: extra MGU-K-vermogen, binnen 1 s bij de detectielijn, activatie erna, alleen
+      in de race; race control zegt `OVERTAKE ENABLED/DISABLED` (de opvolger van `DRS ENABLED`).
+      **Zones**: per event het FIA-document "Competition Notes – Circuit Map"
+      (fia.com/documents → seizoen 2026 → event): per zone A1–A5 het activatiepunt als "30m after
+      T11", normaal en low grip, plus overtake-detectie en -activatie; **geen eindpunten** (die
+      staan alleen getekend). De tekst is met pypdf uit de PDF te halen. Monza: A1 30 m na T11,
+      A2 70 m na T3, A3 170 m na T7, A4 130 m na T10. Monaco heeft geen zones (< 3 s).
+- [x] Uitzoeken: de data. Niets. `drs` is in alle 2026-telemetrie 0 (FastF1 #861: F1 heeft aero en
+      ERS na de wintertests uit de feed gehaald). Race control: geen straight-mode-berichten, wel
+      `OVERTAKE ENABLED/DISABLED` en `LOW GRIP CONDITIONS` / `NORMAL GRIP CONDITIONS`. Live: geen
+      echte opname om in te kijken (de simulator maakt alleen de 6 bekende kanalen); de recorder
+      bewaart de ruwe feed, dus een nieuw kanaal of topic in Austin valt achteraf te vinden.
+- [x] Uitzoeken: de telemetrie. Niet betrouwbaar te zien. Toets op 2025 (DRS-kanaal als
+      waarheid): DRS open geeft in de race +0,3–0,5 m/s² bij 280 km/h tegen dicht, maar het
+      openen zelf is per lap geen zichtbare sprong in a. In 2026 is er geen "uit" om mee te
+      vergelijken (iedereen elke lap in dezelfde zones), en het activatiepunt ligt in de uitgang
+      van een bocht, waar grip, inzet en schakelen de versnelling bepalen. Wel vaste sprongen
+      (Monza −116 m, Zandvoort −205 m, bij alle teams) maar die liggen niet op de FIA-punten
+      (Monza A1 ligt ~470 m eerder): waarschijnlijk inzet. Lap 1 (geen straight mode) vergelijken
+      lukt niet: daar zet iedereen vol in en rijdt in de slipstream.
 - [ ] Daarna kiezen: zones met de hand per circuit, uit de data, of geschat; en waar het komt
       (kaart-optie zoals DRS zones, kanaal in Telemetry, Energy)
 
