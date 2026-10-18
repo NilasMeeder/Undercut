@@ -25,6 +25,7 @@ import { trackLineWidget } from './trackline/widget';
 import { trackMapWidget } from './trackmap/widget';
 import { tyresWidget } from './tyres/widget';
 import { weatherWidget } from './weather/widget';
+import { weekendWidget } from './weekend/widget';
 import type { AnyWidgetDef } from './types';
 
 /**
@@ -46,6 +47,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   miniSectorsWidget,
   energyWidget,
   reportWidget,
+  weekendWidget,
   clockWidget,
   raceControlWidget,
   weatherWidget,

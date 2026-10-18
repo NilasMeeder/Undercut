@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met zevenentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met achtentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -589,6 +589,15 @@ per sector, topsnelheid, de bochtsegmenten met het grootste verschil, en in een 
 van de schone laps (`strategy.is_clean`). Monza 2025 R: VER–TSU +1,709 (pace +1,01), NOR–PIA
 +0,344 maar PIA in pace 0,03 sneller. De box van de widget wordt
 altijd gerenderd: `useElementSize` meet anders nooit (de ref verschijnt pas na het laden).
+
+## Weekend (fase 10)
+
+`weekend.py`, `/weekend`, widget Weekend: per sessie van het weekend tot en met deze per driver de
+plaats (training en Q op beste lap, race en sprint op de finish: `position` van zijn laatste lap)
+en het gat op beste lap; de langste long run uit de trainingen (`reports.long_runs`, meeste laps,
+dan de snelste mediaan: een korte run is vaak met weinig brandstof) en het racetempo
+(`setups.race_pace`). In de preset Session overview als tab naast de Run timeline. Monza 2025:
+VER P6/P4 in FP2/FP3, maar het snelste racetempo (1:22.874).
 
 ## Markeringen en views (fase 5)
 

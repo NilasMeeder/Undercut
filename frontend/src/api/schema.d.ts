@@ -376,6 +376,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/weekend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Weekend Overview
+         * @description Every driver from the first practice up to this session.
+         */
+        get: operations["weekend_overview_api_sessions__year___round___session__weekend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -2216,6 +2236,56 @@ export interface components {
             /** Wind Direction */
             wind_direction: number[];
         };
+        /** WeekendCell */
+        WeekendCell: {
+            /** Position */
+            position: number;
+            /** Best */
+            best: number | null;
+            /** Gap */
+            gap: number | null;
+        };
+        /** WeekendDriver */
+        WeekendDriver: {
+            /** Driver */
+            driver: string;
+            /** Cells */
+            cells: (components["schemas"]["WeekendCell"] | null)[];
+            long_run: components["schemas"]["WeekendLongRun"] | null;
+            /** Race Pace */
+            race_pace: number | null;
+        };
+        /**
+         * WeekendLongRun
+         * @description A driver's longest run in practice (the race simulation; median lap, no fuel correction).
+         */
+        WeekendLongRun: {
+            /** Session */
+            session: string;
+            /** Compound */
+            compound: string | null;
+            /** Laps */
+            laps: number;
+            /** Median */
+            median: number;
+        };
+        /**
+         * WeekendOverview
+         * @description Every driver from the first practice to this session, in the order of the latest one.
+         */
+        WeekendOverview: {
+            /** Sessions */
+            sessions: components["schemas"]["WeekendSession"][];
+            /** Drivers */
+            drivers: components["schemas"]["WeekendDriver"][];
+        };
+        /** WeekendSession */
+        WeekendSession: {
+            /** Code */
+            code: string;
+            /** Race */
+            race: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -2927,6 +2997,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Teammates"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    weekend_overview_api_sessions__year___round___session__weekend_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeekendOverview"];
                 };
             };
             /** @description Validation Error */

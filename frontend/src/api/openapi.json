@@ -1533,6 +1533,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/weekend": {
+      "get": {
+        "summary": "Weekend Overview",
+        "description": "Every driver from the first practice up to this session.",
+        "operationId": "weekend_overview_api_sessions__year___round___session__weekend_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekendOverview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/compare": {
       "get": {
         "summary": "Compare Laps",
@@ -7488,6 +7556,173 @@
         ],
         "title": "Weather",
         "description": "Columnar, about one sample per minute."
+      },
+      "WeekendCell": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "best": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position",
+          "best",
+          "gap"
+        ],
+        "title": "WeekendCell"
+      },
+      "WeekendDriver": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "cells": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WeekendCell"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Cells"
+          },
+          "long_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeekendLongRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "race_pace": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Pace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "cells",
+          "long_run",
+          "race_pace"
+        ],
+        "title": "WeekendDriver"
+      },
+      "WeekendLongRun": {
+        "properties": {
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "median": {
+            "type": "number",
+            "title": "Median"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session",
+          "compound",
+          "laps",
+          "median"
+        ],
+        "title": "WeekendLongRun",
+        "description": "A driver's longest run in practice (the race simulation; median lap, no fuel correction)."
+      },
+      "WeekendOverview": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/WeekendSession"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/WeekendDriver"
+            },
+            "type": "array",
+            "title": "Drivers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "drivers"
+        ],
+        "title": "WeekendOverview",
+        "description": "Every driver from the first practice to this session, in the order of the latest one."
+      },
+      "WeekendSession": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "race": {
+            "type": "boolean",
+            "title": "Race"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "race"
+        ],
+        "title": "WeekendSession"
       }
     }
   }

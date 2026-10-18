@@ -24,6 +24,7 @@ from app import (
     strategies,
     strategy,
     tyres,
+    weekend,
     zones,
 )
 from app.live import record, recorder
@@ -68,6 +69,7 @@ from app.schemas import (
     View,
     ViewIn,
     Weather,
+    WeekendOverview,
 )
 from app.sources.tracinginsights import SourceNotAvailable
 
@@ -366,6 +368,12 @@ def setup_map(year: int, round: int, session: SessionCode) -> SetupMap:
 def teammate_pairs(year: int, round: int, session: SessionCode) -> Teammates:
     """Each team's drivers side by side."""
     return _guard(lambda: setups.teammates(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/weekend")
+def weekend_overview(year: int, round: int, session: SessionCode) -> WeekendOverview:
+    """Every driver from the first practice up to this session."""
+    return _guard(lambda: weekend.overview(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/compare")

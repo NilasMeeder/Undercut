@@ -126,6 +126,8 @@ function overview(api: DockviewApi) {
   const traps = addWidget(api, 'speedtraps', 'blue', { referencePanel: bests, direction: 'right' });
   addWidget(api, 'setups', 'blue', { referencePanel: traps, direction: 'within' });
   addWidget(api, 'teammates', 'blue', { referencePanel: traps, direction: 'within' });
+  addWidget(api, 'weekend', 'blue', { referencePanel: timeline, direction: 'within' });
+  timeline.api.setActive();
   traps.api.setActive();
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: traps, direction: 'right' });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });

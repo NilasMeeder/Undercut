@@ -1107,3 +1107,41 @@ class TeammatePair(BaseModel):
 class Teammates(BaseModel):
     race: bool
     teams: list[TeammatePair]
+
+
+class WeekendSession(BaseModel):
+    code: str
+    race: bool
+
+
+class WeekendCell(BaseModel):
+    position: int
+    """Race: at the finish; otherwise by best lap."""
+    best: float | None
+    gap: float | None
+    """Best lap to the session's quickest."""
+
+
+class WeekendLongRun(BaseModel):
+    """A driver's longest run in practice (the race simulation; median lap, no fuel correction)."""
+
+    session: str
+    compound: str | None
+    laps: int
+    median: float
+
+
+class WeekendDriver(BaseModel):
+    driver: str
+    cells: list[WeekendCell | None]
+    """Per session of WeekendOverview.sessions; null when he did not drive it."""
+    long_run: WeekendLongRun | None
+    race_pace: float | None
+    """Median of the clean race laps."""
+
+
+class WeekendOverview(BaseModel):
+    """Every driver from the first practice to this session, in the order of the latest one."""
+
+    sessions: list[WeekendSession]
+    drivers: list[WeekendDriver]
