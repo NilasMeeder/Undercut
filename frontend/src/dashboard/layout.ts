@@ -93,6 +93,7 @@ function qualifying(api: DockviewApi) {
   const mini = addWidget(api, 'minisectors', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });
   addWidget(api, 'energy', 'blue', { referencePanel: mini, direction: 'within' });
+  addWidget(api, 'setups', 'blue', { referencePanel: mini, direction: 'within' });
   mini.api.setActive();
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
   bests.group.api.setSize({ width: 430 });
@@ -122,6 +123,8 @@ function overview(api: DockviewApi) {
   const timeline = addWidget(api, 'timeline', 'blue');
   const bests = addWidget(api, 'bests', 'blue', { referencePanel: timeline, direction: 'below' });
   const traps = addWidget(api, 'speedtraps', 'blue', { referencePanel: bests, direction: 'right' });
+  addWidget(api, 'setups', 'blue', { referencePanel: traps, direction: 'within' });
+  traps.api.setActive();
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: traps, direction: 'right' });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();

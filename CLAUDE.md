@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met vierentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met vijfentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Speed map, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -574,6 +574,16 @@ die compound met de hoogste leeftijd onder de eerste leeftijd van de stint; geen
 al gebruikt was (`new_in: null`, punt in de UI). Monza 2025: ALO 13 sets (8 S, 3 M, 2 H) = de
 allocatie; PIA eindigt de race op een soft uit Q (4–11). Alleen drivers van deze sessie in de
 widget: FP1-rookies rijden op de sets van de vaste driver.
+
+## Speed map (fase 10)
+
+`setups.py`, `/setups`, widget Speed map (`setups`): de beste lap van elke driver (zonder gat in de
+telemetrie) op de snelste lap gelegd zoals `/compare`, in bochtsegmenten
+(`analysis.corner_segments`); per driver de hoogste snelheid op de lap, de speed trap en de
+gemiddelde minimumsnelheid over alle bochten, de langzame (< 150 km/h op de snelste lap) en de
+rest. Scatter in SVG met de medianen gestippeld: linksboven weinig luchtweerstand, rechtsonder
+veel downforce. Monza 2025 Q: HUL 356 km/h / 180 km/h, PIA 346 / 190. De box van de widget wordt
+altijd gerenderd: `useElementSize` meet anders nooit (de ref verschijnt pas na het laden).
 
 ## Markeringen en views (fase 5)
 

@@ -19,6 +19,7 @@ from app import (
     reports,
     schedule,
     sessions,
+    setups,
     store,
     strategies,
     strategy,
@@ -56,6 +57,7 @@ from app.schemas import (
     SessionDetail,
     SessionReport,
     SessionTimeline,
+    SetupMap,
     TagCount,
     Telemetry,
     TimingState,
@@ -351,6 +353,12 @@ def lap_predictions(
 def tyre_sets(year: int, round: int, session: SessionCode) -> TyreWeekend:
     """Every driver's tyre sets over the weekend up to and including this session."""
     return _guard(lambda: tyres.weekend(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/setups")
+def setup_map(year: int, round: int, session: SessionCode) -> SetupMap:
+    """Top speed against cornering speed of every driver's best lap."""
+    return _guard(lambda: setups.setup_map(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/compare")

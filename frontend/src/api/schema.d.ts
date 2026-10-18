@@ -336,6 +336,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/setups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Setup Map
+         * @description Top speed against cornering speed of every driver's best lap.
+         */
+        get: operations["setup_map_api_sessions__year___round___session__setups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -1715,6 +1735,38 @@ export interface components {
             /** Clock */
             clock: components["schemas"]["ClockPoint"][];
         };
+        /**
+         * SetupDriver
+         * @description One driver's best lap: how fast on the straights against how fast through the corners.
+         */
+        SetupDriver: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Lap Time */
+            lap_time: number;
+            /** Top Speed */
+            top_speed: number;
+            /** Speed Trap */
+            speed_trap: number | null;
+            /** Corner Speed */
+            corner_speed: number | null;
+            /** Slow Corners */
+            slow_corners: number | null;
+            /** Fast Corners */
+            fast_corners: number | null;
+        };
+        /**
+         * SetupMap
+         * @description Top speed against cornering speed per driver (best laps): low drag or high downforce.
+         */
+        SetupMap: {
+            /** Slow Limit */
+            slow_limit: number;
+            /** Drivers */
+            drivers: components["schemas"]["SetupDriver"][];
+        };
         /** StatusPeriod */
         StatusPeriod: {
             /** Start */
@@ -2747,6 +2799,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TyreWeekend"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setup_map_api_sessions__year___round___session__setups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupMap"];
                 };
             };
             /** @description Validation Error */

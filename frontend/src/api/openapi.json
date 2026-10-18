@@ -1397,6 +1397,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/setups": {
+      "get": {
+        "summary": "Setup Map",
+        "description": "Top speed against cornering speed of every driver's best lap.",
+        "operationId": "setup_map_api_sessions__year___round___session__setups_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupMap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/compare": {
       "get": {
         "summary": "Compare Laps",
@@ -5899,6 +5967,105 @@
         ],
         "title": "SessionTimeline",
         "description": "What the session clock needs: its range, the laps and the track status over time."
+      },
+      "SetupDriver": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "lap_time": {
+            "type": "number",
+            "title": "Lap Time"
+          },
+          "top_speed": {
+            "type": "number",
+            "title": "Top Speed"
+          },
+          "speed_trap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed Trap"
+          },
+          "corner_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corner Speed"
+          },
+          "slow_corners": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slow Corners"
+          },
+          "fast_corners": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fast Corners"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "lap_time",
+          "top_speed",
+          "speed_trap",
+          "corner_speed",
+          "slow_corners",
+          "fast_corners"
+        ],
+        "title": "SetupDriver",
+        "description": "One driver's best lap: how fast on the straights against how fast through the corners."
+      },
+      "SetupMap": {
+        "properties": {
+          "slow_limit": {
+            "type": "number",
+            "title": "Slow Limit"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/SetupDriver"
+            },
+            "type": "array",
+            "title": "Drivers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slow_limit",
+          "drivers"
+        ],
+        "title": "SetupMap",
+        "description": "Top speed against cornering speed per driver (best laps): low drag or high downforce."
       },
       "StatusPeriod": {
         "properties": {

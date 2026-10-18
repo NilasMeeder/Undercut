@@ -1050,3 +1050,27 @@ class TyreWeekend(BaseModel):
     missing: list[str]
     """Sessions of the weekend so far without data."""
     drivers: list[DriverTyres]
+
+
+class SetupDriver(BaseModel):
+    """One driver's best lap: how fast on the straights against how fast through the corners."""
+
+    driver: str
+    lap: int
+    lap_time: float
+    top_speed: float
+    """km/h, highest on the lap."""
+    speed_trap: float | None
+    corner_speed: float | None
+    """km/h, mean minimum speed over all corners."""
+    slow_corners: float | None
+    """km/h, mean minimum speed in the slow corners (below slow_limit on the quickest lap)."""
+    fast_corners: float | None
+
+
+class SetupMap(BaseModel):
+    """Top speed against cornering speed per driver (best laps): low drag or high downforce."""
+
+    slow_limit: float
+    drivers: list[SetupDriver]
+    """Quickest first; laps with a gap in their telemetry are left out."""

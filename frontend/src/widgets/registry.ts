@@ -13,6 +13,7 @@ import { pitWindowWidget } from './pitwindow/widget';
 import { positionsWidget } from './positions/widget';
 import { raceControlWidget } from './racecontrol/widget';
 import { reportWidget } from './report/widget';
+import { setupsWidget } from './setups/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
 import { stintsWidget } from './stints/widget';
 import { telemetryWidget } from './telemetry/widget';
@@ -36,6 +37,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   trackMapWidget,
   bestsWidget,
   speedTrapsWidget,
+  setupsWidget,
   timelineWidget,
   cornersWidget,
   miniSectorsWidget,

@@ -384,7 +384,8 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
 - [x] Bandensets per weekend (2026-10-18, widget Tyre sets, `/tyre-sets`): sets aan elkaar geregen op
       leeftijd. Getest op Monza 2025 Q en R
 - [ ] Bandensets: FP1-rookies aan de vaste driver koppelen (zelfde auto)
-- [ ] Topsnelheid tegen bochtsnelheid per team (afstelling: vleugelniveau)
+- [x] Topsnelheid tegen bochtsnelheid (2026-10-18, widget Speed map, `/setups`). Getest op Monza 2025 Q
+- [ ] Speed map: labels die botsen uit elkaar schuiven
 - [ ] Teamgenoten naast elkaar (Q-gat, racetempo, waar in de bochten)
 - [ ] Racetrend: tempo laatste 3/5 laps tegen voor/achter, inlopen, wanneer binnen 1 s
 - [ ] Weekendoverzicht: FP1 → Q → R per driver, long runs tegen racetempo
