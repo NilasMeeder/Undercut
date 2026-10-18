@@ -151,6 +151,16 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
       ),
     [energyLaps, data]
   );
+  /** Per lap where it clips (amber in Deploy, also above zero): the strips of the speed chart. */
+  const clipping = useMemo(
+    () =>
+      energyLaps.map((lap) => {
+        if (!data || !lap) return null;
+        const stretches = lap.straights.flatMap((s: EnergyStraightLap | null) => s?.clipping ?? []);
+        return data.distance.map((d) => stretches.some((c) => d >= c.start && d <= c.end));
+      }),
+    [energyLaps, data]
+  );
   /** Per lap where it deploys (purple), the same estimate as on the Track map. */
   const deploying = useMemo(
     () =>
@@ -181,13 +191,19 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
         ...(channel.key === 'deploy'
           ? {
               width: 1.25,
-              fill: { above: COLORS.ers, below: COLORS.clip, aboveOnly: deploying[n] ?? [] },
+              fill: {
+                above: [
+                  { color: COLORS.ers, mask: deploying[n] ?? [] },
+                  { color: COLORS.clip, mask: clipping[n] ?? [], opacity: 0.45 },
+                ],
+                below: { color: COLORS.clip, opacity: 0.7 },
+              },
             }
           : {}),
       }));
       return { channel, data: [data.distance, ...values] as uPlot.AlignedData, series };
     });
-  }, [data, styles, channels, deploy, deploying]);
+  }, [data, styles, channels, deploy, deploying, clipping]);
 
   if (laps.length === 0) return <NoLapsMessage group={group} />;
   if (error) return <PanelMessage>{error.message}</PanelMessage>;

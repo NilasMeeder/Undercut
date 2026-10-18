@@ -12,10 +12,13 @@ export type ChartSeries = {
   dash?: number[];
   stepped?: boolean;
   width?: number;
-  /** Fill to zero: one colour above, another below (Deploy: deploying vs harvesting). Above
-   * zero only where `aboveOnly` is true, when given (Deploy: more than the engine alone). */
-  fill?: { above: string; below: string; aboveOnly?: boolean[] | null };
+  /** Fill to zero, above and below it in their own colours (Deploy: deploying or clipping
+   * above, harvesting below). */
+  fill?: { above: FillPart[]; below: FillPart };
 };
+
+/** One colour of a fill, only where `mask` is true when given, at `opacity` (default 0.19). */
+export type FillPart = { color: string; mask?: boolean[] | null; opacity?: number };
 
 /** A strip along the bottom of the plot from `start` to `end` (m), one lane per lap: where a lap
  * does something worth seeing over distance (clipping), in the lap's colour. */
@@ -54,7 +57,7 @@ const NO_MARKS: DistanceMark[] = [];
 const NO_BANDS: ChartBand[] = [];
 const NO_TICKS: ChartTick[] = [];
 const TICK_SIZE = 4;
-const FILL_ALPHA = '30'; // hex: ~19% over the line colour
+const FILL_OPACITY = 0.19;
 const BAND_HEIGHT = 3;
 const BAND_GAP = 1;
 let nextChartId = 0;
@@ -153,8 +156,8 @@ function drawTicks(u: uPlot, ticks: ChartTick[]) {
   ctx.restore();
 }
 
-/** Fill a series to zero, under the lines: `above` over zero (where `aboveOnly` allows it),
- * `below` under it. Drawn by hand so the fill above zero can stop where the mask does. */
+/** Fill a series to zero, under the lines: each part of `above` over zero where its mask
+ * allows it, `below` under it. Drawn by hand so a fill can stop where its mask does. */
 function drawFills(u: uPlot, series: ChartSeries[]) {
   const { ctx } = u;
   const { left, top, width, height } = u.bbox;
@@ -163,8 +166,7 @@ function drawFills(u: uPlot, series: ChartSeries[]) {
   series.forEach((s, n) => {
     if (!s.fill) return;
     const ys = u.data[n + 1];
-    const mask = s.fill.aboveOnly;
-    const area = (keep: (i: number) => boolean) => {
+    const area = (mask: boolean[] | null | undefined) => {
       const path = new Path2D();
       let first = -1;
       const close = (last: number) => {
@@ -175,35 +177,32 @@ function drawFills(u: uPlot, series: ChartSeries[]) {
       };
       for (let i = 0; i < xs.length; i++) {
         const y = ys[i];
-        if (y == null || !keep(i)) {
+        if (y == null || (mask && mask[i] !== true)) {
           if (first >= 0) close(i - 1);
           continue;
         }
         const x = u.valToPos(xs[i], 'x', true);
-        const py = u.valToPos(y, 'y', true);
         if (first < 0) {
           first = i;
           path.moveTo(x, zero);
         }
-        path.lineTo(x, py);
+        path.lineTo(x, u.valToPos(y, 'y', true));
       }
       if (first >= 0) close(xs.length - 1);
       return path;
     };
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(left, top, width, zero - top);
-    ctx.clip();
-    ctx.fillStyle = s.fill.above + FILL_ALPHA;
-    ctx.fill(area((i) => !mask || mask[i] === true));
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(left, zero, width, top + height - zero);
-    ctx.clip();
-    ctx.fillStyle = s.fill.below + FILL_ALPHA;
-    ctx.fill(area(() => true));
-    ctx.restore();
+    const fill = (part: FillPart, y0: number, y1: number) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, y0, width, y1 - y0);
+      ctx.clip();
+      ctx.fillStyle = part.color;
+      ctx.globalAlpha = part.opacity ?? FILL_OPACITY;
+      ctx.fill(area(part.mask));
+      ctx.restore();
+    };
+    for (const part of s.fill.above) fill(part, top, zero);
+    fill(s.fill.below, zero, top + height);
   });
 }
 

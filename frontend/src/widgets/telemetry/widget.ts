@@ -23,9 +23,11 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
       'Deploy (2026, estimated): acceleration at full throttle as a share of the best laps on ' +
         'that straight at that speed: 100% is as hard as the best, 0 is not gaining. Purple ' +
         'where it gains more than the engine alone could (the battery deploying, as on the ' +
-        'Track map); a line without fill gains, but not clearly with the battery. Amber below ' +
-        'zero: losing speed at full throttle, the battery harvesting ' +
-        '("super clipping"). Empty off the throttle, in fast corners and near top speed.',
+        'Track map); a line without fill gains, but not clearly with the battery. Light amber ' +
+        'where it clips (the same stretches as the strips in the speed chart: hardly gaining ' +
+        'where the best laps still did, so it can stay just above zero). Dark amber below zero: ' +
+        'losing speed at full throttle, the battery harvesting ("super clipping"). Empty off ' +
+        'the throttle, in fast corners and near top speed.',
       'Triangles at the top of the gear chart: a downshift at full throttle above 200 km/h. ' +
         'In 2026 that keeps the engine above 10,500 rpm, where the fuel flow is at its maximum, ' +
         'while the car loses speed harvesting. Some teams do it, others let the rpm drop.',

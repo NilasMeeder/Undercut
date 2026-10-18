@@ -288,6 +288,12 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
       omhullende, maar paars alleen waar de kaart ook paars is (meer dan de motor alleen); positief
       zonder inzet = lijn zonder vulling. Getest op Monza 2026 Q (GAS L17, RUS L16: zelfde stukken
       als op de kaart)
+- [x] Kaart en Deploy (2026-10-18, Nilas): losse schakelaars "DRS zones (until 2025)" en
+      "Straights and clipping (2026)"; paars/amber op de kaart alleen na een klik op een straight
+      in Energy (niet bij elke zoom); Deploy licht amber boven nul waar de lap clipt (Nilas zag een
+      lange clipstrook in de speed-chart terwijl Deploy niet onder nul kwam: clipping is bijna geen
+      winst, onder nul is snelheid verliezen), vol amber onder nul. Getest op Monza 2026 Q (GAS L17
+      T9→T11) en Monza 2025 Q (DRS 1 en 2)
 - [ ] Inzet en clippunt nalopen met Nilas op een sessie (gevoel: paars en clippunt kloppen nog
       niet overal)
 - [ ] Clipstukken in Live lap (de lap die bezig is); Nilas: niet standaard

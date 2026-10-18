@@ -22,7 +22,7 @@ import { COLORS } from '@/lib/colors';
 import type { DistanceMark } from '@/lib/markers';
 import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
-import { cursorBus, useZoom } from '@/store/cursor';
+import { cursorBus, useZoom, useZoomKind } from '@/store/cursor';
 import { useGroupLaps, type GroupId } from '@/store/groups';
 import { useSelection } from '@/store/selection';
 import { useClockDraw } from '../hooks';
@@ -115,13 +115,23 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
     miniSectors: config.miniSectors,
   });
   const zoom = useZoom(group);
-  const zones = useZones(config.zones).data;
+  const zoomKind = useZoomKind(group);
+  const fetchedZones = useZones(config.drs || config.straights).data;
+  // One endpoint, by year: DRS zones until 2025, straights from 2026; each has its own toggle.
+  const zones =
+    fetchedZones &&
+    (fetchedZones.kind === 'drs'
+      ? config.drs
+      : config.straights && fetchedZones.kind === 'straight')
+      ? fetchedZones
+      : undefined;
   const sectors = useSectors(config.sectors).data;
   // Where each compared lap clipped (2026), on the first lap's scale like the comparison. A
   // disabled query still returns what another panel cached (Energy in 2025), hence `clips`.
-  const clips = config.zones && config.cars === 'laps' && zones?.kind === 'straight';
-  // From 2026 a zoomed stretch (a straight clicked in Energy) shows where the first lap deployed.
-  const onZoom = config.cars === 'laps' && detail?.has_drs === false && zoom != null;
+  const clips = config.cars === 'laps' && zones?.kind === 'straight';
+  // From 2026 a straight clicked in Energy shows on the map where the first lap deployed.
+  const onZoom =
+    config.cars === 'laps' && detail?.has_drs === false && zoom != null && zoomKind === 'energy';
   const fetched = useEnergy(laps, clips || onZoom).data;
   const energy = clips || onZoom ? fetched : undefined;
   const lapClips = useMemo(
@@ -150,7 +160,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         showCorners={config.corners}
         showMarks={config.markers}
         showGhosts={config.ghosts}
-        zones={config.zones ? zones : undefined}
+        zones={zones}
         sectors={config.sectors ? sectors : undefined}
       />
     );
@@ -162,8 +172,8 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       styles={styles}
       showCorners={config.corners}
       showMarks={config.markers}
-      zones={config.zones ? zones : undefined}
-      lapClips={config.zones ? lapClips : undefined}
+      zones={zones}
+      lapClips={lapClips}
       lapEnergy={lapEnergy}
       sectors={config.sectors ? sectors : undefined}
     />

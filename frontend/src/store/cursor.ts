@@ -9,11 +9,15 @@ import type { GroupId } from './groups';
  * value readouts) can use the hooks below.
  */
 export type Range = [number, number];
+/** Where a zoom came from, when that matters: `energy` = a straight clicked in Energy (the map
+ * then shows where the lap deployed and clipped). */
+export type ZoomKind = 'energy';
 type Listener = (source: string | undefined) => void;
 
 const cursors = new Map<GroupId, number | null>();
 const frozen = new Set<GroupId>();
 const zooms = new Map<GroupId, Range | null>();
+const zoomKinds = new Map<GroupId, ZoomKind | null>();
 const cursorListeners = new Map<GroupId, Set<Listener>>();
 const zoomListeners = new Map<GroupId, Set<Listener>>();
 
@@ -49,8 +53,10 @@ export const cursorBus = {
   },
 
   getZoom: (group: GroupId) => zooms.get(group) ?? null,
-  setZoom(group: GroupId, range: Range | null, source?: string) {
+  getZoomKind: (group: GroupId) => zoomKinds.get(group) ?? null,
+  setZoom(group: GroupId, range: Range | null, source?: string, kind: ZoomKind | null = null) {
     zooms.set(group, range);
+    zoomKinds.set(group, range ? kind : null);
     listenersFor(zoomListeners, group).forEach((fn) => fn(source));
   },
   subscribeZoom(group: GroupId, fn: Listener) {
@@ -78,5 +84,12 @@ export function useZoom(group: GroupId): Range | null {
   return useSyncExternalStore(
     (fn) => cursorBus.subscribeZoom(group, fn),
     () => cursorBus.getZoom(group)
+  );
+}
+
+export function useZoomKind(group: GroupId): ZoomKind | null {
+  return useSyncExternalStore(
+    (fn) => cursorBus.subscribeZoom(group, fn),
+    () => cursorBus.getZoomKind(group)
   );
 }

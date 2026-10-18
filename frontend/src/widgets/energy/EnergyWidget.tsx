@@ -255,7 +255,9 @@ function StraightRows({
   return (
     <>
       <tr
-        onClick={() => range && cursorBus.setZoom(group, zoomed ? null : range)}
+        onClick={() =>
+          range && cursorBus.setZoom(group, zoomed ? null : range, undefined, 'energy')
+        }
         className={cn('cursor-pointer border-t border-line hover:bg-raised', zoomed && 'bg-raised')}
       >
         <td className="px-1.5 pt-0.5 text-left font-semibold">{straightLabel(straight)}</td>

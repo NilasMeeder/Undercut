@@ -479,23 +479,30 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   zegt verder weinig: per versnelling vast (8e ≈ 35 rpm per km/h).
 - **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen en DOWN; SESSION:
   drivers × straights, kosten, meters of % laps met terugschakelen). Telemetry: kanaal Deploy (lijn in
-  de lapkleur, vulling amber `clip` onder nul en paars `ers` alleen waar de lap inzet volgens dezelfde
-  regel als de kaart (`EnergyLap.deploying`, een masker op het raster van `deploy`, uit
-  `energy.deploying_stretches`); positief zonder inzet = alleen de lijn. `ChartSeries.fill.aboveOnly`;
-  de vulling tekent `UPlotChart` zelf in de `drawAxes`-hook, dus onder de lijnen), instelling
+  de lapkleur; boven nul paars `ers` alleen waar de lap inzet volgens dezelfde regel als de kaart
+  (`EnergyLap.deploying`, een masker op het raster van `deploy`, uit `energy.deploying_stretches`) en
+  licht amber waar hij clipt (dezelfde stukken als de strookjes in de speed-chart, ook als de lijn net
+  boven nul blijft: clipping = bijna geen winst, niet snelheid verliezen); onder nul vol amber
+  (oogsten); positief zonder inzet of clipping = alleen de lijn. `ChartSeries.fill` met `FillPart`s
+  (kleur, masker, dekking); `UPlotChart` tekent de vulling zelf in de `drawAxes`-hook, dus onder de
+  lijnen), instelling
   "Clipping and downshifts (2026)": amberen strookjes van 3 px onderaan de speed-chart (een rij per
   lap, de eerste onderaan, `UPlotChart` `bands`), CLIP in de readout en driehoekjes in de lapkleur
   bovenin de gear-chart (`ticks`). Alleen zonder DRS (2026+), zodat een oude sessie niet al zijn
   telemetrie hoeft te lezen.
 
-- **Inzet op de kaart**: een zoombereik (klik op een straight in Energy) is op de Track map wit;
-  vanaf 2026 is het stuk van de eerste lap paars waar hij inzet en amber waar hij clipt
-  (`zoomPieces`, legenda rechtsonder). Nilas wil dat alleen op zo'n klik zien, niet standaard.
+- **Inzet op de kaart**: een zoombereik is op de Track map wit. Alleen na een klik op een straight
+  in Energy (vanaf 2026) is het stuk van de eerste lap paars waar hij inzet en amber waar hij clipt
+  (`zoomPieces`, legenda rechtsonder): de zoom onthoudt waar hij vandaan kwam
+  (`cursorBus.setZoom(…, 'energy')`, `useZoomKind`; elke andere zoom wist dat). Nilas wil het niet
+  bij elke zoom zien (slepen in een chart, Corners, Report).
 - **Sectoren op de kaart** (`/sectors`, `zones.get_sectors`, Track map-instelling "Sectors",
   standaard uit): streepjes waar S1 en S2 eindigen (mediaan over de beste laps van de 5 snelsten:
   de afstand op hun sectortijd als deel van de lap, × de laplengte van de kaart), label S1/S2/S3
   binnen de baan. Monza 2025 Q: 1894 en 3711 m.
-- **Zones op de kaart** (`zones.py`, `/zones`, Track map-instelling "Zones", standaard **uit**): een paarse
+- **Zones op de kaart** (`zones.py`, `/zones`, Track map-instellingen "DRS zones (until 2025)" en
+  "Straights and clipping (2026)", los van elkaar, standaard **uit**; `/zones` geeft per jaar het een
+  of het ander, de kaart toont het als de bijbehorende schakelaar aan staat): een paarse
   streep net buiten de baan (`outwardNormals`: weg van het midden van het circuit). Tot 2025 de
   DRS-zones: waar ≥ 50% van de beste laps van de 8 snelsten de flap open heeft (`drs` is 0/1 in de
   data), ≥ 100 m; een race (en sprint) neemt ze uit Q (SQ), want daar gaat de flap alleen open
