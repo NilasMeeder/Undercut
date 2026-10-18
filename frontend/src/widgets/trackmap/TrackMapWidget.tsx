@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Circuit, Comparison, DriverInfo } from '@/api/client';
+import type { Circuit, Comparison, DriverInfo, TrackZones } from '@/api/client';
 import {
   useCircuit,
+  useEnergy,
   useReplayPositions,
   useSessionDetail,
+  useZones,
   type PositionTrack,
 } from '@/api/queries';
 import { useDistanceMarks } from '@/api/markers';
@@ -14,6 +16,7 @@ import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
 import { cursorBus, useZoom } from '@/store/cursor';
 import { useGroupLaps, type GroupId } from '@/store/groups';
+import { useSelection } from '@/store/selection';
 import { useClockDraw } from '../hooks';
 import { useSectorFlags } from '../useSectorFlags';
 import type { WidgetProps } from '../types';
@@ -21,6 +24,9 @@ import { useGroupComparison } from '../useGroupComparison';
 import type { TrackMapConfig } from './widget';
 
 type Point = [number, number];
+type Along = { points: Point[]; distance: number[]; normals: Point[]; length: number };
+type Stretch = { start: number; end: number };
+type LapClips = { name: string; stretches: Stretch[] };
 
 const NO_GHOSTS: GhostKind[] = [];
 
@@ -45,9 +51,72 @@ function toPath(points: Point[]): string {
   return points.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(0)},${y.toFixed(0)}`).join('');
 }
 
+/** Unit normals of a closed outline, pointing away from the middle of the circuit. */
+function outwardNormals(points: Point[]): Point[] {
+  const n = points.length;
+  const normals = points.map((_, i): Point => {
+    const [ax, ay] = points[(i - 2 + n) % n];
+    const [bx, by] = points[(i + 2) % n];
+    const length = Math.hypot(bx - ax, by - ay) || 1;
+    return [-(by - ay) / length, (bx - ax) / length];
+  });
+  const cx = points.reduce((sum, p) => sum + p[0], 0) / n;
+  const cy = points.reduce((sum, p) => sum + p[1], 0) / n;
+  const out = points.reduce(
+    (sum, [x, y], i) => sum + normals[i][0] * (x - cx) + normals[i][1] * (y - cy),
+    0
+  );
+  return out < 0 ? normals.map(([x, y]) => [-x, -y]) : normals;
+}
+
+/** A stretch of the lap drawn `offset` outside the track; one before the line (start < 0) or
+ * past it wraps round. */
+function offsetPath(along: Along, { start, end }: Stretch, offset: number): string {
+  const { length } = along;
+  const pieces: [number, number][] =
+    start < 0
+      ? [
+          [start + length, length],
+          [0, end],
+        ]
+      : end > length
+        ? [
+            [start, length],
+            [0, end - length],
+          ]
+        : [[start, end]];
+  return pieces
+    .map(([a, b]) => {
+      const from = indexAt(along.distance, a);
+      const to = Math.max(indexAt(along.distance, b), from + 1);
+      return toPath(
+        along.points.slice(from, to + 1).map(([x, y], k): Point => {
+          const [nx, ny] = along.normals[from + k] ?? [0, 0];
+          return [x + nx * offset, y + ny * offset];
+        })
+      );
+    })
+    .join('');
+}
+
 export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
   const circuit = useCircuit();
-  const { data, styles } = useGroupComparison(group, { miniSectors: config.miniSectors });
+  const { laps, data, styles } = useGroupComparison(group, { miniSectors: config.miniSectors });
+  const zones = useZones(config.zones).data;
+  // Where each compared lap clipped (2026), on the first lap's scale like the comparison. A
+  // disabled query still returns what another panel cached (Energy in 2025), hence `clips`.
+  const clips = config.zones && config.cars === 'laps' && zones?.kind === 'straight';
+  const energy = useEnergy(laps, clips).data;
+  const lapClips = useMemo(
+    () =>
+      clips
+        ? energy?.laps.map((lap) => ({
+            name: `${lap.driver} L${lap.lap}`,
+            stretches: lap.straights.flatMap((s) => s?.clipping ?? []),
+          }))
+        : undefined,
+    [clips, energy]
+  );
 
   if (circuit.error) return <PanelMessage>{circuit.error.message}</PanelMessage>;
   if (!circuit.data) return <PanelMessage>Loading circuit…</PanelMessage>;
@@ -59,6 +128,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         showCorners={config.corners}
         showMarks={config.markers}
         showGhosts={config.ghosts}
+        zones={config.zones ? zones : undefined}
       />
     );
   return (
@@ -69,6 +139,8 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       styles={styles}
       showCorners={config.corners}
       showMarks={config.markers}
+      zones={config.zones ? zones : undefined}
+      lapClips={config.zones ? lapClips : undefined}
     />
   );
 }
@@ -80,12 +152,14 @@ function ReplayMap({
   showCorners,
   showMarks,
   showGhosts,
+  zones,
 }: {
   group: GroupId;
   circuit: Circuit;
   showCorners: boolean;
   showMarks: boolean;
   showGhosts: boolean;
+  zones?: TrackZones;
 }) {
   const { status, track, error } = useReplayPositions();
   const detail = useSessionDetail();
@@ -111,6 +185,7 @@ function ReplayMap({
       note={loading}
       cars={track && detail.data ? { track, drivers: detail.data.drivers } : undefined}
       ghosts={ghosts}
+      zones={zones}
     />
   );
 }
@@ -125,6 +200,8 @@ function TrackMap({
   note,
   cars,
   ghosts = NO_GHOSTS,
+  zones,
+  lapClips,
 }: {
   group: GroupId;
   circuit: Circuit;
@@ -136,6 +213,9 @@ function TrackMap({
   cars?: { track: PositionTrack; drivers: DriverInfo[] };
   /** Pit stop ghosts of the drivers selected in the group (with all cars). */
   ghosts?: GhostKind[];
+  zones?: TrackZones;
+  /** Per compared lap, where it clipped. */
+  lapClips?: LapClips[];
 }) {
   const zoom = useZoom(group);
   const ghostsRef = useRef<SVGGElement>(null);
@@ -161,11 +241,15 @@ function TrackMap({
     // The outline from the start/finish line on, so lap distance only grows along it.
     const first = circuit.track_distance.indexOf(Math.min(...circuit.track_distance));
     const order = outline.map((_, i) => (first + i) % outline.length);
+    const points = order.map((i) => outline[i]);
+    const along: Along = {
+      points,
+      distance: order.map((i) => circuit.track_distance[i]),
+      normals: outwardNormals(points),
+      length: circuit.lap_length,
+    };
     return {
-      along: {
-        points: order.map((i) => outline[i]),
-        distance: order.map((i) => circuit.track_distance[i]),
-      },
+      along,
       outline: toPath(outline) + 'Z',
       viewBox: `${minX - pad} ${minY - pad} ${maxX - minX + 2 * pad} ${maxY - minY + 2 * pad}`,
       unit: size / 100,
@@ -270,6 +354,7 @@ function TrackMap({
           {note ?? 'Mini-sectors: fastest lap colours the track'}
         </div>
       ) : null}
+      {zones && zones.zones.length > 0 ? <ZoneLegend zones={zones} /> : null}
       {cars ? (
         <div ref={emptyRef} hidden className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">
           No cars on track at the session clock
@@ -283,6 +368,9 @@ function TrackMap({
           strokeWidth={u * 2.2}
           strokeLinejoin="round"
         />
+        {zones ? (
+          <ZoneLayer along={geometry.along} zones={zones} lapClips={lapClips} unit={u} />
+        ) : null}
         {markShapes.map((m) => (
           <g key={m.id} opacity={m.dim ? 0.45 : 1}>
             {m.path ? (
@@ -422,14 +510,111 @@ function TrackMap({
   );
 }
 
-/** Yellow flags at the session clock: the marshal sector drawn in yellow along the track. */
-function SectorFlags({
+const ZONE_OFFSET = 2.1;
+const ZONE_WIDTH = 0.9;
+const LANE_STEP = 1.1;
+const LANE_WIDTH = 0.6;
+
+/** DRS zones or straights as a purple stripe outside the track, amber from where the session
+ * usually clips; outside that a thin amber row per compared lap where it clipped. */
+function ZoneLayer({
   along,
+  zones,
+  lapClips,
   unit,
 }: {
-  along: { points: Point[]; distance: number[] };
+  along: Along;
+  zones: TrackZones;
+  lapClips?: LapClips[];
   unit: number;
 }) {
+  const offset = unit * ZONE_OFFSET;
+  return (
+    <g strokeLinecap="butt" strokeLinejoin="round" fill="none">
+      {zones.zones.map((zone) => (
+        <g key={zone.label}>
+          <title>
+            {zone.clip_at != null
+              ? `${zone.label}: most laps clip from ${Math.round(zone.clip_at)} m ` +
+                `(${Math.round(zone.clipping * 100)}% of clean laps)`
+              : zone.label}
+          </title>
+          <path
+            d={offsetPath(along, zone, offset)}
+            stroke={COLORS.ers}
+            strokeWidth={unit * ZONE_WIDTH}
+          />
+          {zone.clip_at != null ? (
+            <path
+              d={offsetPath(along, { start: zone.clip_at, end: zone.end }, offset)}
+              stroke={COLORS.clip}
+              strokeWidth={unit * ZONE_WIDTH}
+            />
+          ) : null}
+        </g>
+      ))}
+      {lapClips?.map(({ name, stretches }, lane) =>
+        stretches.map((stretch) => (
+          <path
+            key={`${lane}-${stretch.start}`}
+            d={offsetPath(along, stretch, offset + unit * LANE_STEP * (lane + 1))}
+            stroke={COLORS.clip}
+            strokeWidth={unit * LANE_WIDTH}
+          >
+            <title>{`${name} clips here (${Math.round(stretch.end - stretch.start)} m)`}</title>
+          </path>
+        ))
+      )}
+      {zones.kind === 'drs'
+        ? zones.zones.map((zone) => {
+            const i = indexAt(
+              along.distance,
+              zone.start < 0 ? zone.start + along.length : zone.start
+            );
+            const [x, y] = along.points[i];
+            const [nx, ny] = along.normals[i];
+            return (
+              <text
+                key={`label-${zone.label}`}
+                x={x + nx * unit * 4.5}
+                y={y + ny * unit * 4.5}
+                fill={COLORS.textFaint}
+                fontSize={unit * 2.2}
+                textAnchor="middle"
+                dominantBaseline="central"
+              >
+                {zone.label}
+              </text>
+            );
+          })
+        : null}
+    </g>
+  );
+}
+
+function ZoneLegend({ zones }: { zones: TrackZones }) {
+  const session = useSelection((s) => s.session);
+  const clips = zones.zones.some((z) => z.clip_at != null);
+  return (
+    <div className="absolute bottom-1 left-1.5 z-10 flex items-center gap-2.5 text-[10px] text-faint">
+      <span className="flex items-center gap-1">
+        <span className="h-[3px] w-3 bg-ers" />
+        {zones.kind === 'drs'
+          ? `DRS zones${zones.source && zones.source !== session ? ` (from ${zones.source})` : ''}`
+          : 'Full-throttle straights (estimate)'}
+      </span>
+      {clips ? (
+        <span className="flex items-center gap-1">
+          <span className="h-[3px] w-3 bg-clip" />
+          Most laps clip from here
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** Yellow flags at the session clock: the marshal sector drawn in yellow along the track. */
+function SectorFlags({ along, unit }: { along: Along; unit: number }) {
   const flags = useSectorFlags();
   return (
     <>

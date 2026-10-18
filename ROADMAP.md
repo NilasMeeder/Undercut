@@ -276,7 +276,11 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
 - [ ] AT CLOCK voor Energy: SESSION en de omhullende alleen uit laps tot de klok
 - [ ] Slipstream uit de omhullende houden (`DistanceToDriverAhead` staat alleen in het archief)
 - [ ] Clipping per lap over een stint/race als lap-chart (waar spaart of oogst een driver, en wanneer)
-- [ ] Clipstukken op de Track map en in Live lap (de lap die bezig is)
+- [x] Zones op de Track map (2026-10-18, Nilas): paars de DRS-zones (tot 2025, een race uit Q) of
+      de straights (2026), amber vanaf waar de sessie meestal clipt, en per vergeleken lap waar hij
+      clipte. Getest op Monza 2025 Q en R (Pitwall, alle auto's) en Monza 2026 Q
+- [ ] Clipstukken in Live lap (de lap die bezig is)
+- [ ] Officiële straight-mode-zones per circuit (FIA-documenten, met de hand) naast de geschatte straights
 - [x] **Terugschakelen bij vol gas** (2026-10-18, Nilas' vraag of rpm meer zegt): rpm per
       versnelling ligt vast (8e ≈ 35, 7e ≈ 39,4, 6e ≈ 45 rpm per km/h), dus rpm alleen zegt weinig.
       Terugschakelen bij vol gas boven 200 km/h wel: het komt bijna altijd **ná het clippunt**,

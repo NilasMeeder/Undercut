@@ -12,6 +12,7 @@ import {
   type Degradation,
   type EnergyComparison,
   type EnergySession,
+  type TrackZones,
   type SessionReport,
   type Lap,
   type LapProgress,
@@ -94,6 +95,8 @@ export const useReport = (enabled = true) => useSessionQuery<SessionReport>('/re
 
 export const useEnergySession = (enabled = true) =>
   useSessionQuery<EnergySession>('/energy/session', enabled);
+/** DRS zones (until 2025) or the straights with where the session clips (2026), for the map. */
+export const useZones = (enabled = true) => useSessionQuery<TrackZones>('/zones', enabled);
 
 export type ProgressReference = 'previous' | 'best';
 

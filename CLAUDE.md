@@ -146,6 +146,7 @@ backend/app/progress.py    de lap die bezig is op t (replay: afgeknipt, live: ui
 backend/app/energy.py      pure energie-logica (2026): kinematica op een tijdraster (a uit de snelheid, helling,
                            dwarsversnelling), vol-gas-stukken, omhullende per straight, clipping en de kosten;
                            energies.py: per sessie (schone laps, cache per lap die generaties overleeft)
+backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
                            pure functies (long_runs, start_moves, stop_extremes, undercuts, flags) getest
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
@@ -474,6 +475,16 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   lap, de eerste onderaan, `UPlotChart` `bands`), CLIP in de readout en driehoekjes in de lapkleur
   bovenin de gear-chart (`ticks`). Alleen zonder DRS (2026+), zodat een oude sessie niet al zijn
   telemetrie hoeft te lezen.
+
+- **Zones op de kaart** (`zones.py`, `/zones`, Track map-instelling "Zones", standaard aan): een paarse
+  streep net buiten de baan (`outwardNormals`: weg van het midden van het circuit). Tot 2025 de
+  DRS-zones: waar ≥ 50% van de beste laps van de 8 snelsten de flap open heeft (`drs` is 0/1 in de
+  data), ≥ 100 m; een race (en sprint) neemt ze uit Q (SQ), want daar gaat de flap alleen open
+  achter een andere auto. Vanaf 2026 de straights van Energy (mediaan begin en eind; begin < 0 =
+  vóór de lijn, de kaart knipt dat rond) met amber vanaf de mediaan van `clip_at` als ≥ 50% van de
+  schone laps clipt. De officiële straight-mode-zones staan niet in de data. Met vergeleken laps
+  daarbuiten een dun amber rijtje per lap waar die clipte (`/energy?laps=`, eerste lap het dichtst
+  bij de baan). Let op: een uitgeschakelde TanStack-query geeft wel de cache van een ander paneel.
 
 ## Werkplekken (fase 9)
 

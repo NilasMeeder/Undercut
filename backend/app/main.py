@@ -22,6 +22,7 @@ from app import (
     store,
     strategies,
     strategy,
+    zones,
 )
 from app.live import record, recorder
 from app.live import service as live
@@ -56,6 +57,7 @@ from app.schemas import (
     TagCount,
     Telemetry,
     TimingState,
+    TrackZones,
     View,
     ViewIn,
     Weather,
@@ -431,6 +433,12 @@ def session_report(year: int, round: int, session: SessionCode) -> SessionReport
     """Things worth looking at in the session, each with the comparison that shows it. The first
     request reads the best laps' telemetry (and in 2026 every clean lap, for clipping)."""
     return _guard(lambda: reports.get_report(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/zones")
+def track_zones(year: int, round: int, session: SessionCode) -> TrackZones:
+    """DRS zones (until 2025) or the straights with where the session clips (2026), for the map."""
+    return _guard(lambda: zones.get_zones(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/energy/session")

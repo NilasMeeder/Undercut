@@ -355,6 +355,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Track Zones
+         * @description DRS zones (until 2025) or the straights with where the session clips (2026), for the map.
+         */
+        get: operations["track_zones_api_sessions__year___round___session__zones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/energy/session": {
         parameters: {
             query?: never;
@@ -1771,6 +1791,40 @@ export interface components {
             /** Current */
             current: boolean;
         };
+        /**
+         * TrackZone
+         * @description A stretch to mark along the track. Distances in metres from the line on a lap of the
+         *     session's usual length; a start below zero runs on from the previous lap.
+         */
+        TrackZone: {
+            /** Label */
+            label: string;
+            /** Corner */
+            corner?: string | null;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Clip At */
+            clip_at?: number | null;
+            /**
+             * Clipping
+             * @default 0
+             */
+            clipping: number;
+        };
+        /** TrackZones */
+        TrackZones: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "drs" | "straight" | "none";
+            /** Source */
+            source?: string | null;
+            /** Zones */
+            zones: components["schemas"]["TrackZone"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2591,6 +2645,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    track_zones_api_sessions__year___round___session__zones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackZones"];
                 };
             };
             /** @description Validation Error */

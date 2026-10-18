@@ -365,6 +365,32 @@ class EnergySession(BaseModel):
     clean_laps: int
 
 
+class TrackZone(BaseModel):
+    """A stretch to mark along the track. Distances in metres from the line on a lap of the
+    session's usual length; a start below zero runs on from the previous lap."""
+
+    label: str
+    """'DRS 1', or 'T11 → T1' for a straight (from the corner it starts at to the one it brakes
+    for, as in Energy)."""
+    corner: str | None = None
+    """A straight: the corner it brakes for (as in /energy)."""
+    start: float
+    end: float
+    clip_at: float | None = None
+    """A straight: where most clean laps start to clip (median), when most of them do."""
+    clipping: float = 0.0
+    """A straight: share of the clean laps that clip on it (0–1)."""
+
+
+class TrackZones(BaseModel):
+    kind: Literal["drs", "straight", "none"]
+    """DRS zones until 2025; from 2026 (no DRS) the straights at full throttle (an estimate:
+    the official straight-mode zones are not in the data)."""
+    source: str | None = None
+    """The session the zones come from (a race takes its DRS zones from qualifying)."""
+    zones: list[TrackZone]
+
+
 class Corner(BaseModel):
     label: str
     distance: float

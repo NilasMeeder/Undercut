@@ -1517,6 +1517,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/zones": {
+      "get": {
+        "summary": "Track Zones",
+        "description": "DRS zones (until 2025) or the straights with where the session clips (2026), for the map.",
+        "operationId": "track_zones_api_sessions__year___round___session__zones_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackZones"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/energy/session": {
       "get": {
         "summary": "Energy Session",
@@ -6113,6 +6181,94 @@
           "current"
         ],
         "title": "TowerSector"
+      },
+      "TrackZone": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "corner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corner"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "clip_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip At"
+          },
+          "clipping": {
+            "type": "number",
+            "title": "Clipping",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "start",
+          "end"
+        ],
+        "title": "TrackZone",
+        "description": "A stretch to mark along the track. Distances in metres from the line on a lap of the\nsession's usual length; a start below zero runs on from the previous lap."
+      },
+      "TrackZones": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "drs",
+              "straight",
+              "none"
+            ],
+            "title": "Kind"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/TrackZone"
+            },
+            "type": "array",
+            "title": "Zones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "zones"
+        ],
+        "title": "TrackZones"
       },
       "ValidationError": {
         "properties": {
