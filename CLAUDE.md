@@ -30,7 +30,9 @@ sessie (zie "Live"). Fase 8 (energie 2026) is gebouwd: waar een auto bij vol gas
 wint terwijl de beste laps op die straight dat wel deden (clipping), en wat dat kost; widget Energy,
 strookjes in de speed-chart, kanaal Deploy en terugschakelen bij vol gas (zie "Energie"). Fase 9 is
 gebouwd: twee werkplekken, Analyse en Pitwall, elk met eigen tabs, en het sessieverslag Report in de
-preset Debrief (zie "Werkplekken").
+preset Debrief (zie "Werkplekken"). Fase 10 (2026-10-18): Q-cut en voorspelde laptijd in de tower,
+Qualifying-presets (Analyse en Pitwall), Mini-sectors, Tyre sets, Speed map, Teammates, Battles,
+Weekend en Release (zie ROADMAP.md fase 10 en de secties hieronder).
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
