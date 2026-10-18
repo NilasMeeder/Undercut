@@ -4,6 +4,7 @@ import { suggestName } from '@/features/views/views';
 import { useSaveCurrentView } from '@/features/views/hooks';
 import { useActiveLinkGroup, useDashboardApi } from '@/dashboard/api';
 import { cn } from '@/lib/utils';
+import { tabWorkspace, useDashboards } from '@/store/dashboards';
 import { GROUP_COLORS } from '@/store/groups';
 import { buildCommands, type Command } from './commands';
 import { useLapsAtClock } from '@/widgets/useLapsAtClock';
@@ -25,6 +26,12 @@ export function CommandPalette() {
   const views = useViews();
   const { save } = useSaveCurrentView();
   const [open, setOpen] = useState(false);
+  const allTabs = useDashboards((s) => s.tabs);
+  const workspace = useDashboards((s) => s.workspace);
+  const tabs = useMemo(
+    () => allTabs.filter((t) => tabWorkspace(t) === workspace),
+    [allTabs, workspace]
+  );
 
   const commands = useMemo(
     () =>
@@ -34,8 +41,9 @@ export function CommandPalette() {
         laps: laps.data ?? [],
         views: views.data ?? [],
         saveView: () => void save(suggestName(group)),
+        tabs,
       }),
-    [api, group, laps.data, views.data, save]
+    [api, group, laps.data, views.data, save, tabs]
   );
 
   useEffect(() => {

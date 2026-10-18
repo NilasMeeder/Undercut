@@ -50,7 +50,7 @@ Valkuilen bij het headless testen:
 - Werkplek: de tab-preset bepaalt de werkplek (`replay`/`pitwall` → Pitwall, de rest → Analyse), dus
   de truc hieronder opent vanzelf in Pitwall; `?ws=analysis` of `?ws=pitwall` in de URL dwingt het
   af. In Pitwall staat de AT CLOCK-schakelaar niet in de klokbalk en zijn de panelen op slot (de
-  tandwielen verschijnen pas na een klik op EDIT). Wisselen: toets `w`. Report: preset `debrief`,
+  tandwielen verschijnen pas na een klik op EDIT). Wisselen: toets `w`; tabs: `1`–`9`. Report: preset `debrief`,
   regels zijn knoppen (`getByRole('button', { name: /loses 0.143/ })`).
 - Replay: zet ook `localStorage['f1dash-dashboards'] =
   {"state":{"tabs":[{"id":"t1","name":"Replay","layout":null,"preset":"replay"}],"active":"t1"},"version":0}`
@@ -500,6 +500,9 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   race, anders Live lap); de tower staat op `size: 'fit'` (CSS `zoom` tot 2,4× zodat hij het paneel vult).
 - **Analyse**: bij binnenkomst de klok op het einde; preset **Debrief** = Report + Delta,
   Telemetry, kaart, Corners/Race pace.
+- **Dashboards per werkplek**: elke werkplek heeft zijn eigen tabs (ook Pitwall: + voor een preset
+  of "Duplicate this dashboard", `duplicate` zet de kopie ernaast). Toetsen **1–9** = de n-de tab van
+  de werkplek waar je staat (het cijfer staat klein in de tab), ook in de palette.
 - **Klok per werkplek** (`features/workspace/useWorkspaceClock.ts`): bij het wisselen wordt de stand
   (t, spelen, live volgen) van de oude werkplek bewaard en die van de nieuwe teruggezet; een nieuwe
   sessie vergeet ze. Een gepauzeerde klok op het einde blijft op het einde als het bereik groeit

@@ -7,7 +7,7 @@ import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
 import { useAtClock } from '@/store/atClock';
 import { clock } from '@/store/clock';
-import { useDashboards } from '@/store/dashboards';
+import { useDashboards, type DashboardTab } from '@/store/dashboards';
 import { cursorBus } from '@/store/cursor';
 import { useGroups, type GroupId, type LapRef } from '@/store/groups';
 import { WIDGETS } from '@/widgets/registry';
@@ -29,10 +29,19 @@ export type CommandContext = {
   laps: Lap[];
   views: View[];
   saveView: () => void;
+  /** The dashboard tabs of this window's workspace, in order. */
+  tabs: DashboardTab[];
 };
 
 /** Every command, for the palette and the shortcuts. Lap commands act on the last selected lap. */
-export function buildCommands({ api, group, laps, views, saveView }: CommandContext): Command[] {
+export function buildCommands({
+  api,
+  group,
+  laps,
+  views,
+  saveView,
+  tabs,
+}: CommandContext): Command[] {
   const groups = useGroups.getState;
   const selected = () => groups().laps[group];
   const last = () => selected().at(-1);
@@ -143,6 +152,22 @@ export function buildCommands({ api, group, laps, views, saveView }: CommandCont
       run: () => {
         const { workspace, setWorkspace } = useDashboards.getState();
         setWorkspace(workspace === 'pitwall' ? 'analysis' : 'pitwall');
+      },
+    },
+    ...tabs.slice(0, 9).map((tab, i) => ({
+      id: `dashboard-${i + 1}`,
+      section: 'Dashboards',
+      title: `Go to dashboard ${tab.name}`,
+      key: String(i + 1),
+      run: () => useDashboards.getState().activate(tab.id),
+    })),
+    {
+      id: 'dashboard-duplicate',
+      section: 'Dashboards',
+      title: 'Duplicate this dashboard (a variant to change)',
+      run: () => {
+        const { active, duplicate } = useDashboards.getState();
+        duplicate(active);
       },
     },
     {

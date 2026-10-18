@@ -39,6 +39,8 @@ type DashboardsState = {
   editing: boolean;
   setEditing: (editing: boolean) => void;
   add: (name: string, preset: PresetId) => void;
+  /** A copy of a tab (layout and all) right after it, made active: a variant of a board. */
+  duplicate: (id: string) => void;
   rename: (id: string, name: string) => void;
   remove: (id: string) => void;
   activate: (id: string) => void;
@@ -146,6 +148,18 @@ export const useDashboards = create<DashboardsState>()(
           const tab = { id: newId(), name, layout: null, preset, workspace: s.workspace };
           return {
             tabs: [...s.tabs, tab],
+            active: tab.id,
+            actives: { ...s.actives, [s.workspace]: tab.id },
+          };
+        }),
+      duplicate: (id) =>
+        set((s) => {
+          const at = s.tabs.findIndex((t) => t.id === id);
+          if (at < 0) return s;
+          const { viewId: _view, ...original } = s.tabs[at];
+          const tab = { ...original, id: newId(), name: `${original.name} 2` };
+          return {
+            tabs: [...s.tabs.slice(0, at + 1), tab, ...s.tabs.slice(at + 1)],
             active: tab.id,
             actives: { ...s.actives, [s.workspace]: tab.id },
           };

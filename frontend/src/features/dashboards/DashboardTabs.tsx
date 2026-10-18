@@ -53,13 +53,22 @@ function PresetList({
 /** Dashboard tabs of this workspace in the top bar: each has its own layout. Double-click a tab
  * to rename it. */
 export function DashboardTabs() {
-  const { tabs: all, active, activate, rename, remove, add, workspace } = useDashboards();
+  const {
+    tabs: all,
+    active,
+    activate,
+    rename,
+    remove,
+    add,
+    duplicate,
+    workspace,
+  } = useDashboards();
   const tabs = all.filter((t) => tabWorkspace(t) === workspace);
   const [editing, setEditing] = useState<string | null>(null);
 
   return (
     <div className="flex items-center" role="tablist" aria-label="Dashboards">
-      {tabs.map((tab) => (
+      {tabs.map((tab, i) => (
         <div
           key={tab.id}
           className={cn(
@@ -87,11 +96,14 @@ export function DashboardTabs() {
               type="button"
               role="tab"
               aria-selected={tab.id === active}
-              title="Double-click to rename"
+              title={
+                i < 9 ? `${tab.name} (${i + 1}); double-click to rename` : 'Double-click to rename'
+              }
               onClick={() => activate(tab.id)}
               onDoubleClick={() => setEditing(tab.id)}
-              className="h-full px-2 text-[11px]"
+              className="flex h-full items-center gap-1 px-2 text-[11px]"
             >
+              {i < 9 ? <span className="text-[9px] tabular-nums text-faint">{i + 1}</span> : null}
               {tab.name}
             </button>
           )}
@@ -111,6 +123,18 @@ export function DashboardTabs() {
       <HeaderMenu icon={<Plus className="h-3.5 w-3.5" />} title="New dashboard" align="right">
         {(close) => (
           <div className="py-0.5">
+            <button
+              type="button"
+              className={menuItem}
+              onClick={() => {
+                close();
+                duplicate(active);
+              }}
+            >
+              <div className="text-text">Duplicate this dashboard</div>
+              <div className="text-[10px] text-faint">A copy of this layout, to change</div>
+            </button>
+            <div className="my-0.5 border-t border-line" />
             <PresetList
               heading="New dashboard from"
               onPick={(p) => {

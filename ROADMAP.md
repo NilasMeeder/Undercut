@@ -341,6 +341,8 @@ Ontwerp (2026-10-18):
 - [x] Corners/Delta (2026-10-18): een lap met een gat in de telemetrie (lengte > 0,5% anders dan een
       normale lap van de sessie) meldt dat in plaats van een onzin-verlies te tonen. Getest op Monza
       2026 Q (GAS L17: +107 m)
+- [x] Meerdere Pitwall-borden snel wisselen (2026-10-18, Nilas): toetsen 1–9 per werkplek (cijfer in
+      de tab), "Duplicate this dashboard" om een variant te maken. Getest in Pitwall (Monza 2025 R)
 - [ ] Presets naar schermgrootte ook voor Analyse (nu alleen Pitwall)
 - [ ] Tweede venster: selectie en klok delen tussen vensters (BroadcastChannel), nu los
 
