@@ -30,10 +30,6 @@ from app.sources import tracinginsights as ti
 CORNER_DRIVERS = 10
 """Best laps of this many drivers (quickest first) are held against the fastest lap."""
 
-LENGTH_SLACK = 0.005
-"""A lap whose telemetry is longer or shorter than the median by more than this share has a
-hole or a glitch in its distance (Monza 2026 Q, GAS L17: 110 m too long): left out."""
-
 LONG_RUN = 5
 """Laps at pace on one set from which a practice stint is a long run."""
 
@@ -288,7 +284,7 @@ def _corners(year: int, round_number: int, code: str, laps: list[Lap]) -> list[R
     if len(traces) < 2:
         return []
     median = float(np.median([t.length for _, t in traces]))
-    traces = [(lap, t) for lap, t in traces if abs(t.length / median - 1) <= LENGTH_SLACK]
+    traces = [(lap, t) for lap, t in traces if analysis.length_off(t.length, median) is None]
     if len(traces) < 2:
         return []
     corners = [(c.label, c.distance) for c in circuit.corners]

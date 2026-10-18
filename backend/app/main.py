@@ -339,14 +339,20 @@ def compare_laps(
         except SourceNotAvailable:
             corners = []
 
+        typical = sessions.typical_lap_length(year, round, session)
         compared = []
-        for (code, number), lap, delta in zip(resolved, result.laps, result.deltas, strict=True):
+        for (code, number), trace, lap, delta in zip(
+            resolved, traces, result.laps, result.deltas, strict=True
+        ):
             ch = lap.channels
+            off = analysis.length_off(trace.length, typical)
             compared.append(
                 ComparedLap(
                     driver=code,
                     lap=number,
                     lap_time=sessions.lap_time(year, round, session, code, number),
+                    length=float(np.round(trace.length, 1)),
+                    length_off=None if off is None else float(np.round(off, 1)),
                     time=_rounded(lap.time, 3),
                     delta=_rounded(delta, 3),
                     speed=_rounded(ch["speed"], 1),

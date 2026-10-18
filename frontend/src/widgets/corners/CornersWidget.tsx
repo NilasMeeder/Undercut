@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ComparedLap, CornerLap, CornerSegment } from '@/api/client';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
-import { explainCorner, THRESHOLDS } from '@/lib/insights';
+import { explainCorner, lengthOffNote, THRESHOLDS } from '@/lib/insights';
 import { td, th } from '@/lib/table';
 import type { LapStyle } from '@/lib/timing';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ export function CornersWidget({ group, config }: WidgetProps<CornersConfig>) {
     return <PanelMessage>No corner data for this circuit.</PanelMessage>;
 
   const index = Math.min(picked, data.laps.length - 1);
+  const notes = [data.laps[0], data.laps[index]].map(lengthOffNote).filter((n) => n != null);
   return (
     <div className="flex h-full flex-col">
       {data.laps.length > 2 ? (
@@ -54,15 +55,23 @@ export function CornersWidget({ group, config }: WidgetProps<CornersConfig>) {
           </span>
         </div>
       ) : null}
-      <CornerTable
-        group={group}
-        corners={data.corners}
-        reference={data.laps[0]}
-        lap={data.laps[index]}
-        index={index}
-        styles={styles}
-        config={config}
-      />
+      {notes.length > 0 ? (
+        <div className="space-y-1 px-1.5 py-1 text-[11px] leading-snug text-dim">
+          {notes.map((note) => (
+            <p key={note}>{note}</p>
+          ))}
+        </div>
+      ) : (
+        <CornerTable
+          group={group}
+          corners={data.corners}
+          reference={data.laps[0]}
+          lap={data.laps[index]}
+          index={index}
+          styles={styles}
+          config={config}
+        />
+      )}
     </div>
   );
 }

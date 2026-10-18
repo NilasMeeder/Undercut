@@ -610,6 +610,10 @@ export interface components {
             lap: number;
             /** Lap Time */
             lap_time: number | null;
+            /** Length */
+            length: number;
+            /** Length Off */
+            length_off: number | null;
             /** Time */
             time: number[];
             /** Delta */

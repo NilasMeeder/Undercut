@@ -2362,6 +2362,21 @@
             ],
             "title": "Lap Time"
           },
+          "length": {
+            "type": "number",
+            "title": "Length"
+          },
+          "length_off": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Off"
+          },
           "time": {
             "items": {
               "type": "number"
@@ -2445,6 +2460,8 @@
           "driver",
           "lap",
           "lap_time",
+          "length",
+          "length_off",
           "time",
           "delta",
           "speed",

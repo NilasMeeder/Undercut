@@ -104,3 +104,10 @@ def test_outline_distance_without_corners_counts_decimetres() -> None:
     distance, lap_length = analysis.outline_distance(x, y, [])
     assert lap_length == pytest.approx(40.0)
     assert distance.tolist() == pytest.approx([0.0, 10.0, 20.0, 30.0])
+
+
+def test_length_off_flags_only_laps_beyond_the_slack() -> None:
+    assert analysis.length_off(5793.0, 5783.0) is None  # 0.17%: another line through the corners
+    assert analysis.length_off(5893.0, 5783.0) == pytest.approx(110.0)  # GAS L17, Monza 2026 Q
+    assert analysis.length_off(5700.0, 5783.0) == pytest.approx(-83.0)
+    assert analysis.length_off(5893.0, None) is None

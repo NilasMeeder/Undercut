@@ -49,6 +49,20 @@ class MiniSectors:
     """Per mini-sector: index of the lap that was quickest."""
 
 
+LENGTH_SLACK = 0.005
+"""A lap whose telemetry is longer or shorter than a normal lap by more than this share has a
+hole or a glitch in its distance (Monza 2026 Q, GAS L17: 110 m too long), or went another way
+(the pit lane). Stretched onto another lap, its corners land in the wrong place."""
+
+
+def length_off(length: float, typical: float | None) -> float | None:
+    """Metres longer (+) or shorter (-) than a typical lap, when that is more than LENGTH_SLACK;
+    else None."""
+    if typical is None or typical <= 0 or abs(length / typical - 1) <= LENGTH_SLACK:
+        return None
+    return length - typical
+
+
 def make_grid(length: float, step: float) -> np.ndarray:
     grid = np.arange(0.0, length, step)
     return np.append(grid, length)

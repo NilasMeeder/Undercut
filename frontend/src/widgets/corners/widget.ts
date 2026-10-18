@@ -16,6 +16,8 @@ export const cornersWidget = defineWidget<CornersConfig>({
       'The bar shows who is quicker in that corner, in their colour; the rows add up to the gap.',
       'Losing time with a higher minimum speed often means braking too early or a late throttle.',
       'Differences under 10 m or 3 km/h are greyed out: at ~4 Hz sampling they are within noise.',
+      'A lap whose telemetry is more than 0.5% longer or shorter than a normal lap (a gap in the ' +
+        'data, or the pit lane) is not compared: its corners would land in the wrong place.',
       'Brake is on/off only, so “brakes later” is about the brake point, not how hard.',
     ],
     controls:

@@ -15,6 +15,8 @@ export const deltaWidget = defineWidget<DeltaConfig>({
       'A rising line means that lap is losing time there; a falling line means it is gaining.',
       'Steep slopes are where the lap is won or lost: usually braking zones and slow corners.',
       'A long, even slope on a straight points at top speed or a poor exit from the corner before.',
+      'A length after a lap (+107 m) means its telemetry is not as long as a normal lap: a gap ' +
+        'in the data, or the pit lane. The delta along that lap is then off; at the line it is right.',
     ],
     controls:
       'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset. ' +

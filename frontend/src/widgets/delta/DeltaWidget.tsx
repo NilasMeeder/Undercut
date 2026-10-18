@@ -4,6 +4,7 @@ import { useDistanceMarks } from '@/api/markers';
 import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
 import { LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
+import { lengthOff } from '@/lib/insights';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
 import type { DeltaConfig } from './widget';
@@ -40,6 +41,19 @@ export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
             <LineSwatch color={styles[i].color} dash={styles[i].dash} />
             {lap.driver} L{lap.lap}
             <span className="text-dim">{i === 0 ? 'ref' : formatGap(lap.delta.at(-1))}</span>
+            {lap.length_off != null ? (
+              <span
+                className="text-[10px] text-faint"
+                title={
+                  `The telemetry of this lap is ${lengthOff(lap)} than a normal lap (a gap in ` +
+                  'the data, or the pit lane). Stretched onto the reference, the delta along ' +
+                  'the lap is off; at the line it is right.'
+                }
+              >
+                {lap.length_off > 0 ? '+' : '−'}
+                {Math.abs(lap.length_off).toFixed(0)} m
+              </span>
+            ) : null}
           </span>
         ))}
         <span className="ml-auto text-faint">

@@ -1,4 +1,4 @@
-import type { CornerLap } from '@/api/client';
+import type { ComparedLap, CornerLap } from '@/api/client';
 
 /**
  * Smallest differences worth naming. Telemetry is sampled at ~4 Hz, so at 300 km/h two samples are
@@ -71,4 +71,20 @@ export function explainCorner(
   const despite = causes.find((c) => c.helps !== gains);
   if (why.length === 0) return `${head}; no single cause stands out in the data.`;
   return `${head}: ${why.map((c) => c.text).join(', ')}${despite ? `, despite ${despite.despite}` : ''}.`;
+}
+
+/** "107 m longer", for a lap whose telemetry is not the length of a normal lap. */
+export function lengthOff(lap: ComparedLap): string | null {
+  if (lap.length_off == null) return null;
+  return `${Math.abs(lap.length_off).toFixed(0)} m ${lap.length_off > 0 ? 'longer' : 'shorter'}`;
+}
+
+/** Why the corners of such a lap are not compared. */
+export function lengthOffNote(lap: ComparedLap): string | null {
+  const off = lengthOff(lap);
+  if (!off) return null;
+  return (
+    `${lap.driver} L${lap.lap}: the telemetry is ${off} than a normal lap (a gap in the data, ` +
+    'or the pit lane), so its corners land in the wrong place. Pick another lap to compare corners.'
+  );
 }

@@ -185,6 +185,30 @@ def trace_from_tel(tel: dict[str, Any], year: int) -> analysis.LapTrace:
     )
 
 
+TYPICAL_DRIVERS = 5
+"""The typical lap length is the median over the best laps of this many drivers."""
+
+
+@session_cache(maxsize=16)
+def typical_lap_length(year: int, round_number: int, code: str) -> float | None:
+    """Median telemetry length (m) of the quickest drivers' best laps: what a lap without a gap
+    in its data measures in this session. None without telemetry."""
+    best: dict[str, Lap] = {}
+    for lap in get_laps(year, round_number, code):
+        if lap.lap_time is None or lap.deleted:
+            continue
+        if lap.driver not in best or lap.lap_time < best[lap.driver].lap_time:  # type: ignore[operator]
+            best[lap.driver] = lap
+    ranked = sorted(best.values(), key=lambda lap: lap.lap_time or 0)[:TYPICAL_DRIVERS]
+    lengths = []
+    for lap in ranked:
+        try:
+            lengths.append(get_trace(year, round_number, code, lap.driver, lap.lap).length)
+        except ti.SourceNotAvailable:
+            continue
+    return float(np.median(lengths)) if lengths else None
+
+
 def lap_time(year: int, round_number: int, code: str, driver: str, lap: int) -> float | None:
     for row in get_laps(year, round_number, code):
         if row.driver == driver and row.lap == lap:

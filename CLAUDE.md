@@ -409,7 +409,12 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   bestand heeft komt ook uit het geheugen; de eerste 3 s na de lijn (`HOLD`) toont hij de net
   afgeronde lap. Pit-laps (lengte > 0,5% anders) worden nooit uitgerekt; out-laps (vanaf de garage)
   tonen geen delta. Referentie "Auto": vorige lap in een race, beste lap tot t in Q/FP (de lap ervoor
-  is daar meestal een out- of cool-down lap). De frontend vraagt per hele seconde klok.
+  is daar meestal een out- of cool-down lap). De frontend vraagt per hele seconde klok, **2 s vooruit**
+  (`AHEAD`), en knipt de lijnen elk frame af op de klok (`time` per gridpunt, `setData` via
+  `UPlotChart`'s `chartRef`; y-as op het zichtbare deel): de lijn groeit vloeiend en de getallen
+  bovenin lopen per frame mee. Tot de klok op de nieuwe lap is en 3 s erna (`HOLD`) staat de
+  afgeronde lap er, apart gevraagd op zijn eindtijd − 1 ms (`precise`), met de eind-delta. Lijnen
+  zijn voor het tekenen licht gladgestreken (driehoek over ±10 m); de getallen zijn ruw.
 
 ## Energie (fase 8)
 
@@ -618,7 +623,11 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   live) heeft speed, throttle, brake, gear, rpm, x/y/z; `drs` is leeg.
 - **Telemetrie met een gat**: soms is de afstand van een lap fout (Monza 2026 Q, GAS L17 is 110 m te
   lang). Uitrekken naar de referentie verdeelt dat verkeerd, dus een bochtvergelijking met zo'n lap
-  geeft onzin. Report laat ze weg (lengte > 0,5% van de mediaan); Corners en Delta nog niet.
+  geeft onzin. `analysis.length_off` (> 0,5%, `LENGTH_SLACK`) tegen `sessions.typical_lap_length`
+  (mediaan van de beste laps van de 5 snelsten): `/compare` geeft per lap `length` en `length_off`;
+  Corners toont dan een melding in plaats van de tabel, Delta "+107 m" achter de lap. Report laat
+  ze weg (tegen de mediaan van zijn eigen laps). Een out-lap door de pitstraat kan ook afwijken
+  (Monza 2025 R, NOR L47: +41 m).
 - **Teamkleuren** komen uit `drivers.json` (`tc`) → `DriverInfo.color`. Twee drivers van hetzelfde team:
   de tweede gestippeld.
 

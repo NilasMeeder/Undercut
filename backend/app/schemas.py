@@ -189,6 +189,12 @@ class ComparedLap(BaseModel):
     driver: str
     lap: int
     lap_time: float | None
+    length: float
+    """Metres of telemetry over the lap."""
+    length_off: float | None
+    """Metres longer (+) or shorter (-) than a normal lap of this session when that is more than
+    0.5% (a gap in the data, or the pit lane): stretched onto another lap, its corners land in
+    the wrong place. Null when it is a normal length."""
     time: list[float]
     delta: list[float]
     """Seconds behind the reference (first) lap; positive = slower."""

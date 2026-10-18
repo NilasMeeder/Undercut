@@ -254,6 +254,9 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
       `_seconds`-fout van 2026-10-18. Nog niet: een kwalificatie (Q-delen, `qs`)
 - [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
 - [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
+- [x] Live lap vloeiend (2026-10-18, Nilas): 2 s vooruit gevraagd en per frame afgeknipt op de klok,
+      afgeronde lap 3 s vasthouden met de echte eind-delta, lijnen licht gladgestreken. Getest met de
+      simulator (Monza R: VER L42 +0.087 aan de lijn = laptijdverschil)
 
 ## Fase 8 — Energie (2026)
 
@@ -331,8 +334,9 @@ Ontwerp (2026-10-18):
 - [ ] Report: AT CLOCK (tijdens een live sessie: het verslag tot nu), en markeringen voor de momenten
 - [ ] Report: meer momenten (tempo-omslag, snelle lap na de stop, verkeer), long runs met brandstof
       als het weekendschema het aantal laps zegt
-- [ ] Corners/Delta: een lap met een gat in de telemetrie (lengte > 0,5% anders) melden in plaats van
-      een onzin-verlies tonen
+- [x] Corners/Delta (2026-10-18): een lap met een gat in de telemetrie (lengte > 0,5% anders dan een
+      normale lap van de sessie) meldt dat in plaats van een onzin-verlies te tonen. Getest op Monza
+      2026 Q (GAS L17: +107 m)
 - [ ] Presets naar schermgrootte ook voor Analyse (nu alleen Pitwall)
 - [ ] Tweede venster: selectie en klok delen tussen vensters (BroadcastChannel), nu los
 
