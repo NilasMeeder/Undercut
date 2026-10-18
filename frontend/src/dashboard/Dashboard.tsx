@@ -36,7 +36,9 @@ const components = Object.fromEntries(
       const config = useMemo(() => resolveConfig(widget, params.config), [params.config]);
       const setConfig = useCallback(
         (patch: WidgetConfig) =>
-          api.updateParameters({ config: diffFromDefaults({ ...config, ...patch }, widget.defaults) }),
+          api.updateParameters({
+            config: diffFromDefaults({ ...config, ...patch }, widget.defaults),
+          }),
         [api, config]
       );
       return (

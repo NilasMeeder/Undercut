@@ -207,7 +207,9 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [x] Simulator: archiefsessie → feed in tempo, voor testen zonder live sessie
 - [ ] Echte test met de F1 TV-login (Austin FP1): opnemen, live volgen, en kijken wat de echte feed
       anders doet dan de simulator (garage/OffTrack, gele vlaggen, Q-delen, rode vlag)
-- [ ] Recorder starten vanuit de topbalk (nu `make live` in een terminal)
+- [x] Recorder starten vanuit de topbalk (2026-10-18): REC met status, de sessie van nu of "opnemen
+      als hij begint" (`record.py --wait`), stoppen en de laatste logregels; eigen proces, overleeft
+      een herstart van de backend
 - [x] Late start (2026-10-18): een opname die halverwege begint geeft vanaf de instap dezelfde laps,
       lapnummers, banden en stints als het archief (`convert.joined_late`, `simulate --join`); getest
       op Monza R, Q en FP2. Ook gevonden: FastF1 vroeg Ergast bij elke omzetting (nu uit), DriverList

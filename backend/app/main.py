@@ -3,7 +3,7 @@ import gzip
 import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
 import numpy as np
@@ -12,6 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
 
 from app import analysis, progress, replays, schedule, sessions, store, strategies, strategy
+from app.live import record, recorder
 from app.live import service as live
 from app.schemas import (
     Circuit,
@@ -30,8 +31,10 @@ from app.schemas import (
     ProgressReference,
     RaceControlMessage,
     RaceHistory,
+    RecorderStatus,
     ReplayPositions,
     ReplayStatus,
+    ScheduledSession,
     SeasonEvents,
     SessionCode,
     SessionDetail,
@@ -400,6 +403,60 @@ def live_sessions() -> list[LiveSessionInfo]:
     """Recorded sessions, live ones first."""
     infos = [_live_info(s) for s in live.service.sessions.values()]
     return sorted(infos, key=lambda i: (i.state != "live", -i.year, -i.round))
+
+
+def _scheduled(found: tuple[int, int, str, datetime] | None) -> ScheduledSession | None:
+    if found is None:
+        return None
+    year, round_number, code, start = found
+    event, info = schedule.resolve_session(year, round_number, code)
+    return ScheduledSession(
+        year=year,
+        round=round_number,
+        code=code,  # type: ignore[arg-type]
+        event_name=event.name,
+        session_name=info.name,
+        start_utc=start,
+    )
+
+
+@app.get("/api/live/recorder")
+def recorder_status() -> RecorderStatus:
+    """Whether the recorder runs, and what it would record."""
+    now = datetime.now(UTC)
+    current = record.current_session(now)
+    after = current[3] + timedelta(minutes=1) if current is not None else now
+    state = recorder.running()
+    return RecorderStatus(
+        running=state is not None,
+        since=datetime.fromisoformat(state["started"]) if state else None,
+        signed_in=record.signed_in(),
+        current=_scheduled(current),
+        upcoming=_scheduled(record.upcoming_session(after)),
+        log=recorder.log_tail(),
+    )
+
+
+@app.post("/api/live/recorder")
+def recorder_start(wait: bool = False) -> RecorderStatus:
+    """Start recording the session on now; `wait`: or wait for the next one. The recorder is its
+    own process: it goes on when the backend restarts."""
+    try:
+        recorder.start(wait)
+    except recorder.RecorderBusy as error:
+        raise HTTPException(409, str(error)) from error
+    except recorder.NotSignedIn as error:
+        raise HTTPException(403, str(error)) from error
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+    return recorder_status()
+
+
+@app.delete("/api/live/recorder")
+def recorder_stop() -> RecorderStatus:
+    """Stop the recorder (it closes the recording first)."""
+    recorder.stop()
+    return recorder_status()
 
 
 @app.get(

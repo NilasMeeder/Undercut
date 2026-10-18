@@ -695,3 +695,28 @@ class LiveSessionInfo(BaseModel):
     status: str | None
     """F1's session status: Inactive, Started, Aborted, Finished, Finalised, Ends."""
     error: str | None
+
+
+class ScheduledSession(BaseModel):
+    year: int
+    round: int
+    code: SessionCode
+    event_name: str
+    session_name: str
+    start_utc: datetime
+
+
+class RecorderStatus(BaseModel):
+    """The live recorder (app/live/record.py), started from the top bar or with `make live`."""
+
+    running: bool
+    """Started from here and still going: recording, or waiting for `upcoming`."""
+    since: datetime | None
+    signed_in: bool
+    """Signed in to F1 TV (FastF1's login); without it the feed has no data."""
+    current: ScheduledSession | None
+    """The session to record now: from an hour before its start until its end."""
+    upcoming: ScheduledSession | None
+    """The next session after that."""
+    log: list[str]
+    """The last lines of the recorder's output."""

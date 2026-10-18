@@ -80,9 +80,7 @@ export function ClockWidget({ config, setConfig }: WidgetProps<ClockConfig>) {
         {!red && stopped ? <span className="text-faint">STOPPED</span> : null}
       </div>
       <div className="flex h-full min-w-0 flex-1 items-center justify-center text-pit">
-        {big != null ? (
-          <SegmentDisplay text={hms(big)} className="h-full w-full" />
-        ) : null}
+        {big != null ? <SegmentDisplay text={hms(big)} className="h-full w-full" /> : null}
       </div>
       <div className="flex w-14 shrink-0 flex-col items-start text-[10px] leading-tight">
         <button

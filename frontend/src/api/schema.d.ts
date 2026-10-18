@@ -333,6 +333,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/live/recorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recorder Status
+         * @description Whether the recorder runs, and what it would record.
+         */
+        get: operations["recorder_status_api_live_recorder_get"];
+        put?: never;
+        /**
+         * Recorder Start
+         * @description Start recording the session on now; `wait`: or wait for the next one. The recorder is its
+         *     own process: it goes on when the backend restarts.
+         */
+        post: operations["recorder_start_api_live_recorder_post"];
+        /**
+         * Recorder Stop
+         * @description Stop the recorder (it closes the recording first).
+         */
+        delete: operations["recorder_stop_api_live_recorder_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/live/{year}/{round}/{session}/events": {
         parameters: {
             query?: never;
@@ -1047,6 +1076,22 @@ export interface components {
             drivers: components["schemas"]["DriverRace"][];
         };
         /**
+         * RecorderStatus
+         * @description The live recorder (app/live/record.py), started from the top bar or with `make live`.
+         */
+        RecorderStatus: {
+            /** Running */
+            running: boolean;
+            /** Since */
+            since: string | null;
+            /** Signed In */
+            signed_in: boolean;
+            current: components["schemas"]["ScheduledSession"] | null;
+            upcoming: components["schemas"]["ScheduledSession"] | null;
+            /** Log */
+            log: string[];
+        };
+        /**
          * Rejoin
          * @description Where a car comes out after a pit stop now, if nobody else stops.
          */
@@ -1094,6 +1139,27 @@ export interface components {
             phase: string | null;
             /** Error */
             error: string | null;
+        };
+        /** ScheduledSession */
+        ScheduledSession: {
+            /** Year */
+            year: number;
+            /** Round */
+            round: number;
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            /** Event Name */
+            event_name: string;
+            /** Session Name */
+            session_name: string;
+            /**
+             * Start Utc
+             * Format: date-time
+             */
+            start_utc: string;
         };
         /** SeasonEvents */
         SeasonEvents: {
@@ -2142,6 +2208,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiveSessionInfo"][];
+                };
+            };
+        };
+    };
+    recorder_status_api_live_recorder_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderStatus"];
+                };
+            };
+        };
+    };
+    recorder_start_api_live_recorder_post: {
+        parameters: {
+            query?: {
+                wait?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recorder_stop_api_live_recorder_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderStatus"];
                 };
             };
         };

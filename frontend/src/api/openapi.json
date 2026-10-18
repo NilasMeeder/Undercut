@@ -1373,6 +1373,81 @@
         }
       }
     },
+    "/api/live/recorder": {
+      "get": {
+        "summary": "Recorder Status",
+        "description": "Whether the recorder runs, and what it would record.",
+        "operationId": "recorder_status_api_live_recorder_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecorderStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Recorder Start",
+        "description": "Start recording the session on now; `wait`: or wait for the next one. The recorder is its\nown process: it goes on when the backend restarts.",
+        "operationId": "recorder_start_api_live_recorder_post",
+        "parameters": [
+          {
+            "name": "wait",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Wait"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecorderStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Recorder Stop",
+        "description": "Stop the recorder (it closes the recording first).",
+        "operationId": "recorder_stop_api_live_recorder_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecorderStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/live/{year}/{round}/{session}/events": {
       "get": {
         "summary": "Live Events",
@@ -3853,6 +3928,68 @@
         "title": "RaceHistory",
         "description": "The session lap by lap for every driver: what gap, position and stint charts need."
       },
+      "RecorderStatus": {
+        "properties": {
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          },
+          "signed_in": {
+            "type": "boolean",
+            "title": "Signed In"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduledSession"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "upcoming": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduledSession"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "log": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Log"
+          }
+        },
+        "type": "object",
+        "required": [
+          "running",
+          "since",
+          "signed_in",
+          "current",
+          "upcoming",
+          "log"
+        ],
+        "title": "RecorderStatus",
+        "description": "The live recorder (app/live/record.py), started from the top bar or with `make live`."
+      },
       "Rejoin": {
         "properties": {
           "position": {
@@ -4000,6 +4137,55 @@
         ],
         "title": "ReplayStatus",
         "description": "Preparing the position track: every lap's telemetry is downloaded once (~10 s for a race)."
+      },
+      "ScheduledSession": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "FP1",
+              "FP2",
+              "FP3",
+              "SQ",
+              "SS",
+              "S",
+              "Q",
+              "R"
+            ],
+            "title": "Code"
+          },
+          "event_name": {
+            "type": "string",
+            "title": "Event Name"
+          },
+          "session_name": {
+            "type": "string",
+            "title": "Session Name"
+          },
+          "start_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Utc"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "round",
+          "code",
+          "event_name",
+          "session_name",
+          "start_utc"
+        ],
+        "title": "ScheduledSession"
       },
       "SeasonEvents": {
         "properties": {

@@ -130,7 +130,8 @@ backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stint
 backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
                            feed), convert.py (FastF1 → archiefvorm), service.py (opnames volgen en omzetten),
                            track.py (positiespoor dat groeit), telemetry.py (telemetrie per lap), tower.py
-                           (F1's tower uit TimingData over die uit de laps), recordings.py
+                           (F1's tower uit TimingData over die uit de laps), recorder.py (recorder als
+                           proces starten/stoppen vanuit de API), recordings.py
 backend/app/generations.py versie per sessie; session_cache = lru_cache die op die versie sleutelt (live verloopt)
 backend/app/store.py       gebruikersdata in SQLite: markeringen en views (migraties via PRAGMA user_version)
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
@@ -158,7 +159,8 @@ frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaul
                            sneltoetsen), dashboards/ (tabs, Layout-menu met presets en export/import),
                            clock/ (ClockBar onderin, useSessionClock), markers/ (MarkerEditor, actions:
                            springen en markeren), views/ (ViewsMenu, openen/opslaan, #view=-links),
-                           live/ (LiveBadge: een live sessie die niet open staat), session/FollowLatest
+                           live/ (LiveBadge: een live sessie die niet open staat, RecorderMenu: REC),
+                           session/FollowLatest
                            (laps van volgende groepen meeschuiven)
 ```
 
@@ -249,7 +251,13 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   of binnen het uur begint; neemt op tot start + 2 uur (race 4 uur), verbindt opnieuw na 5 minuten
   stilte en voegt toe (`a`), dus herstarten gaat door in dezelfde opname. **Start vóór de sessie**: de
   feed stuurt alleen wat verandert, een opname die halverwege begint mist de laps ervoor (zie "Late
-  start" hieronder: wat erna komt klopt wel).
+  start" hieronder: wat erna komt klopt wel). `--wait`: geen sessie nu, dan wachten tot een uur voor
+  de volgende. **Vanuit de topbalk** (REC, `features/live/RecorderMenu.tsx`, `live/recorder.py`,
+  `GET/POST/DELETE /api/live/recorder`, `?wait=true`): de recorder draait als eigen proces
+  (`start_new_session`), dus een herstart van de backend of Ctrl-C op `make dev` stopt hem niet; pid
+  in `<LIVE_DIR>/recorder.json`, uitvoer in `recorder.log`, stoppen = SIGINT. Starten weigert zonder
+  F1 TV-login (403, met het commando). Test de knop nooit echt (dat verbindt met F1): de API-test
+  gebruikt een slapend proces als recorder.
 - **Opslag**: `backend/data/live/<jaar>/<event>/<sessie>/` met `live.txt` (de feed zoals FastF1 hem
   schrijft), `meta.json` (jaar, ronde, code) en `converted/` (de archiefbestanden, plus `live.json` met
   het geplande aantal laps, `<DRV>/<lap>_tel.json.gz` en `track-v1.npz`). Niet in `.cache`: na afloop

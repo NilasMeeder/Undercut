@@ -28,10 +28,13 @@ export function HeaderMenu({
   align = 'right',
   side = 'below',
   width = 'w-64',
+  buttonClassName,
   children,
 }: {
   icon: ReactNode;
   title: string;
+  /** Instead of the square icon button (a text button in the top bar). */
+  buttonClassName?: string;
   align?: 'left' | 'right';
   /** 'above' for buttons at the bottom of the screen. */
   side?: 'below' | 'above';
@@ -90,7 +93,7 @@ export function HeaderMenu({
         aria-label={title}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={cn(headerButton, open && 'bg-raised text-text')}
+        className={cn(buttonClassName ?? headerButton, open && 'bg-raised text-text')}
       >
         {icon}
       </button>

@@ -62,11 +62,7 @@ function Digit({ char, x }: { char: string; x: number }) {
   return (
     <g transform={`translate(${x} 0)`}>
       {SEGMENTS.map((points, i) => (
-        <polygon
-          key={i}
-          points={points}
-          opacity={lit.includes('abcdefg'[i]) ? 1 : 0.07}
-        />
+        <polygon key={i} points={points} opacity={lit.includes('abcdefg'[i]) ? 1 : 0.07} />
       ))}
     </g>
   );
