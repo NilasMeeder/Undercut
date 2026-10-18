@@ -840,3 +840,113 @@ class RecorderStatus(BaseModel):
     """The next session after that."""
     log: list[str]
     """The last lines of the recorder's output."""
+
+
+class ReportAction(BaseModel):
+    """What a click on a line of the report opens."""
+
+    laps: list[str]
+    """DRV:lap to compare in the panel's link group, the first is the reference; empty = keep."""
+    zoom: list[float] | None
+    """[start, end] (m, on the first lap's scale) to zoom the group to."""
+    t: float | None
+    """Session time (s) to put the clock at."""
+
+
+class ReportCorner(BaseModel):
+    """Where a driver's best lap loses most to the fastest lap of the session."""
+
+    driver: str
+    lap: int
+    reference: str
+    reference_lap: int
+    gap: float
+    """Lap time behind the reference (s)."""
+    corner: str
+    """Corner segment label (as in /compare)."""
+    loss: float
+    """Seconds lost in that segment."""
+    reference_stats: CornerLap
+    stats: CornerLap
+    action: ReportAction
+
+
+class ReportRun(BaseModel):
+    """A long run in practice: at least 5 laps at pace on one set."""
+
+    driver: str
+    stint: int
+    compound: str | None
+    laps: int
+    median: float
+    """Median lap time (s) of the run, not corrected for fuel (unknown in practice)."""
+    best: float
+    slope: float | None
+    """Seconds per lap the run got slower (fuel burn and tyres together); null under 5 laps."""
+    action: ReportAction
+
+
+class ReportStint(BaseModel):
+    """A stint whose degradation stands out (fuel-corrected fit)."""
+
+    driver: str
+    stint: int
+    compound: str | None
+    slope: float
+    laps: int
+    start_lap: int
+    end_lap: int
+    action: ReportAction
+
+
+class ReportClipping(BaseModel):
+    """2026: a driver who loses most to clipping, against the one who loses least."""
+
+    driver: str
+    cost_time: float
+    """Median per clean lap (s), all straights."""
+    reference: str
+    reference_cost: float
+    corner: str
+    after: str
+    """The straight where the difference is biggest (it brakes for `corner`)."""
+    straight_cost: float
+    """Median cost on that straight (s) for `driver`."""
+    action: ReportAction
+
+
+ReportMomentKind = Literal["fast_stop", "slow_stop", "start", "undercut", "flag"]
+
+
+class ReportMoment(BaseModel):
+    """Something that happened in a race, at a moment on the clock."""
+
+    kind: ReportMomentKind
+    t: float
+    lap: int | None
+    driver: str | None
+    other: str | None
+    """The other car (undercut: the one that was passed)."""
+    value: float | None
+    """Pit lane seconds (stops), places gained or lost (start)."""
+    status: TrackStatus | None
+    """Flags: sc, vsc or red."""
+    until_lap: int | None
+    action: ReportAction
+
+
+class SessionReport(BaseModel):
+    """Things worth looking at in a session, each with the comparison that shows it."""
+
+    kind: Literal["race", "quali", "practice"]
+    corners: list[ReportCorner]
+    """Best laps against the fastest, where most time goes; quickest drivers first."""
+    long_runs: list[ReportRun]
+    """Practice only; quickest median first per compound."""
+    compounds: list[CompoundPace]
+    stints: list[ReportStint]
+    """Most degradation first, then the least."""
+    clipping: list[ReportClipping]
+    """2026 on; most cost first."""
+    moments: list[ReportMoment]
+    """Races only, in time order."""

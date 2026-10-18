@@ -12,6 +12,7 @@ import {
   type Degradation,
   type EnergyComparison,
   type EnergySession,
+  type SessionReport,
   type Lap,
   type LapProgress,
   type PitWindow,
@@ -88,6 +89,8 @@ export function useEnergy(laps: LapRef[], enabled = true, step?: number) {
     placeholderData: keepPreviousData,
   });
 }
+
+export const useReport = (enabled = true) => useSessionQuery<SessionReport>('/report', enabled);
 
 export const useEnergySession = (enabled = true) =>
   useSessionQuery<EnergySession>('/energy/session', enabled);

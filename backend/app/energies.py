@@ -114,7 +114,7 @@ def clean_laps(laps: list[Lap]) -> list[Lap]:
     return [lap for lap in clean if lap.lap_time is not None and lap.lap_time <= best * CLEAN_PACE]
 
 
-def _prefetch(year: int, round_number: int, code: str, laps: list[Lap]) -> None:
+def prefetch_laps(year: int, round_number: int, code: str, laps: list[Lap]) -> None:
     event, session = sessions.folders(year, round_number, code)
     if recordings.has_recording(year, event, session):
         return  # a recording has its telemetry on disk, and TracingInsights does not have it
@@ -128,7 +128,7 @@ def _prefetch(year: int, round_number: int, code: str, laps: list[Lap]) -> None:
 def get_session(year: int, round_number: int, code: str) -> SessionEnergy:
     laps = sessions.get_laps(year, round_number, code)
     clean = clean_laps(laps)
-    _prefetch(year, round_number, code, clean)
+    prefetch_laps(year, round_number, code, clean)
 
     found: dict[tuple[str, int], LapRuns] = {}
     for lap in clean:

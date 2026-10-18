@@ -13,9 +13,9 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met eenentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Energy, Clock, Race control, Weather, Timing
-tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met tweeëntwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Energy, Report, Clock, Race control, Weather,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -27,8 +27,10 @@ Verder in fase 7: Clock als digitale klok (lokale tijd op het circuit of sessiek
 (een opname die halverwege begint klopt vanaf de instap), de tower live uit TimingData met F1's
 mini-sectoren, en REC in de topbalk om de recorder te starten of te laten wachten op de volgende
 sessie (zie "Live"). Fase 8 (energie 2026) is gebouwd: waar een auto bij vol gas geen snelheid meer
-wint terwijl de beste laps op die straight dat wel deden (clipping), en wat dat kost; widget Energy
-en strookjes in de speed-chart (zie "Energie").
+wint terwijl de beste laps op die straight dat wel deden (clipping), en wat dat kost; widget Energy,
+strookjes in de speed-chart, kanaal Deploy en terugschakelen bij vol gas (zie "Energie"). Fase 9 is
+gebouwd: twee werkplekken, Analyse en Pitwall, elk met eigen tabs, en het sessieverslag Report in de
+preset Debrief (zie "Werkplekken").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -45,6 +47,11 @@ Valkuilen bij het headless testen:
   `hasText` matcht ook beschrijvingen ("Corners" zit in de beschrijving van Track map).
 - `getByRole('tab')` vindt ook de dockview-tabs; de dashboard-tabs zitten in `[aria-label=Dashboards]`.
 - Popout: `ctx.waitForEvent('page')` rond de klik op "Open in a separate window".
+- Werkplek: de tab-preset bepaalt de werkplek (`replay`/`pitwall` → Pitwall, de rest → Analyse), dus
+  de truc hieronder opent vanzelf in Pitwall; `?ws=analysis` of `?ws=pitwall` in de URL dwingt het
+  af. In Pitwall staat de AT CLOCK-schakelaar niet in de klokbalk en zijn de panelen op slot (de
+  tandwielen verschijnen pas na een klik op EDIT). Wisselen: toets `w`. Report: preset `debrief`,
+  regels zijn knoppen (`getByRole('button', { name: /loses 0.143/ })`).
 - Replay: zet ook `localStorage['f1dash-dashboards'] =
   {"state":{"tabs":[{"id":"t1","name":"Replay","layout":null,"preset":"replay"}],"active":"t1"},"version":0}`
   en wacht op de tekst `LAP` (race) of `Q1`/`Q2`/`Q3`. De klok staat bij het laden op het einde; klik
@@ -139,6 +146,8 @@ backend/app/progress.py    de lap die bezig is op t (replay: afgeknipt, live: ui
 backend/app/energy.py      pure energie-logica (2026): kinematica op een tijdraster (a uit de snelheid, helling,
                            dwarsversnelling), vol-gas-stukken, omhullende per straight, clipping en de kosten;
                            energies.py: per sessie (schone laps, cache per lap die generaties overleeft)
+backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
+                           pure functies (long_runs, start_moves, stop_extremes, undercuts, flags) getest
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
                            pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
 backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
@@ -167,7 +176,7 @@ frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom
                            data/SegmentDisplay.tsx (7-segmentcijfers in SVG)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
                            lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), energy.ts
-                           (zinnen en namen voor Energy), table.ts,
+                           (zinnen en namen voor Energy), report.ts (zinnen voor Report), table.ts,
                            replay.ts (auto op t interpoleren, klokformaat, pit-ghosts), markers.ts (labels, plaats
                            als tekst), strategy.ts (cutoff, volgorde op t, lap-as, SC-banden)
 frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaultSelection), commands/ (⌘K en
@@ -175,6 +184,7 @@ frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaul
                            clock/ (ClockBar onderin, useSessionClock), markers/ (MarkerEditor, actions:
                            springen en markeren), views/ (ViewsMenu, openen/opslaan, #view=-links),
                            live/ (LiveBadge: een live sessie die niet open staat, RecorderMenu: REC),
+                           workspace/ (ANALYSIS | PITWALL, EDIT en schermvullend, klok per werkplek),
                            session/FollowLatest
                            (laps van volgende groepen meeschuiven)
 ```
@@ -460,6 +470,38 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   bovenin de gear-chart (`ticks`). Alleen zonder DRS (2026+), zodat een oude sessie niet al zijn
   telemetrie hoeft te lezen.
 
+## Werkplekken (fase 9)
+
+Twee werkplekken met elk **eigen tabs** (geen modus over dezelfde tabs: een analyse-layout hoort niet
+te spelen, een bord niet vol telemetrie). `store/dashboards.ts`: `DashboardTab.workspace` (oude tabs:
+de preset beslist, `tabWorkspace`), `actives` per werkplek, `workspace` per venster (`?ws=` in de URL,
+anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om). Presets hebben
+`workspaces`; het +-menu en het Layout-menu tonen eerst die van de werkplek.
+- **Pitwall**: AT CLOCK altijd aan (`atClockOn`/`useAtClockOn` in `store/atClock.ts`), panelen op slot
+  (dockview `locked` + `disableDnd`, geen knoppen in de titelbalken; EDIT ontgrendelt, `editing`),
+  geen Views/Layout in de topbalk (Layout wel tijdens EDIT), schermvullend. Preset `pitwall` kiest
+  op `window.innerWidth` (< 1700 tabs, ≥ 2400 alles naast elkaar) en de sessie (Gaps alleen in een
+  race, anders Live lap); de tower staat op `size: 'fit'` (CSS `zoom` tot 2,4× zodat hij het paneel vult).
+- **Analyse**: bij binnenkomst de klok op het einde; preset **Debrief** = Report + Delta,
+  Telemetry, kaart, Corners/Race pace.
+- **Klok per werkplek** (`features/workspace/useWorkspaceClock.ts`): bij het wisselen wordt de stand
+  (t, spelen, live volgen) van de oude werkplek bewaard en die van de nieuwe teruggezet; een nieuwe
+  sessie vergeet ze. Een gepauzeerde klok op het einde blijft op het einde als het bereik groeit
+  (`clock.atEnd`), zodat Analyse live alles blijft tonen.
+- **Tweede scherm**: het icoon naast de schakelaar opent de andere werkplek in een eigen venster
+  (`window.open` met `?ws=`); elk venster heeft zijn eigen klok, de opslag (tabs, selectie) is
+  gedeeld via localStorage maar wordt niet live gesynchroniseerd.
+- **Report** (`/report`, `reports.py`, widget `report`): de backend zoekt, de frontend schrijft
+  (`lib/report.ts`, bochten met `explainCorner`). Elk punt heeft een `ReportAction` (laps, zoom, t);
+  een klik zet de laps in de link-groep, zoomt, of zet de klok. Waar de tijd zit: beste laps van de
+  tien snelsten tegen de snelste, grootste bochtverlies; laps waarvan de telemetrie > 0,5% langer of
+  korter is dan de mediaan vallen eruit (Monza 2026 Q, GAS L17: 110 m te lang door een gat, gaf
+  iedereen 1,1 s verlies in T5). Long runs (FP): ≥ 5 schone laps binnen 107% op één set, mediaan,
+  zonder brandstofcorrectie. Degradatie: de stintfits van Race pace (≥ 8 laps). Clipping: alleen
+  2026. Race-momenten: start (≥ 3 plaatsen), snelste/traagste stop (groen, < 60 s), undercuts (achter
+  binnen 3 s, eerst gestopt, de ander ≤ 4 laps later, na beider stops ervoor; op gaps, niet posities),
+  SC/VSC/rood.
+
 ## Markeringen en views (fase 5)
 
 **Twee soorten markeringen** in één tabel, altijd per sessie (niet per circuit: layouts en afstanden
@@ -574,6 +616,9 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   Corner-nummers ook uit `get_circuit_info().corners`.
 - **Positie**: x, y en z in het archief en live in **decimeters**. De 2026-telemetrie (archief en
   live) heeft speed, throttle, brake, gear, rpm, x/y/z; `drs` is leeg.
+- **Telemetrie met een gat**: soms is de afstand van een lap fout (Monza 2026 Q, GAS L17 is 110 m te
+  lang). Uitrekken naar de referentie verdeelt dat verkeerd, dus een bochtvergelijking met zo'n lap
+  geeft onzin. Report laat ze weg (lengte > 0,5% van de mediaan); Corners en Delta nog niet.
 - **Teamkleuren** komen uit `drivers.json` (`tc`) → `DriverInfo.color`. Twee drivers van hetzelfde team:
   de tweede gestippeld.
 
@@ -629,7 +674,7 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   (`widgets/registry.ts`). Nieuwe widget = component + `widget.ts` met `defineWidget({ id, title,
   description, help, defaults, settings, component: lazy(...) })` + entry in de registry. Volgt hij
   de sessieklok, zet dan `followsClock` (of een functie van de config): afspelen op een dashboard
-  zonder zo'n paneel toont in de klokbalk "No panel here follows the clock" met "Open Replay".
+  zonder zo'n paneel toont in de klokbalk "No panel here follows the clock" met "Open Pitwall".
 - Kleine panelen (Clock): `constraints: { minimumHeight }` in de widget-definitie. `addWidget` geeft
   die door aan dockview (dat anders minimaal 100 px houdt) en ze gaan mee in de layout.
 - Dropdowns in titelbalken (`HeaderMenu`) gaan via een portal naar de body met `position: fixed`,

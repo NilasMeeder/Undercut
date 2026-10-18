@@ -76,6 +76,23 @@ function engineer(api: DockviewApi) {
   delta.group.api.setSize({ height: 160 });
 }
 
+/** Preset: the session report next to a comparison: a click on a line shows it there. */
+function debrief(api: DockviewApi) {
+  const report = addWidget(api, 'report', 'blue');
+  const telemetry = addWidget(api, 'telemetry', 'blue', {
+    referencePanel: report,
+    direction: 'right',
+  });
+  const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
+  const corners = addWidget(api, 'corners', 'blue', { referencePanel: map, direction: 'below' });
+  addWidget(api, 'pace', 'blue', { referencePanel: corners, direction: 'within' });
+  corners.api.setActive();
+  const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
+  report.group.api.setSize({ width: Math.min(Math.round(window.innerWidth * 0.32), 620) });
+  map.group.api.setSize({ width: 400, height: 300 });
+  delta.group.api.setSize({ height: 160 });
+}
+
 /** Preset: the session at a glance, no telemetry. */
 function overview(api: DockviewApi) {
   const timeline = addWidget(api, 'timeline', 'blue');
@@ -215,6 +232,14 @@ export const PRESETS = [
     description: 'Dense: every analysis panel around one comparison',
     workspaces: ['analysis'],
     apply: engineer,
+  },
+  {
+    id: 'debrief',
+    title: 'Debrief',
+    description:
+      'The session report next to delta, telemetry, map and corners: click a line to see it',
+    workspaces: ['analysis'],
+    apply: debrief,
   },
   {
     id: 'overview',

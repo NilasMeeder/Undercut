@@ -1449,6 +1449,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/report": {
+      "get": {
+        "summary": "Session Report",
+        "description": "Things worth looking at in the session, each with the comparison that shows it. The first\nrequest reads the best laps' telemetry (and in 2026 every clean lap, for clipping).",
+        "operationId": "session_report_api_sessions__year___round___session__report_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/energy/session": {
       "get": {
         "summary": "Energy Session",
@@ -4657,6 +4725,382 @@
         "title": "ReplayStatus",
         "description": "Preparing the position track: every lap's telemetry is downloaded once (~10 s for a race)."
       },
+      "ReportAction": {
+        "properties": {
+          "laps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Laps"
+          },
+          "zoom": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoom"
+          },
+          "t": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T"
+          }
+        },
+        "type": "object",
+        "required": [
+          "laps",
+          "zoom",
+          "t"
+        ],
+        "title": "ReportAction",
+        "description": "What a click on a line of the report opens."
+      },
+      "ReportClipping": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "cost_time": {
+            "type": "number",
+            "title": "Cost Time"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "reference_cost": {
+            "type": "number",
+            "title": "Reference Cost"
+          },
+          "corner": {
+            "type": "string",
+            "title": "Corner"
+          },
+          "after": {
+            "type": "string",
+            "title": "After"
+          },
+          "straight_cost": {
+            "type": "number",
+            "title": "Straight Cost"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ReportAction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "cost_time",
+          "reference",
+          "reference_cost",
+          "corner",
+          "after",
+          "straight_cost",
+          "action"
+        ],
+        "title": "ReportClipping",
+        "description": "2026: a driver who loses most to clipping, against the one who loses least."
+      },
+      "ReportCorner": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "reference_lap": {
+            "type": "integer",
+            "title": "Reference Lap"
+          },
+          "gap": {
+            "type": "number",
+            "title": "Gap"
+          },
+          "corner": {
+            "type": "string",
+            "title": "Corner"
+          },
+          "loss": {
+            "type": "number",
+            "title": "Loss"
+          },
+          "reference_stats": {
+            "$ref": "#/components/schemas/CornerLap"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/CornerLap"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ReportAction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "reference",
+          "reference_lap",
+          "gap",
+          "corner",
+          "loss",
+          "reference_stats",
+          "stats",
+          "action"
+        ],
+        "title": "ReportCorner",
+        "description": "Where a driver's best lap loses most to the fastest lap of the session."
+      },
+      "ReportMoment": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fast_stop",
+              "slow_stop",
+              "start",
+              "undercut",
+              "flag"
+            ],
+            "title": "Kind"
+          },
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          },
+          "other": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Other"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "green",
+                  "yellow",
+                  "sc",
+                  "vsc",
+                  "vsc_ending",
+                  "red",
+                  "chequered"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "until_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until Lap"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ReportAction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "t",
+          "lap",
+          "driver",
+          "other",
+          "value",
+          "status",
+          "until_lap",
+          "action"
+        ],
+        "title": "ReportMoment",
+        "description": "Something that happened in a race, at a moment on the clock."
+      },
+      "ReportRun": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "stint": {
+            "type": "integer",
+            "title": "Stint"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "median": {
+            "type": "number",
+            "title": "Median"
+          },
+          "best": {
+            "type": "number",
+            "title": "Best"
+          },
+          "slope": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slope"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ReportAction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "stint",
+          "compound",
+          "laps",
+          "median",
+          "best",
+          "slope",
+          "action"
+        ],
+        "title": "ReportRun",
+        "description": "A long run in practice: at least 5 laps at pace on one set."
+      },
+      "ReportStint": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "stint": {
+            "type": "integer",
+            "title": "Stint"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "slope": {
+            "type": "number",
+            "title": "Slope"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "start_lap": {
+            "type": "integer",
+            "title": "Start Lap"
+          },
+          "end_lap": {
+            "type": "integer",
+            "title": "End Lap"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ReportAction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "stint",
+          "compound",
+          "slope",
+          "laps",
+          "start_lap",
+          "end_lap",
+          "action"
+        ],
+        "title": "ReportStint",
+        "description": "A stint whose degradation stands out (fuel-corrected fit)."
+      },
       "ScheduledSession": {
         "properties": {
           "year": {
@@ -4892,6 +5336,73 @@
           "utc_offset"
         ],
         "title": "SessionInfo"
+      },
+      "SessionReport": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "race",
+              "quali",
+              "practice"
+            ],
+            "title": "Kind"
+          },
+          "corners": {
+            "items": {
+              "$ref": "#/components/schemas/ReportCorner"
+            },
+            "type": "array",
+            "title": "Corners"
+          },
+          "long_runs": {
+            "items": {
+              "$ref": "#/components/schemas/ReportRun"
+            },
+            "type": "array",
+            "title": "Long Runs"
+          },
+          "compounds": {
+            "items": {
+              "$ref": "#/components/schemas/CompoundPace"
+            },
+            "type": "array",
+            "title": "Compounds"
+          },
+          "stints": {
+            "items": {
+              "$ref": "#/components/schemas/ReportStint"
+            },
+            "type": "array",
+            "title": "Stints"
+          },
+          "clipping": {
+            "items": {
+              "$ref": "#/components/schemas/ReportClipping"
+            },
+            "type": "array",
+            "title": "Clipping"
+          },
+          "moments": {
+            "items": {
+              "$ref": "#/components/schemas/ReportMoment"
+            },
+            "type": "array",
+            "title": "Moments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "corners",
+          "long_runs",
+          "compounds",
+          "stints",
+          "clipping",
+          "moments"
+        ],
+        "title": "SessionReport",
+        "description": "Things worth looking at in a session, each with the comparison that shows it."
       },
       "SessionTimeline": {
         "properties": {

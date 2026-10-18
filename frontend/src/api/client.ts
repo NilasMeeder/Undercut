@@ -45,6 +45,13 @@ export type EnergyStraightLap = Schemas['EnergyStraightLap'];
 export type EnergyStraightStats = Schemas['EnergyStraightStats'];
 export type EnergySession = Schemas['EnergySession'];
 export type DriverEnergy = Schemas['DriverEnergy'];
+export type SessionReport = Schemas['SessionReport'];
+export type ReportAction = Schemas['ReportAction'];
+export type ReportCorner = Schemas['ReportCorner'];
+export type ReportRun = Schemas['ReportRun'];
+export type ReportStint = Schemas['ReportStint'];
+export type ReportClipping = Schemas['ReportClipping'];
+export type ReportMoment = Schemas['ReportMoment'];
 
 export class ApiError extends Error {
   readonly status: number;

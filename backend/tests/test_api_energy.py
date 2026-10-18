@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import energies, schedule, sessions
-from app.analysis import LapTrace
+from app.analysis import LapTrace, make_grid
 from app.live import recordings
 from app.main import app
 from app.schemas import EventInfo, SessionInfo
@@ -143,3 +143,27 @@ def test_energy_session_summary(client: TestClient) -> None:
 
 def test_energy_of_a_missing_lap_is_404(client: TestClient) -> None:
     assert client.get("/api/sessions/2026/1/Q/energy?laps=VER:9").status_code == 404
+
+
+def test_deploy_on_the_compare_grid(client: TestClient) -> None:
+    energy = client.get("/api/sessions/2026/1/Q/energy?laps=NOR:2,VER:fastest&step=5").json()
+    # /compare's grid: every 5 m over the first lap's length (the fake laps have no gear/rpm).
+    grid = make_grid(CLIPPED.length, 5.0).tolist()
+    nor, ver = (row["deploy"] for row in energy["laps"])
+    assert len(nor) == len(ver) == len(grid)
+    clip_at = energy["laps"][0]["straights"][0]["clip_at"]
+    after = [v for d, v in zip(grid, nor, strict=True) if v is not None and d > clip_at + 100]
+    assert after and max(after) < 30  # not gaining: far below the best laps
+    assert max(v for v in ver if v is not None) > 80
+    assert (
+        client.get("/api/sessions/2026/1/Q/energy?laps=NOR:2").json()["laps"][0]["deploy"] is None
+    )
+
+
+def test_session_report(client: TestClient) -> None:
+    body = client.get("/api/sessions/2026/1/Q/report").json()
+    assert body["kind"] == "quali"
+    assert body["moments"] == [] and body["long_runs"] == []
+    [clip] = body["clipping"]
+    assert (clip["driver"], clip["reference"], clip["corner"]) == ("NOR", "VER", "1")
+    assert clip["action"]["laps"][1].startswith("NOR:") and clip["action"]["zoom"] is not None

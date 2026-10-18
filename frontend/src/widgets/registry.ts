@@ -11,6 +11,7 @@ import { paceWidget } from './pace/widget';
 import { pitWindowWidget } from './pitwindow/widget';
 import { positionsWidget } from './positions/widget';
 import { raceControlWidget } from './racecontrol/widget';
+import { reportWidget } from './report/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
 import { stintsWidget } from './stints/widget';
 import { telemetryWidget } from './telemetry/widget';
@@ -36,6 +37,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   timelineWidget,
   cornersWidget,
   energyWidget,
+  reportWidget,
   clockWidget,
   raceControlWidget,
   weatherWidget,

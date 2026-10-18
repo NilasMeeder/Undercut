@@ -31,8 +31,12 @@ volgende fase voordat de vorige echt werkt.
   frontend, klok volgt live met vertraging, LIVE-knop. Getest met de simulator (Monza 2025 R en Q als
   feed); de echte test is de eerste sessie met de F1 TV-login (Austin FP1, vr 23 okt 17:30 UTC).
 - Fase 8 gebouwd (2026-10-18): energie-inzet 2026 geschat uit de versnelling bij vol gas tegen de
-  beste laps per straight (clipping en wat het kost), widget Energy, strookjes in de speed-chart.
-  Getest op Monza 2026 Q en R, Spa Q en Baku Q, en live met de simulator (Monza Q).
+  beste laps per straight (clipping en wat het kost), widget Energy, strookjes in de speed-chart,
+  kanaal Deploy en terugschakelen bij vol gas. Getest op Monza 2026 Q en R, Spa Q en Baku Q, en
+  live met de simulator (Monza Q).
+- Fase 9 gebouwd (2026-10-18): werkplekken Analyse en Pitwall met eigen tabs, Pitwall-bord per
+  schermbreedte (op slot, AT CLOCK altijd aan, schermvullend, eigen venster), sessieverslag Report
+  in de preset Debrief. Getest in headless Chrome op Monza 2025 R, Q, FP2 en Monza/Spa 2026 Q.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
@@ -287,7 +291,7 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
       leeg in snelle bochten. Clipstrookjes in de speed-chart zijn nu amber (Nilas: deploy paars,
       clipping een eigen kleur)
 
-## Fase 9 — Twee werkplekken: Analyse en Pitwall — bezig
+## Fase 9 — Twee werkplekken: Analyse en Pitwall
 
 Nilas (2026-10-18): een duidelijkere scheiding tussen echte analyse na een sessie en een pitwall-bord
 voor live of om voor de lol terug te kijken.
@@ -321,8 +325,16 @@ Ontwerp (2026-10-18):
       op 53/53, terug → lap 22)
 - [x] Pitwall (2026-10-18): preset per schermbreedte (1440, 1920, 2560 getest), op slot met EDIT,
       AT CLOCK altijd aan, schermvullend, nieuw venster; tower-instelling "Size: fill the panel"
-- [ ] Analyse: klok op het einde, Debrief-preset
-- [ ] Report (sessieverslag) met klik = vergelijking openen
+- [x] Analyse (2026-10-18): klok op het einde, preset Debrief
+- [x] Report (2026-10-18, sessieverslag, `/report`) met klik = vergelijking openen (laps, zoom of
+      klok). Getest op Monza 2025 R, Q en FP2 en Monza/Spa 2026 Q; 5 tests op de pure logica, 1 API-test
+- [ ] Report: AT CLOCK (tijdens een live sessie: het verslag tot nu), en markeringen voor de momenten
+- [ ] Report: meer momenten (tempo-omslag, snelle lap na de stop, verkeer), long runs met brandstof
+      als het weekendschema het aantal laps zegt
+- [ ] Corners/Delta: een lap met een gat in de telemetrie (lengte > 0,5% anders) melden in plaats van
+      een onzin-verlies tonen
+- [ ] Presets naar schermgrootte ook voor Analyse (nu alleen Pitwall)
+- [ ] Tweede venster: selectie en klok delen tussen vensters (BroadcastChannel), nu los
 
 ## Later / backlog
 
@@ -341,8 +353,8 @@ Ontwerp (2026-10-18):
   (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag
 
 - **Presets naar schermgrootte** (Nilas, 2026-10-18): op een groot scherm (curved monitor thuis)
-  meer panelen in de presets dan op de MacBook, bv. kiezen op `window.innerWidth`/`screen.width` bij
-  het toepassen van een preset, of een "groot"-variant per preset
+  meer panelen in de presets dan op de MacBook. Pitwall doet dit sinds fase 9 (`window.innerWidth`);
+  de analyse-presets nog niet
 
 - Remwegen en corner-fases automatisch detecteren uit speed/throttle/brake (braking point, apex, exit)
 - Team radio afspelen op de tijdlijn (OpenF1 heeft opnames)

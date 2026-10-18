@@ -16,6 +16,7 @@ from app import (
     energies,
     progress,
     replays,
+    reports,
     schedule,
     sessions,
     store,
@@ -50,6 +51,7 @@ from app.schemas import (
     SeasonEvents,
     SessionCode,
     SessionDetail,
+    SessionReport,
     SessionTimeline,
     TagCount,
     Telemetry,
@@ -416,6 +418,13 @@ def energy_laps(
         return energies.compare(year, round, session, resolved, step)
 
     return _guard(load)
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/report")
+def session_report(year: int, round: int, session: SessionCode) -> SessionReport:
+    """Things worth looking at in the session, each with the comparison that shows it. The first
+    request reads the best laps' telemetry (and in 2026 every clean lap, for clipping)."""
+    return _guard(lambda: reports.get_report(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/energy/session")

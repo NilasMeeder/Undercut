@@ -334,6 +334,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Session Report
+         * @description Things worth looking at in the session, each with the comparison that shows it. The first
+         *     request reads the best laps' telemetry (and in 2026 every clean lap, for clipping).
+         */
+        get: operations["session_report_api_sessions__year___round___session__report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/energy/session": {
         parameters: {
             query?: never;
@@ -1307,6 +1328,130 @@ export interface components {
             /** Error */
             error: string | null;
         };
+        /**
+         * ReportAction
+         * @description What a click on a line of the report opens.
+         */
+        ReportAction: {
+            /** Laps */
+            laps: string[];
+            /** Zoom */
+            zoom: number[] | null;
+            /** T */
+            t: number | null;
+        };
+        /**
+         * ReportClipping
+         * @description 2026: a driver who loses most to clipping, against the one who loses least.
+         */
+        ReportClipping: {
+            /** Driver */
+            driver: string;
+            /** Cost Time */
+            cost_time: number;
+            /** Reference */
+            reference: string;
+            /** Reference Cost */
+            reference_cost: number;
+            /** Corner */
+            corner: string;
+            /** After */
+            after: string;
+            /** Straight Cost */
+            straight_cost: number;
+            action: components["schemas"]["ReportAction"];
+        };
+        /**
+         * ReportCorner
+         * @description Where a driver's best lap loses most to the fastest lap of the session.
+         */
+        ReportCorner: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Reference */
+            reference: string;
+            /** Reference Lap */
+            reference_lap: number;
+            /** Gap */
+            gap: number;
+            /** Corner */
+            corner: string;
+            /** Loss */
+            loss: number;
+            reference_stats: components["schemas"]["CornerLap"];
+            stats: components["schemas"]["CornerLap"];
+            action: components["schemas"]["ReportAction"];
+        };
+        /**
+         * ReportMoment
+         * @description Something that happened in a race, at a moment on the clock.
+         */
+        ReportMoment: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fast_stop" | "slow_stop" | "start" | "undercut" | "flag";
+            /** T */
+            t: number;
+            /** Lap */
+            lap: number | null;
+            /** Driver */
+            driver: string | null;
+            /** Other */
+            other: string | null;
+            /** Value */
+            value: number | null;
+            /** Status */
+            status: ("green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered") | null;
+            /** Until Lap */
+            until_lap: number | null;
+            action: components["schemas"]["ReportAction"];
+        };
+        /**
+         * ReportRun
+         * @description A long run in practice: at least 5 laps at pace on one set.
+         */
+        ReportRun: {
+            /** Driver */
+            driver: string;
+            /** Stint */
+            stint: number;
+            /** Compound */
+            compound: string | null;
+            /** Laps */
+            laps: number;
+            /** Median */
+            median: number;
+            /** Best */
+            best: number;
+            /** Slope */
+            slope: number | null;
+            action: components["schemas"]["ReportAction"];
+        };
+        /**
+         * ReportStint
+         * @description A stint whose degradation stands out (fuel-corrected fit).
+         */
+        ReportStint: {
+            /** Driver */
+            driver: string;
+            /** Stint */
+            stint: number;
+            /** Compound */
+            compound: string | null;
+            /** Slope */
+            slope: number;
+            /** Laps */
+            laps: number;
+            /** Start Lap */
+            start_lap: number;
+            /** End Lap */
+            end_lap: number;
+            action: components["schemas"]["ReportAction"];
+        };
         /** ScheduledSession */
         ScheduledSession: {
             /** Year */
@@ -1397,6 +1542,29 @@ export interface components {
             start_utc: string | null;
             /** Utc Offset */
             utc_offset: number | null;
+        };
+        /**
+         * SessionReport
+         * @description Things worth looking at in a session, each with the comparison that shows it.
+         */
+        SessionReport: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "race" | "quali" | "practice";
+            /** Corners */
+            corners: components["schemas"]["ReportCorner"][];
+            /** Long Runs */
+            long_runs: components["schemas"]["ReportRun"][];
+            /** Compounds */
+            compounds: components["schemas"]["CompoundPace"][];
+            /** Stints */
+            stints: components["schemas"]["ReportStint"][];
+            /** Clipping */
+            clipping: components["schemas"]["ReportClipping"][];
+            /** Moments */
+            moments: components["schemas"]["ReportMoment"][];
         };
         /**
          * SessionTimeline
@@ -2386,6 +2554,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnergyComparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    session_report_api_sessions__year___round___session__report_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionReport"];
                 };
             };
             /** @description Validation Error */
