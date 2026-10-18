@@ -16,6 +16,7 @@ import { reportWidget } from './report/widget';
 import { setupsWidget } from './setups/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
 import { stintsWidget } from './stints/widget';
+import { teammatesWidget } from './teammates/widget';
 import { telemetryWidget } from './telemetry/widget';
 import { timelineWidget } from './timeline/widget';
 import { towerWidget } from './tower/widget';
@@ -38,6 +39,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   bestsWidget,
   speedTrapsWidget,
   setupsWidget,
+  teammatesWidget,
   timelineWidget,
   cornersWidget,
   miniSectorsWidget,

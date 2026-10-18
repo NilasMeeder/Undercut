@@ -1074,3 +1074,36 @@ class SetupMap(BaseModel):
     slow_limit: float
     drivers: list[SetupDriver]
     """Quickest first; laps with a gap in their telemetry are left out."""
+
+
+class TeammateCorner(BaseModel):
+    label: str
+    start: float
+    gap: float
+    """Seconds the second driver's best lap loses here to the first's (negative = gains)."""
+
+
+class TeammatePair(BaseModel):
+    """One team's drivers, the one with the quicker best lap first."""
+
+    team: str
+    drivers: list[str]
+    laps: list[int | None]
+    """Their best laps."""
+    best: list[float | None]
+    gap: float | None
+    """Seconds the second is behind on best lap."""
+    sectors: list[float | None]
+    """Per sector of the best laps: second minus first."""
+    top_speed: float | None
+    """km/h, second minus first, highest on the best laps."""
+    corners: list[TeammateCorner]
+    """Empty when a lap has no usable telemetry."""
+    pace: list[float | None]
+    """Race: median of the clean laps."""
+    pace_laps: list[int]
+
+
+class Teammates(BaseModel):
+    race: bool
+    teams: list[TeammatePair]

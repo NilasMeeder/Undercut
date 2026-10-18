@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met vijfentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Speed map, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met zesentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Speed map, Teammates, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -582,7 +582,12 @@ telemetrie) op de snelste lap gelegd zoals `/compare`, in bochtsegmenten
 (`analysis.corner_segments`); per driver de hoogste snelheid op de lap, de speed trap en de
 gemiddelde minimumsnelheid over alle bochten, de langzame (< 150 km/h op de snelste lap) en de
 rest. Scatter in SVG met de medianen gestippeld: linksboven weinig luchtweerstand, rechtsonder
-veel downforce. Monza 2025 Q: HUL 356 km/h / 180 km/h, PIA 346 / 190. De box van de widget wordt
+veel downforce. Monza 2025 Q: HUL 356 km/h / 180 km/h, PIA 346 / 190.
+**Teammates** (`setups.teammates`, `/teammates`, widget `teammates`) gebruikt dezelfde vergelijking
+(`setups.best_lap_corners`, gecachet per sessie): per team de snelste eerst, gat op beste lap,
+per sector, topsnelheid, de bochtsegmenten met het grootste verschil, en in een race de mediaan
+van de schone laps (`strategy.is_clean`). Monza 2025 R: VER–TSU +1,709 (pace +1,01), NOR–PIA
++0,344 maar PIA in pace 0,03 sneller. De box van de widget wordt
 altijd gerenderd: `useElementSize` meet anders nooit (de ref verschijnt pas na het laden).
 
 ## Markeringen en views (fase 5)

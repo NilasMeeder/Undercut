@@ -1465,6 +1465,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/teammates": {
+      "get": {
+        "summary": "Teammate Pairs",
+        "description": "Each team's drivers side by side.",
+        "operationId": "teammate_pairs_api_sessions__year___round___session__teammates_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Teammates"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/compare": {
       "get": {
         "summary": "Compare Laps",
@@ -6226,6 +6294,172 @@
           "count"
         ],
         "title": "TagCount"
+      },
+      "TeammateCorner": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "gap": {
+            "type": "number",
+            "title": "Gap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "start",
+          "gap"
+        ],
+        "title": "TeammateCorner"
+      },
+      "TeammatePair": {
+        "properties": {
+          "team": {
+            "type": "string",
+            "title": "Team"
+          },
+          "drivers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "laps": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Laps"
+          },
+          "best": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Best"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "sectors": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Sectors"
+          },
+          "top_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Speed"
+          },
+          "corners": {
+            "items": {
+              "$ref": "#/components/schemas/TeammateCorner"
+            },
+            "type": "array",
+            "title": "Corners"
+          },
+          "pace": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Pace"
+          },
+          "pace_laps": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Pace Laps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team",
+          "drivers",
+          "laps",
+          "best",
+          "gap",
+          "sectors",
+          "top_speed",
+          "corners",
+          "pace",
+          "pace_laps"
+        ],
+        "title": "TeammatePair",
+        "description": "One team's drivers, the one with the quicker best lap first."
+      },
+      "Teammates": {
+        "properties": {
+          "race": {
+            "type": "boolean",
+            "title": "Race"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/TeammatePair"
+            },
+            "type": "array",
+            "title": "Teams"
+          }
+        },
+        "type": "object",
+        "required": [
+          "race",
+          "teams"
+        ],
+        "title": "Teammates"
       },
       "Telemetry": {
         "properties": {

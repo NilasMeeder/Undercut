@@ -356,6 +356,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/teammates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Teammate Pairs
+         * @description Each team's drivers side by side.
+         */
+        get: operations["teammate_pairs_api_sessions__year___round___session__teammates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -1815,6 +1835,48 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** TeammateCorner */
+        TeammateCorner: {
+            /** Label */
+            label: string;
+            /** Start */
+            start: number;
+            /** Gap */
+            gap: number;
+        };
+        /**
+         * TeammatePair
+         * @description One team's drivers, the one with the quicker best lap first.
+         */
+        TeammatePair: {
+            /** Team */
+            team: string;
+            /** Drivers */
+            drivers: string[];
+            /** Laps */
+            laps: (number | null)[];
+            /** Best */
+            best: (number | null)[];
+            /** Gap */
+            gap: number | null;
+            /** Sectors */
+            sectors: (number | null)[];
+            /** Top Speed */
+            top_speed: number | null;
+            /** Corners */
+            corners: components["schemas"]["TeammateCorner"][];
+            /** Pace */
+            pace: (number | null)[];
+            /** Pace Laps */
+            pace_laps: number[];
+        };
+        /** Teammates */
+        Teammates: {
+            /** Race */
+            race: boolean;
+            /** Teams */
+            teams: components["schemas"]["TeammatePair"][];
+        };
         /**
          * Telemetry
          * @description One lap, columnar, at the source sample rate (~4 Hz car data merged with position).
@@ -2832,6 +2894,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupMap"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teammate_pairs_api_sessions__year___round___session__teammates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Teammates"];
                 };
             };
             /** @description Validation Error */

@@ -111,6 +111,7 @@ function debrief(api: DockviewApi) {
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const corners = addWidget(api, 'corners', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'pace', 'blue', { referencePanel: corners, direction: 'within' });
+  addWidget(api, 'teammates', 'blue', { referencePanel: corners, direction: 'within' });
   corners.api.setActive();
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
   report.group.api.setSize({ width: Math.min(Math.round(window.innerWidth * 0.32), 620) });
@@ -124,6 +125,7 @@ function overview(api: DockviewApi) {
   const bests = addWidget(api, 'bests', 'blue', { referencePanel: timeline, direction: 'below' });
   const traps = addWidget(api, 'speedtraps', 'blue', { referencePanel: bests, direction: 'right' });
   addWidget(api, 'setups', 'blue', { referencePanel: traps, direction: 'within' });
+  addWidget(api, 'teammates', 'blue', { referencePanel: traps, direction: 'within' });
   traps.api.setActive();
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: traps, direction: 'right' });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });

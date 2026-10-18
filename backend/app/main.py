@@ -59,6 +59,7 @@ from app.schemas import (
     SessionTimeline,
     SetupMap,
     TagCount,
+    Teammates,
     Telemetry,
     TimingState,
     TrackSectors,
@@ -359,6 +360,12 @@ def tyre_sets(year: int, round: int, session: SessionCode) -> TyreWeekend:
 def setup_map(year: int, round: int, session: SessionCode) -> SetupMap:
     """Top speed against cornering speed of every driver's best lap."""
     return _guard(lambda: setups.setup_map(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/teammates")
+def teammate_pairs(year: int, round: int, session: SessionCode) -> Teammates:
+    """Each team's drivers side by side."""
+    return _guard(lambda: setups.teammates(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/compare")

@@ -16,6 +16,7 @@ import {
   type TrackZones,
   type TyreWeekend,
   type SetupMap,
+  type Teammates,
   type SessionReport,
   type Lap,
   type LapPrediction,
@@ -106,6 +107,8 @@ export const useZones = (enabled = true) => useSessionQuery<TrackZones>('/zones'
 export const useTyreSets = () => useSessionQuery<TyreWeekend>('/tyre-sets');
 /** Top speed against cornering speed of every driver's best lap. */
 export const useSetupMap = () => useSessionQuery<SetupMap>('/setups');
+/** Each team's drivers side by side. */
+export const useTeammates = () => useSessionQuery<Teammates>('/teammates');
 export const useSectors = (enabled = true) => useSessionQuery<TrackSectors>('/sectors', enabled);
 
 export type ProgressReference = 'previous' | 'best';

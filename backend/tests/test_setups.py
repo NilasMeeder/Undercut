@@ -15,3 +15,10 @@ def test_corners_split_on_the_reference_laps_minimum() -> None:
     segments = [segment(90, 95), segment(140, 160), segment(200, 190)]
     assert setups.corner_speeds(segments, 1) == pytest.approx((127.5, 190.0))
     assert setups.corner_speeds([segment(200, 210)], 1) == (None, 210.0)
+
+
+def test_corner_gaps_are_the_second_lap_minus_the_first() -> None:
+    a = analysis.CornerStats(2.0, None, 100.0, 0.0, None, 300.0)
+    b = analysis.CornerStats(2.3, None, 95.0, 0.0, None, 300.0)
+    segments = [analysis.CornerSegment("T1", 10.0, 200.0, [a, b])]
+    assert setups.corner_gaps(segments, 0, 1) == [("T1", 10.0, pytest.approx(0.3))]
