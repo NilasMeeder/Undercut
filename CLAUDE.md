@@ -147,7 +147,8 @@ frontend/src/widgets/      één map per widget: widget.ts (definitie, help, def
                            useGroupComparison.ts deelt de compare-data; hooks.ts (useClockDraw, useElementSize);
                            useStrategy.ts (history + klok + cutoff, drivers van een groep, driverkleuren)
 frontend/src/components/   chart/UPlotChart.tsx (uPlot gekoppeld aan cursor/zoom), chart/LapChart.tsx (uPlot over laps:
-                           SC-banden, klok-lijn, labels, readout), data/bits.tsx (badges, swatches)
+                           SC-banden, klok-lijn, labels, readout), data/bits.tsx (badges, swatches),
+                           data/SegmentDisplay.tsx (7-segmentcijfers in SVG)
 frontend/src/lib/          colors.ts (spiegel van de CSS-tokens), format.ts, timing.ts (paars/groen, bests, attempts,
                            lijnstijlen), laps.ts (lap/driver stappen), insights.ts (zinnen voor Corners), table.ts,
                            replay.ts (auto op t interpoleren, klokformaat, pit-ghosts), markers.ts (labels, plaats
@@ -230,6 +231,9 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   (Q1 18, Q2 15, Q3 12 min, SQ 12/10/8, vanaf de eerste auto uit de pit; training 60 min vanaf de
   eerste lap; stil tijdens rode vlaggen), dus een paar seconden onzeker. Races: geen klok, de widget
   toont racetijd en lap. De simulator stuurt de nagerekende klok als `ExtrapolatedClock`.
+  De widget is een digitale klok (`components/data/SegmentDisplay.tsx`, 7 segmenten in SVG): groot
+  de lokale tijd op het circuit (`t0_utc` + t + `SessionInfo.utc_offset`, de offset per sessie uit
+  FastF1's `SessionXDate`) of de sessieklok, het andere klein ernaast; knop LOCAL/SESSION (`mode`).
 
 ## Live (fase 7)
 
@@ -260,6 +264,8 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   `Session.load(livedata=…, telemetry=False)`: ~1 s voor een hele race. Dus dezelfde lap-logica als
   het archief (TracingInsights is met FastF1 gemaakt). Round-trip getest: Monza R en Q via de
   simulator geven dezelfde laptijden, sectoren, banden, stints, posities en pit-tijden.
+  `tests/test_live_roundtrip.py` doet dat offline met een kleine nep-race (FastF1 krijgt een
+  verzonnen schema, het netwerk staat dicht): draai hem na elke wijziging in `convert.py`.
   Valkuilen: **FastF1 cachet ook livedata-parses op `api_path`** (dan blijft live hangen op de
   eerste stand): altijd binnen `fastf1.Cache.disabled()`. Zonder uitslag maakt FastF1 een extra lap
   voor elke gelapte auto (`FastF1Generated`): die gaan eruit. `LapStartDate` is zonder telemetrie leeg:
@@ -496,6 +502,8 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   die door aan dockview (dat anders minimaal 100 px houdt) en ze gaan mee in de layout.
 - Dropdowns in titelbalken (`HeaderMenu`) gaan via een portal naar de body met `position: fixed`,
   anders knipt dockview ze af en liggen de panelen eronder erover; ze scrollen als ze te lang zijn.
+- Een knop **in** een paneel die een instelling wisselt (Clock: LOCAL/SESSION) gebruikt
+  `setConfig(patch)` uit de widget-props: dezelfde opslag als het tandwiel (alleen wat afwijkt).
 - **Paneel-instellingen** zijn declaratief: het type van het config-veld bepaalt de control (boolean =
   aan/uit, array = meerdere aan/uit, anders één keuze). Ze staan in de panel-params (`config`, alleen
   wat afwijkt van de defaults) en dus in de layout. `resolveConfig` valt terug op de default als een

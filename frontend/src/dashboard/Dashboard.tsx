@@ -14,7 +14,7 @@ import { ExternalLink, Info, PanelTopClose, Plus, Settings, X } from 'lucide-rea
 import { PanelMessage } from '@/components/data/bits';
 import { GROUP_COLORS, nextGroup, type GroupId } from '@/store/groups';
 import { WIDGETS, WIDGETS_BY_ID } from '@/widgets/registry';
-import { resolveConfig } from '@/widgets/types';
+import { diffFromDefaults, resolveConfig, type WidgetConfig } from '@/widgets/types';
 import { useDashboardApi } from './api';
 import { HeaderMenu, headerButton } from './HeaderMenu';
 import { useDashboards, type DashboardTab } from '@/store/dashboards';
@@ -31,12 +31,17 @@ const theme: DockviewTheme = {
 const components = Object.fromEntries(
   WIDGETS.map((widget) => {
     const Widget = widget.component;
-    const Panel = ({ params }: IDockviewPanelProps<PanelParams>) => {
+    const Panel = ({ api, params }: IDockviewPanelProps<PanelParams>) => {
       // Stable identity until the panel's settings change, so charts are not rebuilt per render.
       const config = useMemo(() => resolveConfig(widget, params.config), [params.config]);
+      const setConfig = useCallback(
+        (patch: WidgetConfig) =>
+          api.updateParameters({ config: diffFromDefaults({ ...config, ...patch }, widget.defaults) }),
+        [api, config]
+      );
       return (
         <Suspense fallback={<PanelMessage>Loading…</PanelMessage>}>
-          <Widget group={params.group ?? 'blue'} config={config} />
+          <Widget group={params.group ?? 'blue'} config={config} setConfig={setConfig} />
         </Suspense>
       );
     };

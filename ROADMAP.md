@@ -216,11 +216,13 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
       vorige of de beste lap). Getest met de simulator (Monza R) en in replay (Monza Q en R)
 - [x] Widget Clock (2026-10-18): sessieklok in rode cijfers, live F1's ExtrapolatedClock, anders
       nagerekend uit Q-delen en rode vlaggen; race: racetijd en lap. In de Replay-preset bovenaan rechts
-- [ ] Clock als digitale klok (Nilas, 2026-10-18): 7-segment-achtig lettertype, standaard de **lokale
-      tijd op het circuit** als h:m:s (tijdzone van het event uit het schema), met een klein knopje dat
-      wisselt naar **sessietijd** h:m:s; de keuze onthouden per paneel (config)
-- [ ] Test die een echte (gesimuleerde) sessie door `convert.lap_columns` haalt: een helper met
-      dezelfde naam (`_seconds`) brak op 2026-10-18 de hele omzetting zonder dat een test faalde
+- [x] Clock als digitale klok (2026-10-18): eigen 7-segmentweergave in SVG, standaard de **lokale
+      tijd op het circuit** als h:mm:ss (UTC-offset per sessie uit FastF1's schema), knopje
+      LOCAL/SESSION wisselt naar de sessieklok; de keuze staat in de paneel-config. Getest in replay
+      (Monza R, Q, FP2) en live met de simulator (R en Q)
+- [x] Test die een gesimuleerde sessie door `convert.lap_columns` haalt (`test_live_roundtrip.py`, een
+      kleine race met pitstop door simulator → FastF1 → omzetting, zonder netwerk). Vangt de
+      `_seconds`-fout van 2026-10-18. Nog niet: een kwalificatie (Q-delen, `qs`)
 - [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
 - [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
 

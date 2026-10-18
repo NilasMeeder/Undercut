@@ -4166,13 +4166,25 @@
               }
             ],
             "title": "Start Utc"
+          },
+          "utc_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utc Offset"
           }
         },
         "type": "object",
         "required": [
           "code",
           "name",
-          "start_utc"
+          "start_utc",
+          "utc_offset"
         ],
         "title": "SessionInfo"
       },

@@ -11,6 +11,8 @@ class SessionInfo(BaseModel):
     name: str
     """Full FastF1 session name, e.g. 'Sprint Qualifying'."""
     start_utc: datetime | None
+    utc_offset: int | None
+    """Local time at the circuit minus UTC, in minutes (Austin -300, Monza 120)."""
 
 
 class EventInfo(BaseModel):

@@ -21,7 +21,7 @@ EVENT = EventInfo(
     location="Testville",
     format="conventional",
     date="2025-03-16T00:00:00",
-    sessions=[SessionInfo(code="Q", name="Qualifying", start_utc=None)],
+    sessions=[SessionInfo(code="Q", name="Qualifying", start_utc=None, utc_offset=None)],
 )
 
 

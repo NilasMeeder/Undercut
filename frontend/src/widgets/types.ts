@@ -1,7 +1,12 @@
 import type { FunctionComponent } from 'react';
 import type { GroupId } from '@/store/groups';
 
-export type WidgetProps<C> = { group: GroupId; config: C };
+export type WidgetProps<C> = {
+  group: GroupId;
+  config: C;
+  /** Change the panel's settings from inside it (a toggle in the panel), stored like the gear's. */
+  setConfig: (patch: Partial<C>) => void;
+};
 
 type Option<V> = { value: V; label: string };
 
@@ -72,4 +77,11 @@ export function resolveConfig(def: AnyWidgetDef, stored: unknown): WidgetConfig 
     }
   }
   return config;
+}
+
+/** Only the values that differ from the defaults are stored, so changed defaults reach old layouts. */
+export function diffFromDefaults(config: WidgetConfig, defaults: WidgetConfig): WidgetConfig {
+  return Object.fromEntries(
+    Object.entries(config).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(defaults[k]))
+  );
 }

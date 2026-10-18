@@ -31,6 +31,14 @@ def _optional_datetime(value: object) -> pd.Timestamp | None:
     return None if pd.isna(value) else pd.Timestamp(value).tz_localize("UTC")
 
 
+def _utc_offset(value: object) -> int | None:
+    """Minutes ahead of UTC of a local, offset-aware schedule time (FastF1's SessionXDate)."""
+    if value is None or pd.isna(value):
+        return None
+    offset = pd.Timestamp(value).utcoffset()
+    return None if offset is None else round(offset.total_seconds() / 60)
+
+
 def schedule_to_events(schedule: pd.DataFrame) -> list[EventInfo]:
     events = []
     for _, row in schedule.iterrows():
@@ -45,6 +53,7 @@ def schedule_to_events(schedule: pd.DataFrame) -> list[EventInfo]:
                     code=code,
                     name=name,
                     start_utc=_optional_datetime(row.get(f"Session{i}DateUtc")),
+                    utc_offset=_utc_offset(row.get(f"Session{i}Date")),
                 )
             )
         events.append(

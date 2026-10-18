@@ -1162,6 +1162,8 @@ export interface components {
             name: string;
             /** Start Utc */
             start_utc: string | null;
+            /** Utc Offset */
+            utc_offset: number | null;
         };
         /**
          * SessionTimeline

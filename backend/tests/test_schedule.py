@@ -16,6 +16,7 @@ def make_schedule() -> pd.DataFrame:
     for i, name in enumerate(names, start=1):
         row[f"Session{i}"] = name
         row[f"Session{i}DateUtc"] = pd.Timestamp(f"2025-03-2{i} 07:00:00")
+        row[f"Session{i}Date"] = pd.Timestamp(f"2025-03-2{i} 15:00:00+0800")
     return pd.DataFrame([row])
 
 
@@ -37,3 +38,13 @@ def test_start_times_are_utc() -> None:
     [event] = schedule_to_events(make_schedule())
     assert event.sessions[0].start_utc is not None
     assert event.sessions[0].start_utc.utcoffset().total_seconds() == 0
+
+
+def test_local_offset_comes_from_the_local_session_time() -> None:
+    schedule = make_schedule()
+    schedule["Session5Date"] = pd.Timestamp("2025-10-19 14:00:00-0500")
+    schedule["Session4Date"] = pd.NaT
+    [event] = schedule_to_events(schedule)
+    assert event.sessions[0].utc_offset == 480
+    assert event.sessions[3].utc_offset is None
+    assert event.sessions[4].utc_offset == -300

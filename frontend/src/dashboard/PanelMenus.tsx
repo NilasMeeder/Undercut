@@ -1,5 +1,10 @@
 import { cn } from '@/lib/utils';
-import type { AnySetting, AnyWidgetDef, WidgetConfig } from '@/widgets/types';
+import {
+  diffFromDefaults,
+  type AnySetting,
+  type AnyWidgetDef,
+  type WidgetConfig,
+} from '@/widgets/types';
 
 const heading = 'px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-wide text-faint';
 
@@ -26,13 +31,6 @@ export function HelpContent({ widget }: { widget: AnyWidgetDef }) {
         </>
       ) : null}
     </div>
-  );
-}
-
-/** Only the values that differ from the defaults are stored, so changed defaults reach old layouts. */
-function diffFromDefaults(config: WidgetConfig, defaults: WidgetConfig): WidgetConfig {
-  return Object.fromEntries(
-    Object.entries(config).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(defaults[k]))
   );
 }
 
