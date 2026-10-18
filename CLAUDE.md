@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met zesentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Speed map, Teammates, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met zevenentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -657,6 +657,12 @@ Modelkeuzes (in de (i)-uitleg van de widgets ook):
   geleden op het positiespoor; rejoin-positie = 1 + auto's met meer lap-voortgang nu. Twee per
   geselecteerde driver: PIT (`Circuit.pit_loss`) en SC (`pit_loss_sc`, gestippeld). Op de kaart met
   alle auto's en op de Track line (instelling "Pit stop ghosts").
+- **Battles** (widget `battles`, `lib/battles.ts`, alleen frontend uit `/race-history`): per paar
+  in de volgorde op t het interval op de lijn van de laatste lap van de achterste, de trend
+  (interval N laps terug − nu, / N; alleen als alle laps in het venster voor beiden schoon zijn),
+  het gemiddelde schone tempo, en laps tot binnen 1 s (ATTACK) en tot erop (CATCH); rood als dat
+  vóór de finish is. Negatief interval (een stop bezig) = geen interval. Rekent per passage
+  (`crossingsKey`). In de presets Strategy en Pitwall (race).
 - **Lap-charts** (`LapChart`): x = lapnummer op de lijn, vaste x-range (0 of 1 tot het totaal) zodat de
   chart niet verspringt; uPlot `cursor.sync` per link-groep; SC/VSC/rood als banden via
   `lapAxis` (sessietijd → leiderslap). Data hangt aan `crossingsKey` (aantal passages), niet aan t.

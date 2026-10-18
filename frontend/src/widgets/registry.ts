@@ -1,3 +1,4 @@
+import { battlesWidget } from './battles/widget';
 import { bestsWidget } from './bests/widget';
 import { clockWidget } from './clock/widget';
 import { cornersWidget } from './corners/widget';
@@ -54,6 +55,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   stintsWidget,
   tyresWidget,
   gapsWidget,
+  battlesWidget,
   positionsWidget,
   paceWidget,
   pitWindowWidget,

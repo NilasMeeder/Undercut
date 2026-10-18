@@ -387,7 +387,8 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
 - [x] Topsnelheid tegen bochtsnelheid (2026-10-18, widget Speed map, `/setups`). Getest op Monza 2025 Q
 - [ ] Speed map: labels die botsen uit elkaar schuiven
 - [x] Teamgenoten naast elkaar (2026-10-18, widget Teammates, `/teammates`). Getest op Monza 2025 R
-- [ ] Racetrend: tempo laatste 3/5 laps tegen voor/achter, inlopen, wanneer binnen 1 s
+- [x] Racetrend (2026-10-18, widget Battles): interval, trend over 3/5 laps, tempo, laps tot binnen 1 s
+      en tot erop. Getest op Monza 2025 R (lap 22: HAM op RUS +0,128 s/lap, binnen 1 s over 8 laps)
 - [ ] Weekendoverzicht: FP1 → Q → R per driver, long runs tegen racetempo
 - [ ] Q-releasemoment: waar je uitkomt als je nu de pit uit gaat, verkeer op een snelle ronde
 

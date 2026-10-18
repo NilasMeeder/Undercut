@@ -189,6 +189,7 @@ function pitwall(api: DockviewApi) {
   if (width < NARROW) {
     // Laptop: what does not fit is a tab next to the map.
     if (race) addWidget(api, 'gaps', 'blue', { referencePanel: map, direction: 'within' });
+    if (race) addWidget(api, 'battles', 'blue', { referencePanel: map, direction: 'within' });
     addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'within' });
     addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
     map.api.setActive();
@@ -200,6 +201,7 @@ function pitwall(api: DockviewApi) {
       referencePanel: map,
       direction: 'below',
     });
+    if (race) addWidget(api, 'battles', 'blue', { referencePanel: under, direction: 'within' });
     if (width >= WIDE) {
       // Wide: the live lap and the positions get their own space, weather under race control.
       if (race) {
@@ -286,6 +288,8 @@ function strategy(api: DockviewApi) {
   addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
   gaps.api.setActive();
   const pace = addWidget(api, 'pace', 'blue', { referencePanel: gaps, direction: 'right' });
+  addWidget(api, 'battles', 'blue', { referencePanel: pace, direction: 'within' });
+  pace.api.setActive();
   map.group.api.setSize({ width: 470, height: 330 });
   stints.group.api.setSize({ height: 380 });
   pace.group.api.setSize({ width: 500 });
