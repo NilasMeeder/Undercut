@@ -247,7 +247,8 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   naar livetiming.formula1.com en f1dash leest het nooit). Zonder argumenten de sessie die nu bezig is
   of binnen het uur begint; neemt op tot start + 2 uur (race 4 uur), verbindt opnieuw na 5 minuten
   stilte en voegt toe (`a`), dus herstarten gaat door in dezelfde opname. **Start vóór de sessie**: de
-  feed stuurt alleen wat verandert, een opname die halverwege begint mist de laps ervoor.
+  feed stuurt alleen wat verandert, een opname die halverwege begint mist de laps ervoor (zie "Late
+  start" hieronder: wat erna komt klopt wel).
 - **Opslag**: `backend/data/live/<jaar>/<event>/<sessie>/` met `live.txt` (de feed zoals FastF1 hem
   schrijft), `meta.json` (jaar, ronde, code) en `converted/` (de archiefbestanden, plus `live.json` met
   het geplande aantal laps, `<DRV>/<lap>_tel.json.gz` en `track-v1.npz`). Niet in `.cache`: na afloop
@@ -270,6 +271,21 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   eerste stand): altijd binnen `fastf1.Cache.disabled()`. Zonder uitslag maakt FastF1 een extra lap
   voor elke gelapte auto (`FastF1Generated`): die gaan eruit. `LapStartDate` is zonder telemetrie leeg:
   `lSD` = origin + `lST`. `session.total_laps` gooit `DataNotLoadedError` als LapCount ontbreekt.
+  `convert.load_session` zet FastF1's Ergast-aanroepen uit (uitslag en lap-1-tijden: tijdens een
+  sessie leeg, zonder cache 2 requests per omzetting, jolpica staat ~500/uur toe) en laadt weer en
+  race control alleen als ze in de opname zitten (anders haalt FastF1 ze bij F1, 401). De
+  DriverList-toestand telt vanaf t = 0: FastF1 slaat drivers over die na een uur pas genoemd worden.
+- **Late start** (`convert.joined_late`, `Joined`): F1's toestand bij het inschrijven zegt wat er al
+  gebeurde, maar FastF1 leest hem alsof het nu gebeurt. Dus vóór FastF1: `NumberOfLaps` en de
+  tijden van de laatste lap uit de TimingData-toestand (anders een verzonnen lap, en door de
+  5-s-regel de tijd van de volgende lap een lap te vroeg), `InPit: false` (FastF1 telt pas laps na de
+  pit), van de stints alleen de huidige met zijn leeftijd als `StartLaps`. FastF1's `_align_laps` uit
+  (die vergelijkt per eigen lapnummer, bij een late opname verschillende echte laps). Daarna in
+  `lap_columns`: lapnummers + laps vooraf, stints + `NumberOfPitStops` vooraf, de eerste lap begint op
+  `sesT − tijd` (race lap 1: de start uit SessionData), en de pit-exit op het instapmoment vervalt.
+  Getest met `simulate --join <t>` (de opname begint pas op t, met de samengevoegde toestand, lijsten
+  zoals F1) op Monza R (lap 1, 22, 43), Q en FP2: alles na de instap gelijk aan het archief, behalve
+  pit-exits van vóór de opname. Tijdlijn: `first_lap` (lapnummer van `lap_starts[0]`).
 - **Tijdas live**: sessietijd 0 = het **geplande begin** uit het schema (stabiel, ook als de recorder
   later start of herstart); t0 = `lSD − lST` klopt daarmee vanzelf. Elke omzetting verhoogt de
   generatie van de sessie (`generations.py`); `@session_cache` sleutelt daarop, zodat laps, tijdlijn,
@@ -289,7 +305,9 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   jaar (`_borrow_corners`); de feed heeft geen outline.
 - **Live of klaar**: een opname is live als hij de laatste 2 minuten is geschreven en F1 hem niet
   heeft afgesloten (`Finalised`/`Ends`; de heartbeats gaan door). Daarna één laatste omzetting,
-  telemetrie, npz, en het geheugen gaat vrij.
+  telemetrie, npz, en het geheugen gaat vrij. Groeit een klare opname weer (`grows_again`: de
+  recorder verbindt pas na 5 minuten stilte opnieuw, of een nieuwe opname op dezelfde plek), dan wordt
+  hij opnieuw gelezen; heartbeats na `Ends` tellen niet.
 - **API**: `GET /api/live` (opnames, live eerst) en `GET /api/live/{y}/{r}/{s}/events` (SSE): `status`
   (`LiveSessionInfo`: horizon, versie, F1-status) bij elke verandering en `positions` met de nieuwe
   punten (`first`, `count`, `cars`). SSE en geen websocket: één richting, herverbindt zelf, gaat

@@ -220,6 +220,7 @@ class Simulation:
                 continue
             laps.sort(key=lambda lap: lap.lap)
             best = math.inf
+            stops = 0
             stints_sent: set[int] = set()
             if race and laps[0].pit_out_time is None:
                 # On the grid: the car left the pit lane before the lead-in started.
@@ -258,7 +259,9 @@ class Simulation:
                         data["Speeds"] = {"I2": {"Value": str(round(lap.speed_i2))}}
                     out.append(line(number, lap.sector_2_end, data))
                 if lap.pit_in_time is not None:
-                    out.append(line(number, lap.pit_in_time, {"InPit": True}))
+                    stops += 1
+                    data = {"InPit": True, "NumberOfPitStops": stops}
+                    out.append(line(number, lap.pit_in_time, data))
 
                 data = {"NumberOfLaps": lap.lap}
                 if lap.sector_3 is not None:
@@ -478,21 +481,60 @@ def _on_grid(channels: dict[str, np.ndarray], grid: np.ndarray) -> dict[str, np.
     return out
 
 
-def lines(sim: Simulation) -> Iterator[tuple[float, str]]:
-    """(session time, line) in the order F1 would send them."""
-    for topic, data in sim.initial_state().items():
-        yield sim.begin, feed.state_line(topic, data)
-    for update in sim.updates():
+def _merge(state: dict[str, Any], update: dict[str, Any]) -> None:
+    for key, value in update.items():
+        if isinstance(value, dict) and isinstance(state.get(key), dict):
+            _merge(state[key], value)
+        else:
+            state[key] = value
+
+
+def _as_lists(value: Any) -> Any:
+    """F1 sends arrays in its state as lists, in updates as dicts keyed "0", "1", ..."""
+    if not isinstance(value, dict):
+        return value
+    out = {key: _as_lists(v) for key, v in value.items()}
+    if out and all(k.isdigit() for k in out) and sorted(map(int, out)) == list(range(len(out))):
+        return [out[str(i)] for i in range(len(out))]
+    return out
+
+
+def lines(sim: Simulation, join: float | None = None) -> Iterator[tuple[float, str]]:
+    """(session time, line) in the order F1 would send them. `join`: the recording starts at that
+    session time, with F1's state of that moment (everything before merged) instead."""
+    state = sim.initial_state()
+    updates = sim.updates()
+    if join is not None:
+        for update in updates:
+            if update.at > join:
+                break
+            if update.topic not in TELEMETRY and isinstance(update.data, dict):
+                _merge(state.setdefault(update.topic, {}), update.data)
+        updates = [u for u in updates if u.at > join]
+        state = {topic: _as_lists(data) for topic, data in state.items()}
+    begin = sim.begin if join is None else join
+    for topic, data in state.items():
+        yield begin, feed.state_line(topic, data)
+    for update in updates:
         yield update.at, feed.update_line(update.topic, update.data, sim.utc(update.at))
 
 
-def write(sim: Simulation, path: Path, speed: float, start: float | None = None) -> None:
+TELEMETRY = ("Position.z", "CarData.z")
+
+
+def write(
+    sim: Simulation,
+    path: Path,
+    speed: float,
+    start: float | None = None,
+    join: float | None = None,
+) -> None:
     """Write the recording; with speed > 0 paced like a live session from `start` (session time)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     began = time.monotonic()
-    origin = start if start is not None else sim.begin
+    origin = start if start is not None else join if join is not None else sim.begin
     with path.open("w") as f:
-        for at, text in lines(sim):
+        for at, text in lines(sim, join):
             if speed > 0 and at > origin:
                 wait = (at - origin) / speed - (time.monotonic() - began)
                 if wait > 0:
@@ -509,6 +551,9 @@ def main() -> None:
     parser.add_argument("session", help="FP1 FP2 FP3 SQ S Q R")
     parser.add_argument("--speed", type=float, default=1.0, help="0 = all at once")
     parser.add_argument("--start", type=float, help="Session time (s) to start pacing from")
+    parser.add_argument(
+        "--join", type=float, help="Start the recording late, at this session time (s)"
+    )
     parser.add_argument("--out", type=Path, help="Default: the session's live recording")
     args = parser.parse_args()
     sessions_init()
@@ -521,7 +566,7 @@ def main() -> None:
     pace = args.speed or "instant"
     print(f"Writing {path} ({sim.event} {sim.session}, speed {pace})", flush=True)
     try:
-        write(sim, path, args.speed, args.start)
+        write(sim, path, args.speed, args.start, args.join)
     except KeyboardInterrupt:
         print("Stopped")
 

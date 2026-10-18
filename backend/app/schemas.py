@@ -326,6 +326,8 @@ class SessionTimeline(BaseModel):
     """Race distance in laps (races and sprints only)."""
     lap_starts: list[float]
     """Session time at which the leader started each lap (races and sprints only)."""
+    first_lap: int
+    """The lap number of lap_starts[0]: 1, unless a live recording started during the race."""
     segments: list[Segment]
     track_status: list[StatusPeriod]
     sector_flags: list[SectorFlag]

@@ -530,7 +530,7 @@ def _base_row(index: TimingIndex, driver: str, t: float, overall: dict[str, floa
         position=0,
         driver=driver,
         status="running",
-        laps=len(done),
+        laps=done[-1].lap if done else 0,
         gap=None,
         interval=None,
         laps_down=0,

@@ -55,11 +55,11 @@ export function marksAt(marks: DistanceMark[], distance: number, slack = 15): Di
   );
 }
 
-/** The leader's lap (race) at session time t, from 1. */
+/** The leader's lap (race) at session time t, from 1 (or later for a recording started late). */
 export function lapAt(timeline: SessionTimeline, t: number): number {
-  let lap = 0;
-  while (lap < timeline.lap_starts.length && timeline.lap_starts[lap] <= t) lap++;
-  return Math.max(lap, 1);
+  let started = 0;
+  while (started < timeline.lap_starts.length && timeline.lap_starts[started] <= t) started++;
+  return Math.max(timeline.first_lap - 1 + started, timeline.first_lap, 1);
 }
 
 /** Where a session time is: "L17 1:02:03", "Q3 54:10" or "54:10" (time since the first lap). */

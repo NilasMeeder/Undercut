@@ -27,14 +27,14 @@ EVENT = EventInfo(
     sessions=[SessionInfo(code="R", name="Race", start_utc=None, utc_offset=60)],
 )
 T0 = pd.Timestamp("2025-03-16 14:00:00", tz="UTC").to_pydatetime()
-START = 100.0  # session time of the race start
+START = 4000.0  # session time of the race start (late, as when the recording starts at 13:00)
 FIRST = {"VER": 61.0, "NOR": 61.4}
-LAPS = {"VER": [59.0, 59.5], "NOR": [59.3, 79.6]}  # NOR's last lap is through the pit lane
+LAPS = {"VER": [59.0, 59.5, 59.2], "NOR": [59.3, 59.6, 79.6]}  # NOR stops after lap 3
 SPLIT = (0.33, 0.34, 0.33)
 
 
 def race_laps() -> dict[str, list[Any]]:
-    """session_laptimes.json for a three-lap race of two cars; NOR stops at the end of lap 2."""
+    """session_laptimes.json for a four-lap race of two cars; NOR stops at the end of lap 3."""
     cols: dict[str, list[Any]] = {}
 
     def add(**row: Any) -> None:
@@ -48,8 +48,8 @@ def race_laps() -> dict[str, list[Any]]:
             s1, s2, s3 = (round(time * f, 3) for f in SPLIT)
             s3 = round(time - s1 - s2, 3)
             end = round(start + time, 3)
-            pitting = driver == "NOR" and lap == 2
-            out_lap = driver == "NOR" and lap == 3
+            pitting = driver == "NOR" and lap == 3
+            out_lap = driver == "NOR" and lap == 4
             add(
                 drv=driver,
                 dNum=number,
@@ -120,12 +120,15 @@ ARCHIVE = {
 
 @pytest.fixture
 def archive(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    connections: list[Any] = []
+
     def fake_fetch(year: int, event: str, session: str, file: str):
         if file not in ARCHIVE:
             raise ti.SourceNotAvailable(f"{file} not in the test archive")
         return ARCHIVE[file]
 
-    def no_network(*args: Any, **kwargs: Any) -> None:
+    def no_network(sock: socket.socket, address: Any) -> None:
+        connections.append(address)
         raise OSError("no network in this test")
 
     row: dict[str, Any] = {
@@ -157,15 +160,18 @@ def archive(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     yield
     for cached in (*caches, replays.get_timeline):
         cached.cache_clear()
+    # Not even Ergast (FastF1 asks it for results and lap 1 times on every load).
+    assert connections == []
 
 
-def converted_laps() -> dict[str, list[Any]]:
+def converted_laps(join: float | None = None) -> dict[str, list[Any]]:
     sim = simulate.Simulation(2025, 1, "R")
-    messages = [m for _, line in simulate.lines(sim) if (m := feed.parse_line(line))]
+    lines = simulate.lines(sim, join)
+    messages, joined = convert.joined_late([m for _, line in lines if (m := feed.parse_line(line))])
     livedata = convert.live_timing_data(messages, sim.t0, skip=convert.TELEMETRY_TOPICS)
     with fastf1.Cache.disabled():
-        session = convert.load_session(2025, 1, "R", livedata, telemetry=False)
-    return convert.lap_columns(session, sim.t0)
+        session = convert.load_session(2025, 1, "R", livedata, False, joined=joined is not None)
+    return convert.lap_columns(session, sim.t0, joined)
 
 
 def rows(cols: dict[str, list[Any]], keys: tuple[str, ...]) -> list[tuple[Any, ...]]:
@@ -179,9 +185,41 @@ def test_a_simulated_race_converts_back_to_its_laps(archive: None) -> None:
     assert rows(out, keys) == rows(ARCHIVE["session_laptimes.json"], keys)
     times = ("drv", "lap", "lST", "sesT", "s1T", "s2T")
     assert rows(out, times) == rows(ARCHIVE["session_laptimes.json"], times)
-    # The pit stop: in at the end of NOR's lap 2, out on lap 3.
-    cols = (out["drv"], out["lap"], out["pin"], out["pout"])
-    pits = {(d, n): (i, o) for d, n, i, o in zip(*cols, strict=True)}
-    assert pits[("NOR", 2)][0] == pytest.approx(START + 61.4 + 59.3 - 5.0, abs=0.5)
-    assert pits[("NOR", 3)][1] == pytest.approx(START + 61.4 + 59.3 + 18.0, abs=0.5)
-    assert pits[("VER", 2)] == (None, None)
+    # The pit stop: in at the end of NOR's lap 3, out on lap 4.
+    assert pits(out)[("NOR", 3)][0] == pytest.approx(NOR_STOP - 5.0, abs=0.5)
+    assert pits(out)[("NOR", 4)][1] == pytest.approx(NOR_STOP + 18.0, abs=0.5)
+    assert pits(out)[("VER", 3)] == (None, None)
+
+
+NOR_STOP = START + 61.4 + 59.3 + 59.6
+"""Where NOR crosses the line in the pit lane."""
+
+
+def pits(cols: dict[str, list[Any]]) -> dict[tuple[str, int], tuple[Any, Any]]:
+    by_lap = zip(cols["drv"], cols["lap"], cols["pin"], cols["pout"], strict=True)
+    return {(d, n): (i, o) for d, n, i, o in by_lap}
+
+
+@pytest.mark.parametrize(
+    ("join", "wanted"),
+    [
+        # VER has just finished lap 2, NOR not yet: FastF1's lap 1 is a different lap for each,
+        # and it aligns the cars on those.
+        (START + 120.3, {("VER", 3), ("VER", 4), ("NOR", 2), ("NOR", 3), ("NOR", 4)}),
+        # NOR is in the pit lane: FastF1 only counts laps once a car has left the pits.
+        (NOR_STOP - 3.0, {("VER", 3), ("VER", 4), ("NOR", 3), ("NOR", 4)}),
+    ],
+)
+def test_a_recording_that_starts_late_numbers_laps_as_f1(
+    archive: None, join: float, wanted: set[tuple[str, int]]
+) -> None:
+    # FastF1 counts laps from 1 and would make a lap of F1's state.
+    out = converted_laps(join)
+    keys = ("drv", "lap", "time", "lST", "sesT")
+    archived = rows(ARCHIVE["session_laptimes.json"], keys)
+    assert rows(out, keys) == [row for row in archived if (row[0], row[1]) in wanted]
+    # VER's lap 4 is all after the start of the recording.
+    by_lap = zip(out["drv"], out["lap"], out["s1"], out["s2"], strict=True)
+    sectors = {(d, n): (a, b) for d, n, a, b in by_lap}
+    assert sectors[("VER", 4)] == (round(59.2 * 0.33, 3), round(59.2 * 0.34, 3))
+    assert pits(out)[("NOR", 4)][1] == pytest.approx(NOR_STOP + 18.0, abs=0.5)

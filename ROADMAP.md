@@ -208,8 +208,13 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [ ] Echte test met de F1 TV-login (Austin FP1): opnemen, live volgen, en kijken wat de echte feed
       anders doet dan de simulator (garage/OffTrack, gele vlaggen, Q-delen, rode vlag)
 - [ ] Recorder starten vanuit de topbalk (nu `make live` in een terminal)
-- [ ] Late start: een opname die halverwege begint mist laps (FastF1 telt NumberOfLaps per stap);
-      eventueel de eerste toestand als startpunt van de lap-telling gebruiken
+- [x] Late start (2026-10-18): een opname die halverwege begint geeft vanaf de instap dezelfde laps,
+      lapnummers, banden en stints als het archief (`convert.joined_late`, `simulate --join`); getest
+      op Monza R, Q en FP2. Ook gevonden: FastF1 vroeg Ergast bij elke omzetting (nu uit), DriverList
+      na een uur werd genegeerd, en een klare opname die weer groeide werd nooit meer gelezen
+- [ ] Simulator FP2 (rode vlag): bandleeftijd en compound wijken af van het archief, ook zonder late
+      start (de simulator stuurt stints anders dan de echte feed, of FastF1's tyre-fix)
+- [ ] Strategie bij een late opname: race history en lap-assen gaan uit van laps vanaf 1
 - [ ] Tower live direct uit TimingData (gaps/intervallen van F1 zelf), nu uit de laps (tot 3 s later)
 - [x] Live telemetrie volgen (2026-10-18): FOLLOW per link-groep (`l`, de laps schuiven per lap mee,
       ook in replay) en de widget Live lap (de lap die bezig is, groeiend, met de live delta tegen de

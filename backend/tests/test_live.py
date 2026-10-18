@@ -3,10 +3,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
+import pytest
 
-from app import generations
-from app.live import convert, feed, telemetry
+from app import generations, schedule, sessions
+from app.live import convert, feed, recordings, telemetry
+from app.live.service import LiveSession
 from app.live.track import LiveTrack, Outline
+from app.schemas import SessionInfo
 
 
 def test_parse_update_and_state_lines() -> None:
@@ -55,6 +58,7 @@ def test_state_messages_take_the_time_before_them() -> None:
     at = lambda s: origin.replace(second=s)  # noqa: E731
     messages = [
         feed.Message("DriverList", {"1": {"Tla": "VER"}}, None),
+        feed.Message("TimingAppData", {"Lines": {}}, None),
         feed.Message("Heartbeat", {}, at(10)),
         feed.Message("TimingData", {"Lines": {}}, at(20)),
         feed.Message("TimingData", {"Lines": {}}, None),  # resent after a reconnect
@@ -62,7 +66,9 @@ def test_state_messages_take_the_time_before_them() -> None:
     ]
     data = convert.live_timing_data(messages, origin, skip=convert.TELEMETRY_TOPICS).data
     assert [t.total_seconds() for t, _ in data["TimingData"]] == [20, 20]
-    assert data["DriverList"][0][0].total_seconds() == 10
+    assert data["TimingAppData"][0][0].total_seconds() == 10
+    # FastF1 skips drivers listed more than an hour in: the driver list holds from the start.
+    assert data["DriverList"][0][0].total_seconds() == 0
     assert "Position.z" not in data
 
 
@@ -174,3 +180,23 @@ def test_clock_columns_merge_updates_into_the_state() -> None:
         "remaining": [1080.0, 1080.0, 720.0],
         "running": [False, True, False],
     }
+
+
+def test_a_finished_recording_is_read_again_when_it_grows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    info = SessionInfo(code="R", name="Race", start_utc=None, utc_offset=None)
+    monkeypatch.setattr(sessions, "folders", lambda y, r, c: ("Test Grand Prix", "Race"))
+    monkeypatch.setattr(schedule, "resolve_session", lambda y, r, c: (None, info))
+    path = tmp_path / recordings.RECORDING
+    path.write_text("x" * 100)
+    live = LiveSession(2025, 1, "R", folder=tmp_path)
+    live.finish()
+    assert live.finished and not live.grows_again()
+    with path.open("a") as f:
+        f.write("x")  # the recorder reconnected after a long silence
+    assert live.grows_again()
+    live.status = "Ends"  # F1 closed the session: only heartbeats from here
+    assert not live.grows_again()
+    path.write_text("x" * 10)  # a new recording in its place
+    assert live.grows_again()

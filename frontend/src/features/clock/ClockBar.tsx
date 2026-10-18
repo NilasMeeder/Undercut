@@ -107,10 +107,10 @@ function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marke
     () =>
       timeline.lap_starts.map((t, i) => ({
         t,
-        major: (i + 1) % 10 === 0,
-        label: i + 1,
+        major: (timeline.first_lap + i) % 10 === 0,
+        label: timeline.first_lap + i,
       })),
-    [timeline.lap_starts]
+    [timeline.lap_starts, timeline.first_lap]
   );
 
   return (

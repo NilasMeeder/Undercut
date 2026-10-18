@@ -1185,6 +1185,8 @@ export interface components {
             total_laps: number | null;
             /** Lap Starts */
             lap_starts: number[];
+            /** First Lap */
+            first_lap: number;
             /** Segments */
             segments: components["schemas"]["Segment"][];
             /** Track Status */

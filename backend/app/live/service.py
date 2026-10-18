@@ -82,6 +82,8 @@ class LiveSession:
     outline_tried: bool = False
     finished: bool = False
     """Converted for good (the recording stopped growing); timing and track are freed."""
+    finished_size: int = 0
+    """The recording's size when it was finished (see grows_again)."""
     car_data: dict[str, Samples] = field(default_factory=dict)
     """Car number -> CarData.z samples."""
     laps: list[tuple[str, int, float, float]] = field(default_factory=list)
@@ -108,6 +110,22 @@ class LiveSession:
             return (self.folder / recordings.RECORDING).stat().st_mtime
         except FileNotFoundError:
             return 0.0
+
+    def size(self) -> int:
+        try:
+            return (self.folder / recordings.RECORDING).stat().st_size
+        except FileNotFoundError:
+            return 0
+
+    def grows_again(self) -> bool:
+        """Finished, but recording again: a new recording in its place, or the recorder
+        reconnecting after a long silence (it waits 5 minutes, a recording counts as finished
+        after 2). After F1 closed the session the heartbeats go on: that is not it."""
+        size = self.size()
+        if size < self.finished_size:
+            return True
+        recent = time.time() - self.written_at() < ACTIVE_FOR
+        return size > self.finished_size and recent and self.status not in ENDED
 
     def is_active(self) -> bool:
         """Still being written, and F1 has not closed the session (the feed's heartbeats go on)."""
@@ -253,6 +271,7 @@ class LiveSession:
         if self.track.count > 0 and self.outline is not None:
             replays.save_track(self.track_path(), self.track.to_track(self.codes, self.outline))
         self.timing, self.track, self.finished = [], LiveTrack(), True
+        self.finished_size = self.size()
         self.car_data, self.laps = {}, []
         generations.bump(self.key)  # no longer live: the tower's last laps are final now
 
@@ -262,9 +281,12 @@ class LiveSession:
         self.built_at = time.monotonic()
         if self.origin is None or not self.timing:
             return
-        livedata = convert.live_timing_data(self.timing, self.origin)
+        messages, joined = convert.joined_late(self.timing)
+        livedata = convert.live_timing_data(messages, self.origin)
         with _fastf1_lock, fastf1.Cache.disabled():
-            session = convert.load_session(self.year, self.round, self.code, livedata, False)
+            session = convert.load_session(
+                self.year, self.round, self.code, livedata, False, joined=joined is not None
+            )
         files: dict[str, Any] = {
             "drivers.json": convert.driver_rows(session),
             # The laps so far do not tell how many there will be.
@@ -272,7 +294,9 @@ class LiveSession:
             "clock.json": convert.clock_columns(self.timing, self.origin),
         }
         with contextlib.suppress(fastf1.exceptions.DataNotLoadedError):  # no laps yet
-            laps = files["session_laptimes.json"] = convert.lap_columns(session, self.origin)
+            laps = files["session_laptimes.json"] = convert.lap_columns(
+                session, self.origin, joined
+            )
             self.laps = [
                 (driver, lap, start, end)
                 for driver, lap, start, end in zip(
@@ -338,8 +362,13 @@ class Service:
         if time.monotonic() - self._scanned > SCAN_EVERY:
             self._scanned = time.monotonic()
             self.scan()
-        for live in list(self.sessions.values()):
+        for key, live in list(self.sessions.items()):
             if live.finished:
+                if live.grows_again():
+                    # Recording again (a reconnect after a long silence, a restart): read it all
+                    # again, the timing was freed.
+                    log.info("Recording %s grows again", key)
+                    self.sessions[key] = LiveSession(*key, folder=live.folder)
                 continue
             active = live.is_active()
             live.poll()
@@ -382,7 +411,7 @@ class Service:
                 log.warning("Skipping recording %s: %s", meta.parent, error)
                 continue
             if not live.is_active() and _converted_after(live):
-                live.version, live.finished = 1, True
+                live.version, live.finished, live.finished_size = 1, True, live.size()
             self.sessions[key] = live
 
 
