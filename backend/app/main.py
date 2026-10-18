@@ -36,6 +36,7 @@ from app.schemas import (
     EnergyComparison,
     EnergySession,
     Lap,
+    LapPrediction,
     LapProgress,
     LiveSessionInfo,
     Marker,
@@ -308,6 +309,38 @@ def lap_progress(
             reference=ref,
             delta=_nullable(grid.delta, 3),
         )
+
+    return _guard(load)
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/predictions")
+def lap_predictions(
+    year: int,
+    round: int,
+    session: SessionCode,
+    t: Annotated[float, Query(description="Session time (s)")],
+) -> list[LapPrediction]:
+    """Per car on a push lap at t: the lap time it is on course for."""
+
+    def load() -> list[LapPrediction]:
+        drivers = sorted({lap.driver for lap in sessions.get_laps(year, round, session)})
+        out = []
+        for driver in drivers:
+            p = progress.predict(year, round, session, driver, t)
+            if p is not None:
+                out.append(
+                    LapPrediction(
+                        driver=p.driver,
+                        lap=p.lap,
+                        distance=float(np.round(p.distance, 1)),
+                        fraction=float(np.round(p.fraction, 4)),
+                        delta=float(np.round(p.delta, 3)),
+                        reference_lap=p.reference_lap,
+                        reference_time=p.reference_time,
+                        predicted=float(np.round(p.predicted, 3)),
+                    )
+                )
+        return out
 
     return _guard(load)
 

@@ -16,6 +16,7 @@ import {
   type TrackZones,
   type SessionReport,
   type Lap,
+  type LapPrediction,
   type LapProgress,
   type PitWindow,
   type RaceHistory,
@@ -368,4 +369,17 @@ export function appendPositions(track: PositionTrack, chunk: PositionsChunk): bo
   }
   track.count = Math.max(track.count, chunk.count);
   return true;
+}
+
+/** Per car on a push lap at `t` (whole seconds): the lap time it is on course for. */
+export function usePredictions(t: number, enabled = true) {
+  const key = useSessionKey();
+  const at = Math.floor(t);
+  return useQuery({
+    queryKey: ['session', key, 'predictions', at],
+    queryFn: () => apiGet<LapPrediction[]>(`${sessionPath(key!)}/predictions?t=${at}`),
+    enabled: key != null && enabled,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+  });
 }

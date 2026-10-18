@@ -1246,6 +1246,89 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/predictions": {
+      "get": {
+        "summary": "Lap Predictions",
+        "description": "Per car on a push lap at t: the lap time it is on course for.",
+        "operationId": "lap_predictions_api_sessions__year___round___session__predictions_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Session time (s)",
+              "title": "T"
+            },
+            "description": "Session time (s)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LapPrediction"
+                  },
+                  "title": "Response Lap Predictions Api Sessions  Year   Round   Session  Predictions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/compare": {
       "get": {
         "summary": "Compare Laps",
@@ -3855,6 +3938,55 @@
           "pit_out_time"
         ],
         "title": "Lap"
+      },
+      "LapPrediction": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "distance": {
+            "type": "number",
+            "title": "Distance"
+          },
+          "fraction": {
+            "type": "number",
+            "title": "Fraction"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          },
+          "reference_lap": {
+            "type": "integer",
+            "title": "Reference Lap"
+          },
+          "reference_time": {
+            "type": "number",
+            "title": "Reference Time"
+          },
+          "predicted": {
+            "type": "number",
+            "title": "Predicted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "distance",
+          "fraction",
+          "delta",
+          "reference_lap",
+          "reference_time",
+          "predicted"
+        ],
+        "title": "LapPrediction",
+        "description": "What the lap a driver is on at t is on course for: his best lap until t plus the delta so\nfar. Only push laps: not on an out-lap, not in the first 300 m, not 1 s or more down."
       },
       "LapProgress": {
         "properties": {

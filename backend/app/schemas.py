@@ -183,6 +183,24 @@ class LapProgress(BaseModel):
     """Seconds behind the reference; positive = slower."""
 
 
+class LapPrediction(BaseModel):
+    """What the lap a driver is on at t is on course for: his best lap until t plus the delta so
+    far. Only push laps: not on an out-lap, not in the first 300 m, not 1 s or more down."""
+
+    driver: str
+    lap: int
+    distance: float
+    """Metres into the lap."""
+    fraction: float
+    """Share of the lap done (0–1)."""
+    delta: float
+    """Seconds behind his best lap at that point; positive = slower."""
+    reference_lap: int
+    reference_time: float
+    predicted: float
+    """Seconds: the best lap time plus the delta."""
+
+
 class ComparedLap(BaseModel):
     """A lap resampled onto the comparison's shared distance grid."""
 

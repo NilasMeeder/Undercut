@@ -194,3 +194,57 @@ def lap_in_progress(
         reference=reference if reference_trace is not None else None,
         reference_trace=reference_trace,
     )
+
+
+PREDICT_FROM = 300.0
+"""Metres into a lap before a prediction says anything: the first corner decides little."""
+PREDICT_SLACK = 1.0
+"""Seconds behind the best lap at which a lap is not a push lap (a cool-down, a slow lap, a
+big mistake): no prediction."""
+
+
+@dataclass(frozen=True)
+class Prediction:
+    driver: str
+    lap: int
+    distance: float
+    """Metres into the lap, on the reference lap's scale."""
+    fraction: float
+    """Share of the lap done (0–1)."""
+    delta: float
+    """Seconds behind the reference lap at that point (positive = slower)."""
+    reference_lap: int
+    reference_time: float
+    predicted: float
+    """The reference lap time plus the delta so far: what the lap is on course for."""
+
+
+def predict(year: int, round_number: int, code: str, driver: str, t: float) -> Prediction | None:
+    """What the lap `driver` is on at t is on course for: his best lap until t plus the delta
+    so far. None on an out-lap, without a best lap, early in the lap, or when it is no push lap."""
+    try:
+        p = lap_in_progress(year, round_number, code, driver, t, "best")
+    except (LookupError, SourceNotAvailable):
+        return None
+    ref, ref_trace = p.reference, p.reference_trace
+    if p.out_lap or ref is None or ref_trace is None or ref.lap_time is None or ref.lap == p.lap:
+        return None
+    scale = ref_trace.length / p.length if p.length else 1.0
+    if abs(scale - 1) > MAX_STRETCH:
+        scale = 1.0
+    distance = float(p.trace.distance[-1] * scale)
+    if distance < PREDICT_FROM or distance >= ref_trace.length:
+        return None
+    delta = float(p.trace.time[-1] - np.interp(distance, ref_trace.distance, ref_trace.time))
+    if delta > PREDICT_SLACK:
+        return None
+    return Prediction(
+        driver=driver,
+        lap=p.lap,
+        distance=distance,
+        fraction=distance / ref_trace.length,
+        delta=delta,
+        reference_lap=ref.lap,
+        reference_time=ref.lap_time,
+        predicted=ref.lap_time + delta,
+    )

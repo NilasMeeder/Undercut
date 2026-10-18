@@ -148,12 +148,10 @@ function useGroupLocation(group: DockviewGroupPanel) {
   );
 }
 
-/** Title-bar buttons of a tab group; help and settings act on the visible panel. */
-function GroupActions(props: IDockviewHeaderActionsProps) {
-  return useLocked() ? null : <EditableGroupActions {...props} />;
-}
-
-function EditableGroupActions({ containerApi, group, activePanel }: IDockviewHeaderActionsProps) {
+/** Title-bar buttons of a tab group; help and settings act on the visible panel. A locked board
+ * (Pitwall) keeps help and settings: only adding, closing and popping out change the layout. */
+function GroupActions({ containerApi, group, activePanel }: IDockviewHeaderActionsProps) {
+  const locked = useLocked();
   const params = usePanelParams(activePanel);
   const location = useGroupLocation(group);
   const widget = activePanel ? WIDGETS_BY_ID.get(activePanel.api.component) : undefined;
@@ -165,9 +163,11 @@ function EditableGroupActions({ containerApi, group, activePanel }: IDockviewHea
 
   return (
     <div className="flex h-full items-center">
-      <AddWidgetMenu
-        onPick={(id) => addWidget(containerApi, id, linkGroup, { referenceGroup: group })}
-      />
+      {locked ? null : (
+        <AddWidgetMenu
+          onPick={(id) => addWidget(containerApi, id, linkGroup, { referenceGroup: group })}
+        />
+      )}
       {widget ? (
         <HeaderMenu
           icon={<Info className="h-3 w-3" />}
@@ -192,7 +192,7 @@ function EditableGroupActions({ containerApi, group, activePanel }: IDockviewHea
           )}
         </HeaderMenu>
       ) : null}
-      {location.type === 'popout' ? (
+      {locked ? null : location.type === 'popout' ? (
         <button
           type="button"
           title="Back to the dashboard"

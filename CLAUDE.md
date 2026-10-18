@@ -49,8 +49,8 @@ Valkuilen bij het headless testen:
 - Popout: `ctx.waitForEvent('page')` rond de klik op "Open in a separate window".
 - Werkplek: de tab-preset bepaalt de werkplek (`replay`/`pitwall` → Pitwall, de rest → Analyse), dus
   de truc hieronder opent vanzelf in Pitwall; `?ws=analysis` of `?ws=pitwall` in de URL dwingt het
-  af. In Pitwall staat de AT CLOCK-schakelaar niet in de klokbalk en zijn de panelen op slot (de
-  tandwielen verschijnen pas na een klik op EDIT). Wisselen: toets `w`; tabs: `1`–`9`. Report: preset `debrief`,
+  af. In Pitwall staat de AT CLOCK-schakelaar niet in de klokbalk en zijn de panelen op slot
+  (tandwiel en (i) blijven, +, sluiten en popout pas na een klik op EDIT). Wisselen: toets `w`; tabs: `1`–`9`. Report: preset `debrief`,
   regels zijn knoppen (`getByRole('button', { name: /loses 0.143/ })`).
 - Replay: zet ook `localStorage['f1dash-dashboards'] =
   {"state":{"tabs":[{"id":"t1","name":"Replay","layout":null,"preset":"replay"}],"active":"t1"},"version":0}`
@@ -264,6 +264,13 @@ Drie soorten replay-data, bewust gescheiden naar kosten:
   elk tot de volgende; de laatste loopt over de finish). `replay.sector_flag_periods` maakt uit race
   control (scope `Sector`) perioden per sector tot CLEAR, of tot een baanbrede GREEN/CLEAR/RED/CHEQUERED
   (`SessionTimeline.sector_flags`). De kaart (met alle auto's) en de Track line kleuren die stukken geel.
+- **Kwalificatie in de tower**: kolom Cut (binnen de lijn de marge op de eerste die eruit ligt,
+  negatief; eronder wat nog nodig is) en de cut-tijd in de kop, uit de beste laps van de rijen.
+  Kolom Pred (`/predictions?t=`, `progress.predict`): per auto op een push-lap zijn beste lap tot t
+  plus de delta op dit punt (zoals Live lap, `lap_in_progress` met referentie "best"), en de positie
+  die dat geeft tussen de beste laps van de rest. Niet op een out-lap, niet in de eerste 300 m,
+  niet als hij al ≥ 1 s achter ligt (cool-down). Monza 2025 Q: NOR L20 op 95% 1:18.862, werkelijk
+  1:18.869. Frontend vraagt per hele seconde klok (`usePredictions`).
 - **Sessieklok** (`SessionTimeline.clock`, widget Clock): punten (t, resterend, loopt). Live F1's eigen
   `ExtrapolatedClock` (`converted/clock.json`, `convert.clock_columns`: updates bevatten alleen wat
   verandert, dus samenvoegen met de toestand ervoor). Archief: nagerekend in `replay.session_clock`
@@ -520,7 +527,8 @@ de preset beslist, `tabWorkspace`), `actives` per werkplek, `workspace` per vens
 anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om). Presets hebben
 `workspaces`; het +-menu en het Layout-menu tonen eerst die van de werkplek.
 - **Pitwall**: AT CLOCK altijd aan (`atClockOn`/`useAtClockOn` in `store/atClock.ts`), panelen op slot
-  (dockview `locked` + `disableDnd`, geen knoppen in de titelbalken; EDIT ontgrendelt, `editing`),
+  (dockview `locked` + `disableDnd`; in de titelbalk alleen (i) en tandwiel, want instellingen
+  veranderen de indeling niet; EDIT ontgrendelt +, sluiten, popout en slepen, `editing`),
   geen Views/Layout in de topbalk (Layout wel tijdens EDIT), schermvullend. Preset `pitwall` kiest
   op `window.innerWidth` (< 1700 tabs, ≥ 2400 alles naast elkaar) en de sessie (Gaps alleen in een
   race, anders Live lap); de tower staat op `size: 'fit'` (CSS `zoom` tot 2,4× zodat hij het paneel vult).

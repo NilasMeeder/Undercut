@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Lap, TimingState, TowerRow } from '@/api/client';
-import { useLaps, useSessionDetail, useTimingState } from '@/api/queries';
+import type { Lap, LapPrediction, TimingState, TowerRow } from '@/api/client';
+import { useLaps, usePredictions, useSessionDetail, useTimingState } from '@/api/queries';
 import { DriverCell, PanelMessage, TyreBadge } from '@/components/data/bits';
 import { TRACK_STATUS_COLORS } from '@/lib/colors';
 import { formatGap, formatLapTime, formatSector } from '@/lib/format';
@@ -8,6 +8,7 @@ import { TRACK_STATUS_LABEL } from '@/lib/replay';
 import { rowStyle, td, th } from '@/lib/table';
 import { TIMING_TEXT } from '@/lib/timing';
 import { cn } from '@/lib/utils';
+import { useClockTime } from '@/store/clock';
 import { useGroupLaps, useGroups } from '@/store/groups';
 import type { WidgetProps } from '../types';
 import type { TowerConfig } from './widget';
@@ -56,7 +57,15 @@ function Header({ state }: { state: TimingState }) {
           : (state.segment ?? 'PRACTICE')}
       </span>
       {state.cutoff != null ? (
-        <span className="text-faint">top {state.cutoff} go through</span>
+        <span className="text-faint">
+          top {state.cutoff} go through
+          {cutTime(state) != null ? (
+            <>
+              {' · cut '}
+              <span className="text-dim">{formatLapTime(cutTime(state))}</span>
+            </>
+          ) : null}
+        </span>
       ) : null}
       {status !== 'green' ? (
         <span className="ml-auto font-semibold" style={{ color: TRACK_STATUS_COLORS[status] }}>
@@ -64,6 +73,69 @@ function Header({ state }: { state: TimingState }) {
         </span>
       ) : null}
     </div>
+  );
+}
+
+/** Qualifying: the best lap of the last driver through, if he has one. */
+function cutTime(state: TimingState): number | null {
+  return state.cutoff != null ? (state.rows[state.cutoff - 1]?.best_lap ?? null) : null;
+}
+
+/** Qualifying: inside the cut the margin to the first driver out (negative), below it what is
+ * still needed to get in (positive). */
+function toCut(state: TimingState, i: number): number | null {
+  const own = state.rows[i]?.best_lap;
+  if (state.cutoff == null || own == null) return null;
+  const other = state.rows[i < state.cutoff ? state.cutoff : state.cutoff - 1]?.best_lap;
+  return other == null ? null : own - other;
+}
+
+/** The position a predicted lap time would give, among the others' best laps that still count. */
+function predictedPosition(state: TimingState, driver: string, time: number): number {
+  return (
+    1 +
+    state.rows.filter(
+      (r) => r.driver !== driver && !r.eliminated && r.best_lap != null && r.best_lap < time
+    ).length
+  );
+}
+
+function PredictionCell({
+  state,
+  row,
+  prediction,
+}: {
+  state: TimingState;
+  row: TowerRow;
+  prediction: LapPrediction | undefined;
+}) {
+  if (!prediction) return <td className={td} />;
+  const best = Math.min(
+    ...state.rows.filter((r) => !r.eliminated && r.best_lap != null).map((r) => r.best_lap!)
+  );
+  const timing =
+    prediction.predicted < best
+      ? 'best'
+      : row.best_lap == null || prediction.predicted < row.best_lap
+        ? 'pb'
+        : 'none';
+  const position = predictedPosition(state, row.driver, prediction.predicted);
+  const out = state.cutoff != null && position > state.cutoff;
+  return (
+    <td
+      className={td}
+      title={`${Math.round(prediction.fraction * 100)}% of the lap, ${formatGap(prediction.delta)} to his best`}
+    >
+      <span className={TIMING_TEXT[timing]}>{formatLapTime(prediction.predicted)}</span>
+      <span
+        className={cn(
+          'ml-1 inline-block w-6 text-left text-[10px]',
+          out ? 'text-pit' : 'text-faint'
+        )}
+      >
+        P{position}
+      </span>
+    </td>
   );
 }
 
@@ -121,6 +193,9 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   const selected = new Set(useGroupLaps(group).map((l) => l.driver));
   const toggleLap = useGroups((s) => s.toggleLap);
   const { box, table, zoom } = useFitZoom(config.size === 'fit', timing.data?.rows.length ?? 0);
+  const t = useClockTime(1000);
+  const timed = timing.data != null && timing.data.kind !== 'race';
+  const predictions = usePredictions(t, timed && config.columns.includes('predicted')).data;
 
   if (timing.error) return <PanelMessage>{timing.error.message}</PanelMessage>;
   const state = timing.data;
@@ -128,6 +203,9 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
 
   const show = new Set(config.columns);
   const race = state.kind === 'race';
+  const showCut = show.has('cut') && state.cutoff != null;
+  const showPredicted = show.has('predicted') && !race;
+  const byDriver = new Map((showPredicted ? (predictions ?? []) : []).map((p) => [p.driver, p]));
   // Only a live recording has them (F1's own timing), the archive does not.
   const segments = show.has('segments') && state.rows.some((r) => r.segments.length > 0);
   const head = (label: string, title?: string, align = 'text-right') => (
@@ -154,6 +232,10 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
               {head('Drv', undefined, 'text-left')}
               {head('Gap', race ? 'To the leader, at the last timing line' : 'Best lap to P1')}
               {show.has('interval') ? head('Int', 'To the car ahead') : null}
+              {showCut
+                ? head('Cut', 'Margin to the first driver out, or what is needed to get in')
+                : null}
+              {showPredicted ? head('Pred', 'The lap in progress is on course for this') : null}
               {show.has('best') ? head('Best') : null}
               {show.has('last') ? head('Last') : null}
               {show.has('sectors') ? (
@@ -197,6 +279,27 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
                     <td className={cn(td, out ? 'text-faint' : 'text-text')}>
                       {i === 0 || out ? '' : gapText(row.interval, row.interval_laps)}
                     </td>
+                  ) : null}
+                  {showCut ? (
+                    <td
+                      className={cn(
+                        td,
+                        out ? 'text-faint' : i < (state.cutoff ?? 0) ? 'text-dim' : 'text-pit'
+                      )}
+                    >
+                      {out ? '' : formatGap(toCut(state, i))}
+                    </td>
+                  ) : null}
+                  {showPredicted ? (
+                    out ? (
+                      <td className={td} />
+                    ) : (
+                      <PredictionCell
+                        state={state}
+                        row={row}
+                        prediction={byDriver.get(row.driver)}
+                      />
+                    )
                   ) : null}
                   {show.has('best') ? (
                     <td className={cn(td, !out && TIMING_TEXT[row.best_timing])}>

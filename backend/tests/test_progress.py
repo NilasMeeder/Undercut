@@ -67,3 +67,28 @@ def test_lap_in_progress_against_the_previous_or_best_lap(monkeypatch: pytest.Mo
     assert first.reference is None
     with pytest.raises(LookupError):  # after the last lap, not live
         progress.lap_in_progress(2025, 1, "R", "VER", 200.0)
+
+
+def test_predict_is_the_best_lap_plus_the_delta_on_push_laps_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    laps = [
+        lap(2, 40.0, 100.0, lap_time=None, pit_out=True),
+        lap(3, 100.0, 160.0),
+        lap(4, 160.0, 220.8),
+        lap(5, 220.8, 283.3),
+    ]
+    monkeypatch.setattr(sessions, "get_laps", lambda *_: laps)
+    # Lap 4 is 0.8 s down over the whole lap, lap 5 2.5 s (a cool-down).
+    traces = {2: trace(60.0), 3: trace(60.0), 4: trace(60.8), 5: trace(62.5)}
+    monkeypatch.setattr(progress, "_row_trace", lambda y, r, c, row: traces[row.lap])
+    halfway = progress.predict(2025, 1, "Q", "VER", 160.0 + 30.4)
+    assert halfway is not None
+    assert (halfway.lap, halfway.reference_lap) == (4, 3)
+    assert halfway.fraction == pytest.approx(0.5)
+    assert halfway.delta == pytest.approx(0.4)
+    assert halfway.predicted == pytest.approx(60.4)
+    # Too early in the lap, more than the slack down, and on the out-lap (no best yet): nothing.
+    assert progress.predict(2025, 1, "Q", "VER", 160.0 + 10.0) is None
+    assert progress.predict(2025, 1, "Q", "VER", 220.8 + 50.0) is None
+    assert progress.predict(2025, 1, "Q", "VER", 70.0) is None

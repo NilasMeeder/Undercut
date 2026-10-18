@@ -366,6 +366,28 @@ Ontwerp (2026-10-18):
       (Analyse kiest LEC → Pitwall toont hem; Pitwall → FP2 → Analyse ook)
 - [ ] Tweede venster: "klok hierheen" ook in het andere venster (bv. een klik in Report), als optie
 
+## Fase 10 — Meer voor de engineer en de analist
+
+Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat Q live nodig heeft
+(Austin FP1 op vr 23 okt), dan de analyse-tools.
+
+- [x] Pitwall op slot: tandwiel en (i) blijven zichtbaar, EDIT alleen voor de indeling (2026-10-18)
+- [x] Q-afvallijn in de tower met gap tot de cut (kolom Cut, cut-tijd in de kop; de lijn zelf
+      bestond al). Getest op Monza 2025 Q2
+- [x] Voorspelde laptijd van de lap die bezig is (beste lap + delta tot nu), kolom Pred in de tower met
+      de positie die het geeft (`/predictions`). Getest op Monza 2025 Q (NOR L20: 95% → 1:18.862,
+      werkelijk 1:18.869; Q2: NOR P11 → 1:19.420 P9)
+- [ ] Voorspelde laptijd ook in Live lap
+- [ ] Presets Qualifying: Pitwall (tower met cut, voorspelling, Run timeline, kaart, klok) en Analyse
+      (Bests, mini-sectoren, Corners, Energy, Delta)
+- [ ] Mini-sectortabel (per mini-sector de tijden, paars/groen, verlies tegen de eigen beste)
+- [ ] Bandensets per weekend: per driver de sets, nieuw/gebruikt, laps erop
+- [ ] Topsnelheid tegen bochtsnelheid per team (afstelling: vleugelniveau)
+- [ ] Teamgenoten naast elkaar (Q-gat, racetempo, waar in de bochten)
+- [ ] Racetrend: tempo laatste 3/5 laps tegen voor/achter, inlopen, wanneer binnen 1 s
+- [ ] Weekendoverzicht: FP1 → Q → R per driver, long runs tegen racetempo
+- [ ] Q-releasemoment: waar je uitkomt als je nu de pit uit gaat, verkeer op een snelle ronde
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`

@@ -1,7 +1,8 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type TowerColumn = 'interval' | 'best' | 'last' | 'sectors' | 'segments' | 'tyre' | 'stops';
+export type TowerColumn =
+  'interval' | 'cut' | 'predicted' | 'best' | 'last' | 'sectors' | 'segments' | 'tyre' | 'stops';
 export type TowerConfig = { columns: TowerColumn[]; size: 'compact' | 'fit' };
 
 export const towerWidget = defineWidget<TowerConfig>({
@@ -20,7 +21,13 @@ export const towerWidget = defineWidget<TowerConfig>({
         'yellow neither, red pit lane). They come straight from F1, a few seconds ahead of the ' +
         'sector times; the archive does not have them.',
       'Purple and green are as they were at that moment: a purple sector can be beaten a lap later.',
-      'In qualifying the line under a row is the cut: the drivers below it are out if it ends now.',
+      'In qualifying the line under a row is the cut: the drivers below it are out if it ends now. ' +
+        'Cut: inside it the margin to the first driver out (−0.231 = that much to spare), below ' +
+        'it what the driver still needs to find to get in (+0.120).',
+      'Pred: the lap in progress, on course for its best lap so far plus the delta at this ' +
+        'point, with the position it would give. Purple would be the quickest, green a ' +
+        'personal best. Only push laps: not on an out-lap, not in the first 300 m, not when ' +
+        'already 1 s down (a cool-down lap).',
       'Deleted lap times never count, also not before the stewards deleted them.',
       'A car that lost places in the pit lane has no gap until it passes the next timing line.',
       'Status: PIT in the pit lane (red) or garage (grey), OUT / IN on an out- or in-lap, DNF retired.',
@@ -30,7 +37,17 @@ export const towerWidget = defineWidget<TowerConfig>({
       'latest lap (race) or best lap (qualifying) in this link group.',
   },
   defaults: {
-    columns: ['interval', 'best', 'last', 'sectors', 'segments', 'tyre', 'stops'],
+    columns: [
+      'interval',
+      'cut',
+      'predicted',
+      'best',
+      'last',
+      'sectors',
+      'segments',
+      'tyre',
+      'stops',
+    ],
     size: 'compact',
   },
   settings: [
@@ -40,6 +57,8 @@ export const towerWidget = defineWidget<TowerConfig>({
       kind: 'multi',
       options: [
         { value: 'interval', label: 'Interval to the car ahead' },
+        { value: 'cut', label: 'Gap to the cut (qualifying)' },
+        { value: 'predicted', label: 'Predicted lap time (qualifying, practice)' },
         { value: 'best', label: 'Best lap' },
         { value: 'last', label: 'Last lap' },
         { value: 'sectors', label: 'Sectors' },

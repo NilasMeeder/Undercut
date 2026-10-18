@@ -296,6 +296,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lap Predictions
+         * @description Per car on a push lap at t: the lap time it is on course for.
+         */
+        get: operations["lap_predictions_api_sessions__year___round___session__predictions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -1050,6 +1070,29 @@ export interface components {
             pit_in_time: number | null;
             /** Pit Out Time */
             pit_out_time: number | null;
+        };
+        /**
+         * LapPrediction
+         * @description What the lap a driver is on at t is on course for: his best lap until t plus the delta so
+         *     far. Only push laps: not on an out-lap, not in the first 300 m, not 1 s or more down.
+         */
+        LapPrediction: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Distance */
+            distance: number;
+            /** Fraction */
+            fraction: number;
+            /** Delta */
+            delta: number;
+            /** Reference Lap */
+            reference_lap: number;
+            /** Reference Time */
+            reference_time: number;
+            /** Predicted */
+            predicted: number;
         };
         /**
          * LapProgress
@@ -2567,6 +2610,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LapProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lap_predictions_api_sessions__year___round___session__predictions_get: {
+        parameters: {
+            query: {
+                /** @description Session time (s) */
+                t: number;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LapPrediction"][];
                 };
             };
             /** @description Validation Error */
