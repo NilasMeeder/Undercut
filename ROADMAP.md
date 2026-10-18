@@ -248,6 +248,32 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [ ] Live meters (snelheid, gear, gas/rem van dit moment), als dat nog iets toevoegt naast Live lap
 - [ ] Live lap: meerdere drivers tegelijk (nu de eerste driver van de groep)
 
+## Fase 8 — Energie (2026) — volgende
+
+Er is geen officieel kanaal voor batterij of inzet; de feed heeft alleen RPM, speed, gear, throttle,
+brake (en TracingInsights acc_x/y/z). Dus inschatten en eerlijk zeggen dat het een schatting is.
+
+- [ ] Ontwerp: per lap de rechte stukken (vol gas, geen rem), de versnelling als functie van de
+      snelheid a(v) tegen een omhullende (het beste wat in die sessie op die snelheid lukte = volle
+      inzet), "clipping" = vol gas maar geen snelheidswinst of verlies vóór het rempunt
+- [ ] Backend (pure numpy, getest) + endpoint; per lap en per straight: waar de inzet stopt, hoeveel
+      km/h of tijd dat kost, vergeleken met andere laps en drivers
+- [ ] Widget en/of banden in de speed-chart; live via de telemetrie per lap (Austin FP1)
+- [ ] Getest op 2026-sessies uit TracingInsights (t/m Singapore 2026)
+
+## Fase 9 — Twee werkplekken: Analyse en Pitwall
+
+Nilas (2026-10-18): een duidelijkere scheiding tussen echte analyse na een sessie en een pitwall-bord
+voor live of om voor de lol terug te kijken.
+
+- [ ] **Pitwall**: schermvullend bord dat speelt (tower groot, kaart, Track line, klok, race control,
+      gaps, Live lap), AT CLOCK altijd aan, weinig knoppen; ook goed op een tweede scherm
+- [ ] **Analyse**: klok standaard op het einde, analyse-presets, en een **sessieverslag** met
+      suggesties waar naar te kijken (zie "Automatische analyses" bij Ideeën): per driver waar de tijd
+      zit, long runs vs short runs in FP, degradatie samengevat, opvallende momenten; klik = de
+      vergelijking openen
+- [ ] Wisselen tussen de twee in de topbalk; tabs en presets per werkplek
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
