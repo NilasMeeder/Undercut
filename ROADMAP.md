@@ -170,6 +170,8 @@ Ontwerp (zie CLAUDE.md "Markeringen en views"): markeringen per sessie, op afsta
 - [ ] Markeringen over sessies heen: die van Q ook in R tonen (zelfde event), zoeken op tag over alles
 - [ ] Inzichten van de Corners-widget als (tijdelijke) markering in de charts (kan nu met `DistanceMark`)
 - [ ] Markeringen en views mee in de export/import van het Layout-menu
+- [ ] Klik op een markering in een chart, de kaart of de klokbalk = bewerken/verwijderen (nu alleen via
+      het Markers-paneel)
 
 ## Fase 6 — Strategie en race-analyse
 
