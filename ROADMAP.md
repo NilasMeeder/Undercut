@@ -143,7 +143,7 @@ alle panelen meeloopt.
 - [x] Command palette (⌘K) en sneltoetsen: `[` `]` lap, `,` `.` driver, `o` overlay, `f` cursor
       bevriezen, `z` zoom resetten
 - [x] Presets (Quali duel, Engineer, Session overview), meerdere dashboard-tabs, export/import als JSON
-- [ ] Mini-sector-tabel (per mini-sector de tijden; de track map kleurt ze nu alleen)
+- [x] Mini-sector-tabel (fase 10, widget Mini-sectors)
 - [ ] Inzichten in de Corners-widget naast de telemetrie tonen (bv. markering in de speed-chart)
 
 ## Fase 4 — Replay
@@ -378,9 +378,9 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
       de positie die het geeft (`/predictions`). Getest op Monza 2025 Q (NOR L20: 95% → 1:18.862,
       werkelijk 1:18.869; Q2: NOR P11 → 1:19.420 P9)
 - [ ] Voorspelde laptijd ook in Live lap
-- [ ] Presets Qualifying: Pitwall (tower met cut, voorspelling, Run timeline, kaart, klok) en Analyse
-      (Bests, mini-sectoren, Corners, Energy, Delta)
-- [ ] Mini-sectortabel (per mini-sector de tijden, paars/groen, verlies tegen de eigen beste)
+- [x] Presets Qualifying (Analyse) en Qualifying board (Pitwall) (2026-10-18). Getest op Monza 2025 Q
+- [x] Widget Mini-sectors (2026-10-18): per mini-sector de vergeleken laps, ideaal, LOST. Getest op
+      Monza 2025 Q (VER L17 tegen NOR L20: 14/25 tegen 11/25)
 - [ ] Bandensets per weekend: per driver de sets, nieuw/gebruikt, laps erop
 - [ ] Topsnelheid tegen bochtsnelheid per team (afstelling: vleugelniveau)
 - [ ] Teamgenoten naast elkaar (Q-gat, racetempo, waar in de bochten)

@@ -7,6 +7,7 @@ import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
 import { liveLapWidget } from './livelap/widget';
 import { markersWidget } from './markers/widget';
+import { miniSectorsWidget } from './minisectors/widget';
 import { paceWidget } from './pace/widget';
 import { pitWindowWidget } from './pitwindow/widget';
 import { positionsWidget } from './positions/widget';
@@ -36,6 +37,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   speedTrapsWidget,
   timelineWidget,
   cornersWidget,
+  miniSectorsWidget,
   energyWidget,
   reportWidget,
   clockWidget,

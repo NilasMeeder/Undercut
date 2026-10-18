@@ -76,6 +76,29 @@ function engineer(api: DockviewApi) {
   delta.group.api.setSize({ height: 160 });
 }
 
+/** Preset: qualifying after the fact: bests and the run timeline, two laps compared, where the
+ * time is per mini-sector and corner, and the energy. */
+function qualifying(api: DockviewApi) {
+  const bests = addWidget(api, 'bests', 'blue');
+  const asTab: Position = { referencePanel: bests, direction: 'within' };
+  addWidget(api, 'laps', 'blue', asTab);
+  addWidget(api, 'timeline', 'blue', asTab);
+  bests.api.setActive();
+  const telemetry = addWidget(api, 'telemetry', 'blue', {
+    referencePanel: bests,
+    direction: 'right',
+  });
+  const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
+  const mini = addWidget(api, 'minisectors', 'blue', { referencePanel: map, direction: 'below' });
+  addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });
+  addWidget(api, 'energy', 'blue', { referencePanel: mini, direction: 'within' });
+  mini.api.setActive();
+  const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
+  bests.group.api.setSize({ width: 430 });
+  map.group.api.setSize({ width: 470, height: 260 });
+  delta.group.api.setSize({ height: 160 });
+}
+
 /** Preset: the session report next to a comparison: a click on a line shows it there. */
 function debrief(api: DockviewApi) {
   const report = addWidget(api, 'report', 'blue');
@@ -195,6 +218,47 @@ function pitwall(api: DockviewApi) {
   line.group.api.setSize({ height: 120 });
 }
 
+/**
+ * Preset: the qualifying board. The tower with the cut and the predicted lap times, every car on
+ * the map with the live lap of the selected driver under it, the session clock (time left), race
+ * control and the run timeline on the right, the track line along the bottom.
+ */
+function qualiBoard(api: DockviewApi) {
+  const width = window.innerWidth;
+  const tower = addWidget(api, 'tower', 'blue', undefined, { size: 'fit' });
+  const map = addWidget(
+    api,
+    'trackmap',
+    'blue',
+    { referencePanel: tower, direction: 'right' },
+    { cars: 'all' }
+  );
+  const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
+  const clock = addWidget(
+    api,
+    'clock',
+    'blue',
+    { referencePanel: feed, direction: 'above' },
+    { mode: 'session' }
+  );
+  const runs = addWidget(api, 'timeline', 'blue', { referencePanel: feed, direction: 'below' });
+  const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
+  if (width < NARROW) {
+    addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'within' });
+    map.api.setActive();
+    tower.group.api.setSize({ width: Math.round(width * 0.42) });
+    feed.group.api.setSize({ width: 320 });
+  } else {
+    addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'below' });
+    tower.group.api.setSize({ width: Math.min(Math.round(width * 0.36), 950) });
+    feed.group.api.setSize({ width: width >= WIDE ? 520 : 380 });
+    map.group.api.setSize({ height: Math.round((window.innerHeight - 210) * 0.55) });
+  }
+  runs.group.api.setSize({ height: Math.round((window.innerHeight - 210) * 0.5) });
+  clock.group.api.setSize({ height: 64 });
+  line.group.api.setSize({ height: 120 });
+}
+
 /** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */
 function strategy(api: DockviewApi) {
   const stints = addWidget(api, 'stints', 'blue');
@@ -227,6 +291,13 @@ export const PRESETS = [
     apply: qualiDuel,
   },
   {
+    id: 'qualifying',
+    title: 'Qualifying',
+    description: 'Bests, run timeline, two laps compared, mini-sectors, corners, energy',
+    workspaces: ['analysis'],
+    apply: qualifying,
+  },
+  {
     id: 'engineer',
     title: 'Engineer',
     description: 'Dense: every analysis panel around one comparison',
@@ -255,6 +326,14 @@ export const PRESETS = [
       'The board: tower, every car on the map, clock, race control, gaps or live lap, track line; fits the screen',
     workspaces: ['pitwall'],
     apply: pitwall,
+  },
+  {
+    id: 'quali-board',
+    title: 'Qualifying board',
+    description:
+      'Tower with the cut and predicted lap times, every car on the map, live lap, time left, run timeline',
+    workspaces: ['pitwall'],
+    apply: qualiBoard,
   },
   {
     id: 'replay',
@@ -297,7 +376,13 @@ export function validLayout(layout: unknown): SerializedDockview | null {
 }
 
 /** Presets with a panel that moves with the session clock, for a tab that has no layout yet. */
-const CLOCK_PRESETS: ReadonlySet<PresetId> = new Set(['overview', 'pitwall', 'replay', 'strategy']);
+const CLOCK_PRESETS: ReadonlySet<PresetId> = new Set([
+  'overview',
+  'pitwall',
+  'quali-board',
+  'replay',
+  'strategy',
+]);
 
 /** Whether any panel of a dashboard tab moves with the session clock. */
 export function followsClock(tab: DashboardTab): boolean {

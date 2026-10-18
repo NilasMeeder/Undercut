@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met tweeëntwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Energy, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met drieëntwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Mini-sectors, Energy, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -533,7 +533,14 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   op `window.innerWidth` (< 1700 tabs, ≥ 2400 alles naast elkaar) en de sessie (Gaps alleen in een
   race, anders Live lap); de tower staat op `size: 'fit'` (CSS `zoom` tot 2,4× zodat hij het paneel vult).
 - **Analyse**: bij binnenkomst de klok op het einde; preset **Debrief** = Report + Delta,
-  Telemetry, kaart, Corners/Race pace.
+  Telemetry, kaart, Corners/Race pace; preset **Qualifying** = Bests/Laps/Run timeline, Delta,
+  Telemetry, kaart, Mini-sectors/Corners/Energy.
+- **Qualifying board** (Pitwall, `quali-board`): tower (fit, met Cut en Pred), kaart met alle auto's
+  en Live lap, Clock op de sessieklok (`mode: 'session'`, tijd over), Race control, Run timeline,
+  Track line.
+- **Mini-sectors** (widget `minisectors`): `/compare`'s `mini_sectors` als tabel, per mini-sector de
+  bochten erin (`circuit.corners` geschaald naar de laplengte), paars de snelste, de rest +gap;
+  onderaan lap, LOST (tegen de ideale combinatie) en hoe vaak de snelste. Hover = cursor, klik = zoom.
 - **Dashboards per werkplek**: elke werkplek heeft zijn eigen tabs (ook Pitwall: + voor een preset
   of "Duplicate this dashboard", `duplicate` zet de kopie ernaast). Toetsen **1–9** = de n-de tab van
   de werkplek waar je staat (het cijfer staat klein in de tab), ook in de palette.
