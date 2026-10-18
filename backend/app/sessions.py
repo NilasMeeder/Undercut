@@ -37,6 +37,7 @@ TRACE_CHANNELS = {
     "drs": "drs",
     "x": "x",
     "y": "y",
+    "z": "z",
 }
 """API channel name -> archive telemetry key."""
 

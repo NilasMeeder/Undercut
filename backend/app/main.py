@@ -11,7 +11,17 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
 
-from app import analysis, progress, replays, schedule, sessions, store, strategies, strategy
+from app import (
+    analysis,
+    energies,
+    progress,
+    replays,
+    schedule,
+    sessions,
+    store,
+    strategies,
+    strategy,
+)
 from app.live import record, recorder
 from app.live import service as live
 from app.schemas import (
@@ -21,6 +31,8 @@ from app.schemas import (
     CornerLap,
     CornerSegment,
     Degradation,
+    EnergyComparison,
+    EnergySession,
     Lap,
     LapProgress,
     LiveSessionInfo,
@@ -375,6 +387,37 @@ def compare_laps(
         )
 
     return _guard(load)
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/energy")
+def energy_laps(
+    year: int,
+    round: int,
+    session: SessionCode,
+    laps: Annotated[
+        str,
+        Query(description="Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference"),
+    ],
+) -> EnergyComparison:
+    """Where the laps stop gaining speed at full throttle (an estimate: there is no battery
+    channel). The first request for a session reads the telemetry of all its clean laps."""
+
+    def load() -> EnergyComparison:
+        refs = sessions.parse_lap_refs(laps)
+        if len(refs) > MAX_COMPARED_LAPS:
+            raise ValueError(f"Compare at most {MAX_COMPARED_LAPS} laps")
+        resolved = [
+            (code, sessions.resolve_lap(year, round, session, code, ref)) for code, ref in refs
+        ]
+        return energies.compare(year, round, session, resolved)
+
+    return _guard(load)
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/energy/session")
+def energy_session(year: int, round: int, session: SessionCode) -> EnergySession:
+    """Per driver and straight over the session's clean laps: who clips where, at what cost."""
+    return _guard(lambda: energies.summary(year, round, session))
 
 
 # Live: sessions recorded from the live timing feed (app/live), converted as they grow.

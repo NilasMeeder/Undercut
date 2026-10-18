@@ -1350,6 +1350,153 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/energy": {
+      "get": {
+        "summary": "Energy Laps",
+        "description": "Where the laps stop gaining speed at full throttle (an estimate: there is no battery\nchannel). The first request for a session reads the telemetry of all its clean laps.",
+        "operationId": "energy_laps_api_sessions__year___round___session__energy_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "laps",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference",
+              "title": "Laps"
+            },
+            "description": "Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnergyComparison"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/energy/session": {
+      "get": {
+        "summary": "Energy Session",
+        "description": "Per driver and straight over the session's clean laps: who clips where, at what cost.",
+        "operationId": "energy_session_api_sessions__year___round___session__energy_session_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnergySession"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/live": {
       "get": {
         "summary": "Live Sessions",
@@ -2064,6 +2211,24 @@
         ],
         "title": "Circuit"
       },
+      "ClipStretch": {
+        "properties": {
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "ClipStretch"
+      },
       "ClockPoint": {
         "properties": {
           "t": {
@@ -2479,6 +2644,44 @@
         ],
         "title": "Degradation"
       },
+      "DriverEnergy": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "cost_time": {
+            "type": "number",
+            "title": "Cost Time"
+          },
+          "straights": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EnergyStraightStats"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Straights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "laps",
+          "cost_time",
+          "straights"
+        ],
+        "title": "DriverEnergy"
+      },
       "DriverInfo": {
         "properties": {
           "code": {
@@ -2725,6 +2928,243 @@
         ],
         "title": "Duel",
         "description": "Undercut and overcut against one car around the driver.\n\nfirst[k \u2212 1]: the driver stops on the next lap and the rival k laps later; second[k \u2212 1]: the\nrival stops on the next lap and the driver k laps later. Both are seconds the driver gains on\nthe rival once both have stopped (negative = loses), on top of the gap now."
+      },
+      "EnergyComparison": {
+        "properties": {
+          "straights": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyStraight"
+            },
+            "type": "array",
+            "title": "Straights"
+          },
+          "laps": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyLap"
+            },
+            "type": "array",
+            "title": "Laps"
+          },
+          "clean_laps": {
+            "type": "integer",
+            "title": "Clean Laps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "straights",
+          "laps",
+          "clean_laps"
+        ],
+        "title": "EnergyComparison",
+        "description": "Estimated energy deployment (2026): where laps stop gaining speed at full throttle."
+      },
+      "EnergyLap": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "clipped": {
+            "type": "number",
+            "title": "Clipped"
+          },
+          "cost_time": {
+            "type": "number",
+            "title": "Cost Time"
+          },
+          "straights": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EnergyStraightLap"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Straights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "clipped",
+          "cost_time",
+          "straights"
+        ],
+        "title": "EnergyLap"
+      },
+      "EnergySession": {
+        "properties": {
+          "straights": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyStraight"
+            },
+            "type": "array",
+            "title": "Straights"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DriverEnergy"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "clean_laps": {
+            "type": "integer",
+            "title": "Clean Laps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "straights",
+          "drivers",
+          "clean_laps"
+        ],
+        "title": "EnergySession"
+      },
+      "EnergyStraight": {
+        "properties": {
+          "corner": {
+            "type": "string",
+            "title": "Corner"
+          },
+          "after": {
+            "type": "string",
+            "title": "After"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "session": {
+            "$ref": "#/components/schemas/EnergyStraightStats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "corner",
+          "after",
+          "end",
+          "session"
+        ],
+        "title": "EnergyStraight"
+      },
+      "EnergyStraightLap": {
+        "properties": {
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "coast": {
+            "type": "number",
+            "title": "Coast"
+          },
+          "entry_speed": {
+            "type": "number",
+            "title": "Entry Speed"
+          },
+          "peak_speed": {
+            "type": "number",
+            "title": "Peak Speed"
+          },
+          "end_speed": {
+            "type": "number",
+            "title": "End Speed"
+          },
+          "clip_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip At"
+          },
+          "clipping": {
+            "items": {
+              "$ref": "#/components/schemas/ClipStretch"
+            },
+            "type": "array",
+            "title": "Clipping"
+          },
+          "clipped": {
+            "type": "number",
+            "title": "Clipped"
+          },
+          "cost_speed": {
+            "type": "number",
+            "title": "Cost Speed"
+          },
+          "cost_time": {
+            "type": "number",
+            "title": "Cost Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "coast",
+          "entry_speed",
+          "peak_speed",
+          "end_speed",
+          "clip_at",
+          "clipping",
+          "clipped",
+          "cost_speed",
+          "cost_time"
+        ],
+        "title": "EnergyStraightLap",
+        "description": "One lap on one straight. Distances (m) on the reference lap's scale, like /compare;\nnegative = before the line (the main straight runs on from the previous lap)."
+      },
+      "EnergyStraightStats": {
+        "properties": {
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "clipping": {
+            "type": "number",
+            "title": "Clipping"
+          },
+          "clipped": {
+            "type": "number",
+            "title": "Clipped"
+          },
+          "cost_time": {
+            "type": "number",
+            "title": "Cost Time"
+          },
+          "peak_speed": {
+            "type": "number",
+            "title": "Peak Speed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "laps",
+          "clipping",
+          "clipped",
+          "cost_time",
+          "peak_speed"
+        ],
+        "title": "EnergyStraightStats",
+        "description": "A straight over a set of clean laps: shares and medians."
       },
       "EventInfo": {
         "properties": {

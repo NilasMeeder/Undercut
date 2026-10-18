@@ -246,6 +246,101 @@ class Comparison(BaseModel):
     """Empty when the circuit has no corner data."""
 
 
+class ClipStretch(BaseModel):
+    start: float
+    end: float
+
+
+class EnergyStraightLap(BaseModel):
+    """One lap on one straight. Distances (m) on the reference lap's scale, like /compare;
+    negative = before the line (the main straight runs on from the previous lap)."""
+
+    start: float
+    """Full throttle from here."""
+    end: float
+    """Full throttle up to here: the lift or the brake."""
+    coast: float
+    """Metres from the lift to the brake when that is 60 m or more (lift and coast), else 0."""
+    entry_speed: float
+    peak_speed: float
+    end_speed: float
+    """km/h at `end`."""
+    clip_at: float | None
+    """Where the car first stops gaining speed at full throttle while the best laps on this
+    straight still gained (estimate); null if it does not clip."""
+    clipping: list[ClipStretch]
+    """Every stretch like that (it can gain again in between)."""
+    clipped: float
+    """Metres of clipping, all stretches together."""
+    cost_speed: float
+    """km/h more at `end` had it kept accelerating like the best laps from clip_at."""
+    cost_time: float
+    """Seconds that would have saved up to `end`."""
+
+
+class EnergyStraightStats(BaseModel):
+    """A straight over a set of clean laps: shares and medians."""
+
+    laps: int
+    clipping: float
+    """Share of the laps that clip (0–1)."""
+    clipped: float
+    """Median metres of clipping."""
+    cost_time: float
+    """Median seconds clipping cost."""
+    peak_speed: float
+    """Median top speed (km/h)."""
+
+
+class EnergyStraight(BaseModel):
+    corner: str
+    """The corner it brakes for (a label of Circuit.corners)."""
+    after: str
+    """The corner it starts from (most laps)."""
+    end: float
+    """Median end of full throttle (m)."""
+    session: EnergyStraightStats
+    """Over every clean lap of the session."""
+
+
+class EnergyLap(BaseModel):
+    driver: str
+    lap: int
+    clipped: float
+    """Metres of clipping on all straights."""
+    cost_time: float
+    """Seconds clipping cost on all straights."""
+    straights: list[EnergyStraightLap | None]
+    """Same order as EnergyComparison.straights; null if the lap has no run there (a lift)."""
+
+
+class EnergyComparison(BaseModel):
+    """Estimated energy deployment (2026): where laps stop gaining speed at full throttle."""
+
+    straights: list[EnergyStraight]
+    laps: list[EnergyLap]
+    """Same order as asked; the first is the reference for the distance scale."""
+    clean_laps: int
+    """Clean laps of the session the estimate is built from."""
+
+
+class DriverEnergy(BaseModel):
+    driver: str
+    laps: int
+    """Clean laps."""
+    cost_time: float
+    """Median per lap of what clipping cost on all straights (s)."""
+    straights: list[EnergyStraightStats | None]
+    """Same order as EnergySession.straights."""
+
+
+class EnergySession(BaseModel):
+    straights: list[EnergyStraight]
+    drivers: list[DriverEnergy]
+    """Least clipping cost first."""
+    clean_laps: int
+
+
 class Corner(BaseModel):
     label: str
     distance: float

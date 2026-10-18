@@ -313,6 +313,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/energy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Energy Laps
+         * @description Where the laps stop gaining speed at full throttle (an estimate: there is no battery
+         *     channel). The first request for a session reads the telemetry of all its clean laps.
+         */
+        get: operations["energy_laps_api_sessions__year___round___session__energy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/energy/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Energy Session
+         * @description Per driver and straight over the session's clean laps: who clips where, at what cost.
+         */
+        get: operations["energy_session_api_sessions__year___round___session__energy_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/live": {
         parameters: {
             query?: never;
@@ -517,6 +558,13 @@ export interface components {
             /** Pit Loss Vsc */
             pit_loss_vsc: number | null;
         };
+        /** ClipStretch */
+        ClipStretch: {
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+        };
         /**
          * ClockPoint
          * @description F1's session clock from session time `t` on: `remaining` seconds, counting down if
@@ -660,6 +708,17 @@ export interface components {
             /** Compounds */
             compounds: components["schemas"]["CompoundPace"][];
         };
+        /** DriverEnergy */
+        DriverEnergy: {
+            /** Driver */
+            driver: string;
+            /** Laps */
+            laps: number;
+            /** Cost Time */
+            cost_time: number;
+            /** Straights */
+            straights: (components["schemas"]["EnergyStraightStats"] | null)[];
+        };
         /** DriverInfo */
         DriverInfo: {
             /** Code */
@@ -728,6 +787,95 @@ export interface components {
             first: number[];
             /** Second */
             second: number[];
+        };
+        /**
+         * EnergyComparison
+         * @description Estimated energy deployment (2026): where laps stop gaining speed at full throttle.
+         */
+        EnergyComparison: {
+            /** Straights */
+            straights: components["schemas"]["EnergyStraight"][];
+            /** Laps */
+            laps: components["schemas"]["EnergyLap"][];
+            /** Clean Laps */
+            clean_laps: number;
+        };
+        /** EnergyLap */
+        EnergyLap: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Clipped */
+            clipped: number;
+            /** Cost Time */
+            cost_time: number;
+            /** Straights */
+            straights: (components["schemas"]["EnergyStraightLap"] | null)[];
+        };
+        /** EnergySession */
+        EnergySession: {
+            /** Straights */
+            straights: components["schemas"]["EnergyStraight"][];
+            /** Drivers */
+            drivers: components["schemas"]["DriverEnergy"][];
+            /** Clean Laps */
+            clean_laps: number;
+        };
+        /** EnergyStraight */
+        EnergyStraight: {
+            /** Corner */
+            corner: string;
+            /** After */
+            after: string;
+            /** End */
+            end: number;
+            session: components["schemas"]["EnergyStraightStats"];
+        };
+        /**
+         * EnergyStraightLap
+         * @description One lap on one straight. Distances (m) on the reference lap's scale, like /compare;
+         *     negative = before the line (the main straight runs on from the previous lap).
+         */
+        EnergyStraightLap: {
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Coast */
+            coast: number;
+            /** Entry Speed */
+            entry_speed: number;
+            /** Peak Speed */
+            peak_speed: number;
+            /** End Speed */
+            end_speed: number;
+            /** Clip At */
+            clip_at: number | null;
+            /** Clipping */
+            clipping: components["schemas"]["ClipStretch"][];
+            /** Clipped */
+            clipped: number;
+            /** Cost Speed */
+            cost_speed: number;
+            /** Cost Time */
+            cost_time: number;
+        };
+        /**
+         * EnergyStraightStats
+         * @description A straight over a set of clean laps: shares and medians.
+         */
+        EnergyStraightStats: {
+            /** Laps */
+            laps: number;
+            /** Clipping */
+            clipping: number;
+            /** Clipped */
+            clipped: number;
+            /** Cost Time */
+            cost_time: number;
+            /** Peak Speed */
+            peak_speed: number;
         };
         /** EventInfo */
         EventInfo: {
@@ -2181,6 +2329,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Comparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    energy_laps_api_sessions__year___round___session__energy_get: {
+        parameters: {
+            query: {
+                /** @description Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference */
+                laps: string;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnergyComparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    energy_session_api_sessions__year___round___session__energy_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnergySession"];
                 };
             };
             /** @description Validation Error */
