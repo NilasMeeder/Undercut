@@ -27,6 +27,7 @@ from app import generations, replays, schedule, sessions
 from app.config import LIVE_DIR
 from app.live import convert, feed, recordings, telemetry
 from app.live.telemetry import Samples
+from app.live.tower import FeedTower
 from app.live.track import LiveTrack, Outline
 from app.sources import tracinginsights as ti
 
@@ -76,6 +77,8 @@ class LiveSession:
     built_at: float = 0.0
     tail: feed.Tail | None = None
     track: LiveTrack = field(default_factory=LiveTrack)
+    tower: FeedTower = field(default_factory=FeedTower)
+    """F1's own tower (TimingData), laid over the one from the laps while live."""
     codes: dict[str, str] = field(default_factory=dict)
     """Car number -> driver code, from DriverList."""
     outline: Outline | None = None
@@ -139,6 +142,7 @@ class LiveSession:
         if self.tail.restarted:
             self.timing, self.horizon, self.status = [], None, None
             self.track, self.car_data, self.laps, self.written = LiveTrack(), {}, [], set()
+            self.tower = FeedTower()
         for message in messages:
             if self.origin is None and message.utc is not None:
                 self.origin = message.utc
@@ -161,7 +165,11 @@ class LiveSession:
                         self.codes[number] = entry["Tla"]
             elif message.topic == "TimingData":
                 # The initial state has no time: it holds as of the first message.
-                self._lap_counts(data, at if at is not None else (self.horizon or -1e6))
+                since = at if at is not None else (self.horizon or -1e6)
+                self._lap_counts(data, since)
+                self.tower.add_timing(since, data)
+            elif message.topic == "TimingAppData":
+                self.tower.add_tyres(at if at is not None else (self.horizon or -1e6), data)
             self.timing.append(message)
             self.dirty = True
         if self.outline_tried:
@@ -271,6 +279,7 @@ class LiveSession:
         if self.track.count > 0 and self.outline is not None:
             replays.save_track(self.track_path(), self.track.to_track(self.codes, self.outline))
         self.timing, self.track, self.finished = [], LiveTrack(), True
+        self.tower = FeedTower()
         self.finished_size = self.size()
         self.car_data, self.laps = {}, []
         generations.bump(self.key)  # no longer live: the tower's last laps are final now

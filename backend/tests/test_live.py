@@ -6,10 +6,10 @@ import numpy as np
 import pytest
 
 from app import generations, schedule, sessions
-from app.live import convert, feed, recordings, telemetry
+from app.live import convert, feed, recordings, telemetry, tower
 from app.live.service import LiveSession
 from app.live.track import LiveTrack, Outline
-from app.schemas import SessionInfo
+from app.schemas import SessionInfo, TimingState, TowerRow
 
 
 def test_parse_update_and_state_lines() -> None:
@@ -200,3 +200,82 @@ def test_a_finished_recording_is_read_again_when_it_grows(
     assert not live.grows_again()
     path.write_text("x" * 10)  # a new recording in its place
     assert live.grows_again()
+
+
+def test_parse_gap_texts() -> None:
+    assert tower.parse_gap("+1.234") == (1.234, 0, False)
+    assert tower.parse_gap("+1:02.345") == (62.345, 0, False)
+    assert tower.parse_gap("1L") == (None, 1, False)
+    assert tower.parse_gap("+2 LAPS") == (None, 2, False)
+    assert tower.parse_gap("LAP 36") == (None, 0, True)
+    assert tower.parse_gap("") == (None, 0, False)
+
+
+def tower_row(driver: str, position: int, gap: float | None = None) -> TowerRow:
+    return TowerRow(
+        position=position,
+        driver=driver,
+        status="running",
+        laps=36,
+        gap=gap,
+        interval=gap,
+        laps_down=0,
+        interval_laps=0,
+        best_lap=None,
+        best_timing="none",
+        last_lap=None,
+        last_timing="none",
+        sectors=[],
+        compound="HARD",
+        tyre_age=5,
+        pit_stops=1,
+        eliminated=False,
+    )
+
+
+def test_feed_tower_lays_f1s_order_and_gaps_over_the_laps() -> None:
+    feed_tower = tower.FeedTower()
+    # The state at subscription (a late recording), then updates.
+    feed_tower.add_timing(
+        -1e6,
+        {
+            "Lines": {
+                "1": {"Position": "1", "GapToLeader": "LAP 36", "NumberOfLaps": 35},
+                "4": {
+                    "Position": "2",
+                    "GapToLeader": "+5.100",
+                    "IntervalToPositionAhead": {"Value": "+5.100"},
+                },
+                "16": {"Position": "3", "GapToLeader": "1L", "InPit": True},
+            }
+        },
+    )
+    feed_tower.add_timing(100.0, {"Lines": {"4": {"GapToLeader": "+4.900"}}})
+    feed_tower.add_timing(101.0, {"Lines": {"4": {"Position": "1"}, "1": {"Position": "2"}}})
+    assert feed_tower.next_change(99.0) == 100.0
+    assert feed_tower.at(100.5)["4"].gap == "+4.900"
+
+    # The laps have only VER and NOR yet, NOR ahead (stale): F1 says VER, NOR, and LEC 1 lap down.
+    state = TimingState(
+        time=100.5,
+        valid_from=90.0,
+        valid_until=120.0,
+        kind="race",
+        lap=36,
+        total_laps=53,
+        segment=None,
+        cutoff=None,
+        track_status="green",
+        rows=[tower_row("NOR", 1), tower_row("VER", 2, gap=1.0)],
+    )
+    codes = {"1": "VER", "4": "NOR", "16": "LEC"}
+    out = tower.overlay(state, feed_tower.at(100.5), codes, None, feed_tower.next_change(100.5))
+    rows = {row.driver: row for row in out.rows}
+    assert [row.driver for row in out.rows] == ["VER", "NOR", "LEC"]
+    assert rows["VER"].gap is None and rows["NOR"].gap == 4.9 and rows["NOR"].interval == 5.1
+    assert rows["LEC"].laps_down == 1 and rows["LEC"].status == "pit"
+    assert out.valid_until == 101.0  # the next change in the feed
+    assert out.lap == 37  # VER's NumberOfLaps + 1
+
+    later = tower.overlay(state, feed_tower.at(101.5), codes, None, None)
+    assert [row.driver for row in later.rows][:2] == ["NOR", "VER"]

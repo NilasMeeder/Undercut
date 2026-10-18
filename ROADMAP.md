@@ -215,7 +215,11 @@ bestanden van TracingInsights, dus alle widgets werken zonder wijziging.
 - [ ] Simulator FP2 (rode vlag): bandleeftijd en compound wijken af van het archief, ook zonder late
       start (de simulator stuurt stints anders dan de echte feed, of FastF1's tyre-fix)
 - [ ] Strategie bij een late opname: race history en lap-assen gaan uit van laps vanaf 1
-- [ ] Tower live direct uit TimingData (gaps/intervallen van F1 zelf), nu uit de laps (tot 3 s later)
+- [x] Tower live direct uit TimingData (2026-10-18): F1's volgorde, gaps, intervallen en status over
+      de tower uit de laps (`live/tower.py`), ook meteen bij een late opname. Getest met de simulator
+      (Monza R met `--join`, Q2)
+- [ ] Tower: F1's mini-sectoren (`Segments`, de gekleurde streepjes van de officiële timing) en
+      `Catching`, nu niet gebruikt
 - [x] Live telemetrie volgen (2026-10-18): FOLLOW per link-groep (`l`, de laps schuiven per lap mee,
       ook in replay) en de widget Live lap (de lap die bezig is, groeiend, met de live delta tegen de
       vorige of de beste lap). Getest met de simulator (Monza R) en in replay (Monza Q en R)

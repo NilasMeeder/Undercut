@@ -18,7 +18,7 @@ import numpy as np
 from app import replay, sessions
 from app.config import REPLAY_CACHE_DIR
 from app.generations import session_cache
-from app.live import recordings
+from app.live import recordings, tower
 from app.schemas import (
     ClockPoint,
     RaceControlMessage,
@@ -128,7 +128,15 @@ def get_timing_index(year: int, round_number: int, code: str) -> replay.TimingIn
 
 
 def timing_state(year: int, round_number: int, code: str, t: float) -> TimingState:
-    return replay.timing_state(get_timing_index(year, round_number, code), t)
+    state = replay.timing_state(get_timing_index(year, round_number, code), t)
+    live = _live(year, round_number, code)
+    if live is None or not live.tower.changes:
+        return state
+    # Live: F1's own order, gaps and status from the feed (the laps run a few seconds behind).
+    segment = state.segment
+    part = int(segment[-1]) - 1 if segment and segment[-1].isdigit() else None
+    cars, codes = live.tower.at(t), dict(live.codes)
+    return tower.overlay(state, cars, codes, part, live.tower.next_change(t))
 
 
 # --- Position track ------------------------------------------------------------------------------

@@ -129,7 +129,8 @@ backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stint
                            pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
 backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
                            feed), convert.py (FastF1 → archiefvorm), service.py (opnames volgen en omzetten),
-                           track.py (positiespoor dat groeit), telemetry.py (telemetrie per lap), recordings.py
+                           track.py (positiespoor dat groeit), telemetry.py (telemetrie per lap), tower.py
+                           (F1's tower uit TimingData over die uit de laps), recordings.py
 backend/app/generations.py versie per sessie; session_cache = lru_cache die op die versie sleutelt (live verloopt)
 backend/app/store.py       gebruikersdata in SQLite: markeringen en views (migraties via PRAGMA user_version)
 backend/app/schemas.py     Pydantic response-modellen (bron voor de TS-types)
@@ -303,6 +304,15 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   `<DRV>/<lap>_tel.json.gz`. Op Monza 0,2–0,4% van de archieflengte. Opslag compact (`array('d')`).
 - **Circuit**: TracingInsights' `corners.json` van deze sessie, een andere van het weekend, of vorig
   jaar (`_borrow_corners`); de feed heeft geen outline.
+- **Tower live** (`live/tower.py`): de tower uit de laps loopt live tot ~4 s achter en kent een auto
+  bij een late opname pas na zijn eerste passage. `FeedTower` houdt per auto bij wat TimingData zegt
+  (positie, `GapToLeader`/`IntervalToPositionAhead`, in FP `TimeDiffToFastest`/`…ToPositionAhead`,
+  in Q `Stats` per deel en `KnockedOut`, InPit/Retired/Stopped, NumberOfLaps; banden uit
+  TimingAppData), de toestand bij inschrijven vanaf het begin. Zolang de sessie live is legt
+  `replays.timing_state` dat over de tower uit de laps (`tower.overlay`): F1's volgorde, gaps en
+  status; sectoren, banden en paars/groen blijven uit de laps. `valid_until` = de volgende wijziging
+  in de feed (min. 0,25 s). Na afloop alleen de laps (zoals het archief). De simulator stuurt in Q/FP
+  posities en verschillen uit de archief-tower (race: bij de lijn, zoals altijd).
 - **Live of klaar**: een opname is live als hij de laatste 2 minuten is geschreven en F1 hem niet
   heeft afgesloten (`Finalised`/`Ends`; de heartbeats gaan door). Daarna één laatste omzetting,
   telemetrie, npz, en het geheugen gaat vrij. Groeit een klare opname weer (`grows_again`: de

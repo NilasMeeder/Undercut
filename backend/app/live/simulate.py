@@ -23,7 +23,7 @@ from typing import Any
 
 import numpy as np
 
-from app import replays, sessions
+from app import replay, replays, sessions
 from app.live import feed, recordings
 from app.schemas import Lap
 from app.sources import tracinginsights as ti
@@ -159,6 +159,7 @@ class Simulation:
         out += self._weather()
         out += self._lap_count()
         out += self._clock()
+        out += self._standings()
         out += self._samples()
         out += [
             Update(at, "Heartbeat", {"Utc": feed.format_utc(self.utc(at))})
@@ -308,6 +309,39 @@ class Simulation:
                 continue
             interval = {"IntervalToPositionAhead": {"Value": gap(end - ahead)}}
             out.append(line(number, end, interval))
+        return out
+
+    def _standings(self) -> list[Update]:
+        """Qualifying and practice: F1's order and differences at every line crossing, as the
+        archive's tower has them (races send them with the timing points, see _timing)."""
+        if self.timeline.kind == "race":
+            return []
+        index = replays.get_timing_index(*self.key)
+        moments = sorted({lap.end_time for lap in self.laps} | {s.start for s in index.segments})
+        sent: dict[str, dict[str, Any]] = {}
+        out = []
+        for at in moments:
+            state = replay.timing_state(index, at)
+            part = int(state.segment[-1]) - 1 if state.segment else None
+            lines = {}
+            for row in state.rows:
+                number = self.number.get(row.driver)
+                if number is None:
+                    continue
+                fastest = gap(row.gap) if row.gap is not None else ""
+                ahead = gap(row.interval) if row.interval is not None else ""
+                line: dict[str, Any] = {"Position": str(row.position), "Line": row.position}
+                if part is None:
+                    line |= {"TimeDiffToFastest": fastest, "TimeDiffToPositionAhead": ahead}
+                else:
+                    stats = {"TimeDiffToFastest": fastest, "TimeDifftoPositionAhead": ahead}
+                    line |= {"Stats": {str(part): stats}, "KnockedOut": row.eliminated}
+                changed = {k: v for k, v in line.items() if sent.get(number, {}).get(k) != v}
+                if changed:
+                    sent.setdefault(number, {}).update(changed)
+                    lines[number] = changed
+            if lines:
+                out.append(Update(at, "TimingData", {"Lines": lines}))
         return out
 
     def _track_status(self) -> list[Update]:
