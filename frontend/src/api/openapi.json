@@ -3276,6 +3276,20 @@
               }
             ],
             "title": "Deploy"
+          },
+          "deploying": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "boolean"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deploying"
           }
         },
         "type": "object",
@@ -3285,7 +3299,8 @@
           "clipped",
           "cost_time",
           "straights",
-          "deploy"
+          "deploy",
+          "deploying"
         ],
         "title": "EnergyLap"
       },

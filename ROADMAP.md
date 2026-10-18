@@ -284,7 +284,10 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
       "Inzet" is nu strenger: meer dan de motor alleen (sessie-omhullende min 280 kW MGU-K, vanaf
       200 km/h), want Deploy > 0 gaf paars uit de Parabolica. Sectoren (S1/S2/S3) als optie op
       de kaart. Getest op Monza 2026 Q (GAS L17: T7→T8, T9→T11) en Monza 2025 Q (DRS als optie)
-- [ ] Deploy-kanaal in Telemetry dezelfde regel geven (vult nu paars bij elke positieve waarde)
+- [x] Deploy-kanaal in Telemetry dezelfde regel (2026-10-18, Nilas): de lijn blijft % van de
+      omhullende, maar paars alleen waar de kaart ook paars is (meer dan de motor alleen); positief
+      zonder inzet = lijn zonder vulling. Getest op Monza 2026 Q (GAS L17, RUS L16: zelfde stukken
+      als op de kaart)
 - [ ] Inzet en clippunt nalopen met Nilas op een sessie (gevoel: paars en clippunt kloppen nog
       niet overal)
 - [ ] Clipstukken in Live lap (de lap die bezig is); Nilas: niet standaard

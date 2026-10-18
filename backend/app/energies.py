@@ -253,9 +253,11 @@ def _straight_lap(row: energy.Straight, scale: float) -> EnergyStraightLap:
 
 def deploy_on_grid(
     runs: LapRuns, result: SessionEnergy, scale: float, grid: np.ndarray
-) -> list[float | None]:
-    """Deploy (%) of a lap's straights on a distance grid of the reference lap's scale."""
+) -> tuple[list[float | None], list[bool]]:
+    """Deploy (%) of a lap's straights on a distance grid of the reference lap's scale, and per
+    grid point whether it deploys (more than the engine alone, as on the map)."""
     out = np.full(grid.size, np.nan)
+    on = np.zeros(grid.size, dtype=bool)
     k = runs.kinematics
     judged = [(corner, run) for corner, _, run in runs.straights if corner in result.order]
     if runs.across is not None and result.across is not None:
@@ -267,7 +269,11 @@ def deploy_on_grid(
         d = k.distance[run.start : run.end] * scale
         inside = (grid >= d[0]) & (grid <= d[-1])
         out[inside] = np.interp(grid[inside], d, energy.deploy(k, run, reference))
-    return [None if np.isnan(v) else round(float(v)) for v in out]
+        if result.session is not None:
+            for a, b in energy.deploying_stretches(k, run, result.session):
+                on |= (grid >= d[a]) & (grid <= d[b - 1])
+    on &= ~np.isnan(out)
+    return [None if np.isnan(v) else round(float(v)) for v in out], on.tolist()
 
 
 def compare(
@@ -292,6 +298,7 @@ def compare(
     for lap, rows, length in found:
         scale = reference / length if length > 0 else 1.0
         runs = lap_runs(year, round_number, code, lap) if grid is not None else None
+        deploy = None if grid is None or runs is None else deploy_on_grid(runs, result, scale, grid)
         laps.append(
             EnergyLap(
                 driver=lap.driver,
@@ -301,9 +308,8 @@ def compare(
                 straights=[
                     _straight_lap(rows[c], scale) if c in rows else None for c in result.order
                 ],
-                deploy=None
-                if grid is None or runs is None
-                else deploy_on_grid(runs, result, scale, grid),
+                deploy=None if deploy is None else deploy[0],
+                deploying=None if deploy is None else deploy[1],
             )
         )
     return EnergyComparison(straights=_straights(result), laps=laps, clean_laps=len(result.laps))

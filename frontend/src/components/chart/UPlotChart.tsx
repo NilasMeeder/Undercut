@@ -12,8 +12,9 @@ export type ChartSeries = {
   dash?: number[];
   stepped?: boolean;
   width?: number;
-  /** Fill to zero: one colour above, another below (Deploy: deploying vs harvesting). */
-  fill?: { above: string; below: string };
+  /** Fill to zero: one colour above, another below (Deploy: deploying vs harvesting). Above
+   * zero only where `aboveOnly` is true, when given (Deploy: more than the engine alone). */
+  fill?: { above: string; below: string; aboveOnly?: boolean[] | null };
 };
 
 /** A strip along the bottom of the plot from `start` to `end` (m), one lane per lap: where a lap
@@ -152,17 +153,58 @@ function drawTicks(u: uPlot, ticks: ChartTick[]) {
   ctx.restore();
 }
 
-/** A vertical gradient with a hard stop at y = 0: `above` over it, `below` under it. */
-function splitFill(u: uPlot, above: string, below: string): CanvasGradient | string {
-  const { top, height } = u.bbox;
-  if (height <= 0) return above;
-  const zero = Math.min(Math.max((u.valToPos(0, 'y', true) - top) / height, 0), 1);
-  const gradient = u.ctx.createLinearGradient(0, top, 0, top + height);
-  gradient.addColorStop(0, above + FILL_ALPHA);
-  gradient.addColorStop(zero, above + FILL_ALPHA);
-  gradient.addColorStop(zero, below + FILL_ALPHA);
-  gradient.addColorStop(1, below + FILL_ALPHA);
-  return gradient;
+/** Fill a series to zero, under the lines: `above` over zero (where `aboveOnly` allows it),
+ * `below` under it. Drawn by hand so the fill above zero can stop where the mask does. */
+function drawFills(u: uPlot, series: ChartSeries[]) {
+  const { ctx } = u;
+  const { left, top, width, height } = u.bbox;
+  const zero = Math.min(Math.max(u.valToPos(0, 'y', true), top), top + height);
+  const xs = u.data[0];
+  series.forEach((s, n) => {
+    if (!s.fill) return;
+    const ys = u.data[n + 1];
+    const mask = s.fill.aboveOnly;
+    const area = (keep: (i: number) => boolean) => {
+      const path = new Path2D();
+      let first = -1;
+      const close = (last: number) => {
+        path.lineTo(u.valToPos(xs[last], 'x', true), zero);
+        path.lineTo(u.valToPos(xs[first], 'x', true), zero);
+        path.closePath();
+        first = -1;
+      };
+      for (let i = 0; i < xs.length; i++) {
+        const y = ys[i];
+        if (y == null || !keep(i)) {
+          if (first >= 0) close(i - 1);
+          continue;
+        }
+        const x = u.valToPos(xs[i], 'x', true);
+        const py = u.valToPos(y, 'y', true);
+        if (first < 0) {
+          first = i;
+          path.moveTo(x, zero);
+        }
+        path.lineTo(x, py);
+      }
+      if (first >= 0) close(xs.length - 1);
+      return path;
+    };
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, width, zero - top);
+    ctx.clip();
+    ctx.fillStyle = s.fill.above + FILL_ALPHA;
+    ctx.fill(area((i) => !mask || mask[i] === true));
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, zero, width, top + height - zero);
+    ctx.clip();
+    ctx.fillStyle = s.fill.below + FILL_ALPHA;
+    ctx.fill(area(() => true));
+    ctx.restore();
+  });
 }
 
 /**
@@ -256,12 +298,6 @@ export function UPlotChart({
           dash: s.dash,
           points: { show: false },
           paths: s.stepped ? uPlot.paths.stepped!({ align: 1 }) : undefined,
-          ...(s.fill
-            ? {
-                fill: (u: uPlot) => splitFill(u, s.fill!.above, s.fill!.below),
-                fillTo: 0,
-              }
-            : {}),
         })),
       ],
       hooks: {
@@ -296,6 +332,8 @@ export function UPlotChart({
             u.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
           },
         ],
+        // After the axes and before the series: fills go under the lines.
+        drawAxes: [(u) => drawFills(u, series)],
         draw: [
           (u) => {
             drawBands(u, bandsRef.current);

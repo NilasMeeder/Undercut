@@ -479,7 +479,10 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   zegt verder weinig: per versnelling vast (8e ≈ 35 rpm per km/h).
 - **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen en DOWN; SESSION:
   drivers × straights, kosten, meters of % laps met terugschakelen). Telemetry: kanaal Deploy (lijn in
-  de lapkleur, vulling paars `ers` boven nul en amber `clip` eronder, `ChartSeries.fill`), instelling
+  de lapkleur, vulling amber `clip` onder nul en paars `ers` alleen waar de lap inzet volgens dezelfde
+  regel als de kaart (`EnergyLap.deploying`, een masker op het raster van `deploy`, uit
+  `energy.deploying_stretches`); positief zonder inzet = alleen de lijn. `ChartSeries.fill.aboveOnly`;
+  de vulling tekent `UPlotChart` zelf in de `drawAxes`-hook, dus onder de lijnen), instelling
   "Clipping and downshifts (2026)": amberen strookjes van 3 px onderaan de speed-chart (een rij per
   lap, de eerste onderaan, `UPlotChart` `bands`), CLIP in de readout en driehoekjes in de lapkleur
   bovenin de gear-chart (`ticks`). Alleen zonder DRS (2026+), zodat een oude sessie niet al zijn

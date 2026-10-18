@@ -151,6 +151,14 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
       ),
     [energyLaps, data]
   );
+  /** Per lap where it deploys (purple), the same estimate as on the Track map. */
+  const deploying = useMemo(
+    () =>
+      energyLaps.map((lap) =>
+        data && lap?.deploying?.length === data.distance.length ? lap.deploying : null
+      ),
+    [energyLaps, data]
+  );
 
   const channels = useMemo(
     () =>
@@ -166,17 +174,20 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
     if (!data) return [];
     return channels.map((channel) => {
       const values = data.laps.map((lap, n) => channelValues(lap, channel.key, deploy[n]) ?? []);
-      const series: ChartSeries[] = styles.map((s) => ({
+      const series: ChartSeries[] = styles.map((s, n) => ({
         color: s.color,
         dash: s.dash,
         stepped: channel.stepped,
         ...(channel.key === 'deploy'
-          ? { width: 1.25, fill: { above: COLORS.ers, below: COLORS.clip } }
+          ? {
+              width: 1.25,
+              fill: { above: COLORS.ers, below: COLORS.clip, aboveOnly: deploying[n] ?? [] },
+            }
           : {}),
       }));
       return { channel, data: [data.distance, ...values] as uPlot.AlignedData, series };
     });
-  }, [data, styles, channels, deploy]);
+  }, [data, styles, channels, deploy, deploying]);
 
   if (laps.length === 0) return <NoLapsMessage group={group} />;
   if (error) return <PanelMessage>{error.message}</PanelMessage>;

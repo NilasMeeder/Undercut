@@ -155,6 +155,12 @@ def test_deploy_on_the_compare_grid(client: TestClient) -> None:
     after = [v for d, v in zip(grid, nor, strict=True) if v is not None and d > clip_at + 100]
     assert after and max(after) < 30  # not gaining: far below the best laps
     assert max(v for v in ver if v is not None) > 80
+    # Purple only where it deploys like on the map: never off the judged points or after clipping.
+    nor_on, ver_on = (row["deploying"] for row in energy["laps"])
+    assert len(nor_on) == len(grid)
+    assert all(v is not None for v, on in zip(ver, ver_on, strict=True) if on)
+    assert any(ver_on)
+    assert not any(on for d, on in zip(grid, nor_on, strict=True) if d > clip_at + 100)
     assert (
         client.get("/api/sessions/2026/1/Q/energy?laps=NOR:2").json()["laps"][0]["deploy"] is None
     )

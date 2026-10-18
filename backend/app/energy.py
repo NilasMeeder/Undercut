@@ -523,6 +523,12 @@ def deploying(k: Kinematics, run: Run, full: Envelope) -> np.ndarray:
     return run.judged & (speed >= DEPLOY_MIN_SPEED) & (run.accel > floor)
 
 
+def deploying_stretches(k: Kinematics, run: Run, full: Envelope) -> list[tuple[int, int]]:
+    """Where the run deploys as [start, end) indices into the run, as the map and the Deploy
+    channel show it: `deploying` over at least MIN_CLIP metres."""
+    return _stretches(deploying(k, run, full), k.distance[run.start : run.end])
+
+
 def _short(mask: np.ndarray, width: int) -> np.ndarray:
     """The True stretches of `mask` shorter than `width` points."""
     edges = np.flatnonzero(np.diff(np.concatenate(([0], mask.astype(np.int8), [0]))))
@@ -598,7 +604,7 @@ def analyse(
     deploys = (
         []
         if full is None
-        else [(float(d[a]), float(d[b - 1])) for a, b in _stretches(deploying(k, run, full), d)]
+        else [(float(d[a]), float(d[b - 1])) for a, b in deploying_stretches(k, run, full)]
     )
 
     if reference is not None:

@@ -892,6 +892,8 @@ export interface components {
             straights: (components["schemas"]["EnergyStraightLap"] | null)[];
             /** Deploy */
             deploy: (number | null)[] | null;
+            /** Deploying */
+            deploying: boolean[] | null;
         };
         /** EnergySession */
         EnergySession: {

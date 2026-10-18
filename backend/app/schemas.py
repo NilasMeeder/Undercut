@@ -338,6 +338,9 @@ class EnergyLap(BaseModel):
     """With `step`: on /compare's distance grid, the acceleration at full throttle as % of the
     best laps on that straight at that speed (100 = as hard, 0 = not gaining, negative = losing
     speed: harvesting). Null off full throttle, in fast corners and near top speed."""
+    deploying: list[bool] | None
+    """With `step`: per point of `deploy` whether it deploys, the same estimate as
+    EnergyStraightLap.deploying (more than the engine alone could)."""
 
 
 class EnergyComparison(BaseModel):
