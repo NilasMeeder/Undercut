@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met drieëntwintig widgets (Laps, Telemetry, Delta,
-Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Mini-sectors, Energy, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met vierentwintig widgets (Laps, Telemetry, Delta,
+Live lap, Track map, Bests, Speed traps, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -563,6 +563,17 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   2026. Race-momenten: start (≥ 3 plaatsen), snelste/traagste stop (groen, < 60 s), undercuts (achter
   binnen 3 s, eerst gestopt, de ander ≤ 4 laps later, na beider stops ervoor; op gaps, niet posities),
   SC/VSC/rood.
+
+## Bandensets (fase 10)
+
+`tyres.py`, `/tyre-sets` (per sessie: alle sessies van het weekend tot en met deze), widget Tyre sets.
+De data heeft geen setnummers, alleen per lap compound, `fresh_tyre` (nieuw bij het begin van de
+stint) en `tyre_life` (leeftijd, loopt door over stints en sessies op dezelfde set). `chain`: een
+stint op een nieuwe set = een nieuwe set; een stint op een gebruikte set hoort bij de eerdere set van
+die compound met de hoogste leeftijd onder de eerste leeftijd van de stint; geen match = een set die
+al gebruikt was (`new_in: null`, punt in de UI). Monza 2025: ALO 13 sets (8 S, 3 M, 2 H) = de
+allocatie; PIA eindigt de race op een soft uit Q (4–11). Alleen drivers van deze sessie in de
+widget: FP1-rookies rijden op de sets van de vaste driver.
 
 ## Markeringen en views (fase 5)
 

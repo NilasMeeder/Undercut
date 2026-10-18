@@ -22,6 +22,7 @@ from app import (
     store,
     strategies,
     strategy,
+    tyres,
     zones,
 )
 from app.live import record, recorder
@@ -60,6 +61,7 @@ from app.schemas import (
     TimingState,
     TrackSectors,
     TrackZones,
+    TyreWeekend,
     View,
     ViewIn,
     Weather,
@@ -343,6 +345,12 @@ def lap_predictions(
         return out
 
     return _guard(load)
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/tyre-sets")
+def tyre_sets(year: int, round: int, session: SessionCode) -> TyreWeekend:
+    """Every driver's tyre sets over the weekend up to and including this session."""
+    return _guard(lambda: tyres.weekend(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/compare")

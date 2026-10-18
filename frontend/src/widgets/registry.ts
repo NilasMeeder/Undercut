@@ -20,6 +20,7 @@ import { timelineWidget } from './timeline/widget';
 import { towerWidget } from './tower/widget';
 import { trackLineWidget } from './trackline/widget';
 import { trackMapWidget } from './trackmap/widget';
+import { tyresWidget } from './tyres/widget';
 import { weatherWidget } from './weather/widget';
 import type { AnyWidgetDef } from './types';
 
@@ -47,6 +48,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   trackLineWidget,
   markersWidget,
   stintsWidget,
+  tyresWidget,
   gapsWidget,
   positionsWidget,
   paceWidget,

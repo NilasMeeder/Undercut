@@ -91,3 +91,5 @@ export type RecorderStatus = Schemas['RecorderStatus'];
 export type ScheduledSession = Schemas['ScheduledSession'];
 export type LapProgress = Schemas['LapProgress'];
 export type LapPrediction = Schemas['LapPrediction'];
+export type TyreWeekend = Schemas['TyreWeekend'];
+export type TyreSet = Schemas['TyreSet'];

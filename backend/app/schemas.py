@@ -1013,3 +1013,40 @@ class SessionReport(BaseModel):
     """2026 on; most cost first."""
     moments: list[ReportMoment]
     """Races only, in time order."""
+
+
+class TyreUse(BaseModel):
+    session: str
+    laps: int
+    first: int
+    """Tyre age (laps) at the first lap of this stint."""
+    last: int
+
+
+class TyreSet(BaseModel):
+    """One set of tyres as far as the data shows (it has no set numbers: chained by age)."""
+
+    compound: str
+    new_in: str | None
+    """Session it was first used in new; null when it was already used before the data starts."""
+    life: int
+    """Age in laps at its last lap."""
+    laps: int
+    """Laps on it in the data."""
+    last_session: str
+    uses: list[TyreUse]
+
+
+class DriverTyres(BaseModel):
+    driver: str
+    sets: list[TyreSet]
+    """In the order they were first used."""
+
+
+class TyreWeekend(BaseModel):
+    """Every driver's tyre sets over the weekend up to and including this session."""
+
+    sessions: list[str]
+    missing: list[str]
+    """Sessions of the weekend so far without data."""
+    drivers: list[DriverTyres]

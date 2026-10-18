@@ -83,6 +83,7 @@ function qualifying(api: DockviewApi) {
   const asTab: Position = { referencePanel: bests, direction: 'within' };
   addWidget(api, 'laps', 'blue', asTab);
   addWidget(api, 'timeline', 'blue', asTab);
+  addWidget(api, 'tyres', 'blue', asTab);
   bests.api.setActive();
   const telemetry = addWidget(api, 'telemetry', 'blue', {
     referencePanel: bests,
@@ -242,6 +243,8 @@ function qualiBoard(api: DockviewApi) {
     { mode: 'session' }
   );
   const runs = addWidget(api, 'timeline', 'blue', { referencePanel: feed, direction: 'below' });
+  addWidget(api, 'tyres', 'blue', { referencePanel: runs, direction: 'within' });
+  runs.api.setActive();
   const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
   if (width < NARROW) {
     addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'within' });
@@ -272,6 +275,7 @@ function strategy(api: DockviewApi) {
   );
   const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'tower', 'blue', { referencePanel: pit, direction: 'within' });
+  addWidget(api, 'tyres', 'blue', { referencePanel: pit, direction: 'within' });
   pit.api.setActive();
   const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: stints, direction: 'below' });
   addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });

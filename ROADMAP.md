@@ -381,7 +381,9 @@ Nilas (2026-10-18): "zoveel mogelijk features erin pompen". Volgorde: eerst wat 
 - [x] Presets Qualifying (Analyse) en Qualifying board (Pitwall) (2026-10-18). Getest op Monza 2025 Q
 - [x] Widget Mini-sectors (2026-10-18): per mini-sector de vergeleken laps, ideaal, LOST. Getest op
       Monza 2025 Q (VER L17 tegen NOR L20: 14/25 tegen 11/25)
-- [ ] Bandensets per weekend: per driver de sets, nieuw/gebruikt, laps erop
+- [x] Bandensets per weekend (2026-10-18, widget Tyre sets, `/tyre-sets`): sets aan elkaar geregen op
+      leeftijd. Getest op Monza 2025 Q en R
+- [ ] Bandensets: FP1-rookies aan de vaste driver koppelen (zelfde auto)
 - [ ] Topsnelheid tegen bochtsnelheid per team (afstelling: vleugelniveau)
 - [ ] Teamgenoten naast elkaar (Q-gat, racetempo, waar in de bochten)
 - [ ] Racetrend: tempo laatste 3/5 laps tegen voor/achter, inlopen, wanneer binnen 1 s

@@ -316,6 +316,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/tyre-sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tyre Sets
+         * @description Every driver's tyre sets over the weekend up to and including this session.
+         */
+        get: operations["tyre_sets_api_sessions__year___round___session__tyre_sets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -861,6 +881,13 @@ export interface components {
             stints: components["schemas"]["Stint"][];
             /** Stops */
             stops: components["schemas"]["PitStop"][];
+        };
+        /** DriverTyres */
+        DriverTyres: {
+            /** Driver */
+            driver: string;
+            /** Sets */
+            sets: components["schemas"]["TyreSet"][];
         };
         /**
          * Duel
@@ -1900,6 +1927,47 @@ export interface components {
             /** Zones */
             zones: components["schemas"]["TrackZone"][];
         };
+        /**
+         * TyreSet
+         * @description One set of tyres as far as the data shows (it has no set numbers: chained by age).
+         */
+        TyreSet: {
+            /** Compound */
+            compound: string;
+            /** New In */
+            new_in: string | null;
+            /** Life */
+            life: number;
+            /** Laps */
+            laps: number;
+            /** Last Session */
+            last_session: string;
+            /** Uses */
+            uses: components["schemas"]["TyreUse"][];
+        };
+        /** TyreUse */
+        TyreUse: {
+            /** Session */
+            session: string;
+            /** Laps */
+            laps: number;
+            /** First */
+            first: number;
+            /** Last */
+            last: number;
+        };
+        /**
+         * TyreWeekend
+         * @description Every driver's tyre sets over the weekend up to and including this session.
+         */
+        TyreWeekend: {
+            /** Sessions */
+            sessions: string[];
+            /** Missing */
+            missing: string[];
+            /** Drivers */
+            drivers: components["schemas"]["DriverTyres"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2646,6 +2714,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LapPrediction"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tyre_sets_api_sessions__year___round___session__tyre_sets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TyreWeekend"];
                 };
             };
             /** @description Validation Error */

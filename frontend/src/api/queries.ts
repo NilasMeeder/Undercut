@@ -14,6 +14,7 @@ import {
   type EnergySession,
   type TrackSectors,
   type TrackZones,
+  type TyreWeekend,
   type SessionReport,
   type Lap,
   type LapPrediction,
@@ -100,6 +101,8 @@ export const useEnergySession = (enabled = true) =>
 /** DRS zones (until 2025) or the straights with where the session clips (2026), for the map. */
 export const useZones = (enabled = true) => useSessionQuery<TrackZones>('/zones', enabled);
 /** Where sector 1 and 2 end along the lap, for the map. */
+/** Every driver's tyre sets over the weekend up to this session. */
+export const useTyreSets = () => useSessionQuery<TyreWeekend>('/tyre-sets');
 export const useSectors = (enabled = true) => useSessionQuery<TrackSectors>('/sectors', enabled);
 
 export type ProgressReference = 'previous' | 'best';

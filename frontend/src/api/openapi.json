@@ -1329,6 +1329,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/tyre-sets": {
+      "get": {
+        "summary": "Tyre Sets",
+        "description": "Every driver's tyre sets over the weekend up to and including this session.",
+        "operationId": "tyre_sets_api_sessions__year___round___session__tyre_sets_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TyreWeekend"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/compare": {
       "get": {
         "summary": "Compare Laps",
@@ -3212,6 +3280,27 @@
         ],
         "title": "DriverRace",
         "description": "One driver's race lap by lap, columnar: index i is lap laps[i]."
+      },
+      "DriverTyres": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/TyreSet"
+            },
+            "type": "array",
+            "title": "Sets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "sets"
+        ],
+        "title": "DriverTyres"
       },
       "Duel": {
         "properties": {
@@ -6509,6 +6598,116 @@
           "zones"
         ],
         "title": "TrackZones"
+      },
+      "TyreSet": {
+        "properties": {
+          "compound": {
+            "type": "string",
+            "title": "Compound"
+          },
+          "new_in": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New In"
+          },
+          "life": {
+            "type": "integer",
+            "title": "Life"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "last_session": {
+            "type": "string",
+            "title": "Last Session"
+          },
+          "uses": {
+            "items": {
+              "$ref": "#/components/schemas/TyreUse"
+            },
+            "type": "array",
+            "title": "Uses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "compound",
+          "new_in",
+          "life",
+          "laps",
+          "last_session",
+          "uses"
+        ],
+        "title": "TyreSet",
+        "description": "One set of tyres as far as the data shows (it has no set numbers: chained by age)."
+      },
+      "TyreUse": {
+        "properties": {
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "laps": {
+            "type": "integer",
+            "title": "Laps"
+          },
+          "first": {
+            "type": "integer",
+            "title": "First"
+          },
+          "last": {
+            "type": "integer",
+            "title": "Last"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session",
+          "laps",
+          "first",
+          "last"
+        ],
+        "title": "TyreUse"
+      },
+      "TyreWeekend": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DriverTyres"
+            },
+            "type": "array",
+            "title": "Drivers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "missing",
+          "drivers"
+        ],
+        "title": "TyreWeekend",
+        "description": "Every driver's tyre sets over the weekend up to and including this session."
       },
       "ValidationError": {
         "properties": {
