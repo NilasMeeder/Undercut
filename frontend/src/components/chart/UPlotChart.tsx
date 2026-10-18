@@ -12,11 +12,17 @@ export type ChartSeries = {
   dash?: number[];
   stepped?: boolean;
   width?: number;
+  /** Fill to zero: one colour above, another below (Deploy: deploying vs harvesting). */
+  fill?: { above: string; below: string };
 };
 
 /** A strip along the bottom of the plot from `start` to `end` (m), one lane per lap: where a lap
  * does something worth seeing over distance (clipping), in the lap's colour. */
 export type ChartBand = { start: number; end: number; color: string; lane: number };
+
+/** A small triangle hanging from the top of the plot at `at` (m): a moment on a lap (a
+ * downshift at full throttle), in the lap's colour. */
+export type ChartTick = { at: number; color: string };
 
 type Props = {
   group: GroupId;
@@ -33,6 +39,7 @@ type Props = {
   /** Write the marker labels in this chart (the top one of a stack). */
   markLabels?: boolean;
   bands?: ChartBand[];
+  ticks?: ChartTick[];
 };
 
 const FONT = '10px system-ui, sans-serif';
@@ -41,6 +48,9 @@ const X_AXIS_HEIGHT = 18;
 const LABEL_HEIGHT = 14;
 const NO_MARKS: DistanceMark[] = [];
 const NO_BANDS: ChartBand[] = [];
+const NO_TICKS: ChartTick[] = [];
+const TICK_SIZE = 4;
+const FILL_ALPHA = '30'; // hex: ~19% over the line colour
 const BAND_HEIGHT = 3;
 const BAND_GAP = 1;
 let nextChartId = 0;
@@ -118,6 +128,40 @@ function drawBands(u: uPlot, bands: ChartBand[]) {
   ctx.restore();
 }
 
+function drawTicks(u: uPlot, ticks: ChartTick[]) {
+  if (ticks.length === 0) return;
+  const { ctx } = u;
+  const { left, top, width } = u.bbox;
+  const px = uPlot.pxRatio;
+  const r = TICK_SIZE * px;
+  ctx.save();
+  for (const tick of ticks) {
+    const x = u.valToPos(tick.at, 'x', true);
+    if (x < left || x > left + width) continue;
+    ctx.fillStyle = tick.color;
+    ctx.beginPath();
+    ctx.moveTo(x - r, top);
+    ctx.lineTo(x + r, top);
+    ctx.lineTo(x, top + 1.6 * r);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** A vertical gradient with a hard stop at y = 0: `above` over it, `below` under it. */
+function splitFill(u: uPlot, above: string, below: string): CanvasGradient | string {
+  const { top, height } = u.bbox;
+  if (height <= 0) return above;
+  const zero = Math.min(Math.max((u.valToPos(0, 'y', true) - top) / height, 0), 1);
+  const gradient = u.ctx.createLinearGradient(0, top, 0, top + height);
+  gradient.addColorStop(0, above + FILL_ALPHA);
+  gradient.addColorStop(zero, above + FILL_ALPHA);
+  gradient.addColorStop(zero, below + FILL_ALPHA);
+  gradient.addColorStop(1, below + FILL_ALPHA);
+  return gradient;
+}
+
 /**
  * A distance-based uPlot chart wired into its link group's cursor and zoom: hovering moves the
  * group cursor, drag-select zooms the whole group, double-click resets. Shift + drag or Shift + click
@@ -135,20 +179,23 @@ export function UPlotChart({
   marks = NO_MARKS,
   markLabels = false,
   bands = NO_BANDS,
+  ticks = NO_TICKS,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<uPlot | null>(null);
   const marksRef = useRef(marks);
   const markLabelsRef = useRef(markLabels);
   const bandsRef = useRef(bands);
+  const ticksRef = useRef(ticks);
 
-  // Markers and bands change without rebuilding the chart: redraw with the new ones.
+  // Markers, bands and ticks change without rebuilding the chart: redraw with the new ones.
   useEffect(() => {
     marksRef.current = marks;
     markLabelsRef.current = markLabels;
     bandsRef.current = bands;
+    ticksRef.current = ticks;
     chartRef.current?.redraw(false);
-  }, [marks, markLabels, bands]);
+  }, [marks, markLabels, bands, ticks]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -205,6 +252,12 @@ export function UPlotChart({
           dash: s.dash,
           points: { show: false },
           paths: s.stepped ? uPlot.paths.stepped!({ align: 1 }) : undefined,
+          ...(s.fill
+            ? {
+                fill: (u: uPlot) => splitFill(u, s.fill!.above, s.fill!.below),
+                fillTo: 0,
+              }
+            : {}),
         })),
       ],
       hooks: {
@@ -242,6 +295,7 @@ export function UPlotChart({
         draw: [
           (u) => {
             drawBands(u, bandsRef.current);
+            drawTicks(u, ticksRef.current);
             drawMarks(u, marksRef.current, markLabelsRef.current);
           },
         ],

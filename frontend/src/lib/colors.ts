@@ -10,6 +10,9 @@ export const COLORS = {
   pb: '#34d36e',
   slow: '#f2c230',
   pit: '#ff5252',
+  /** Energy (2026, estimated): deploying, and clipping or harvesting at full throttle. */
+  ers: '#b46cff',
+  clip: '#ffa62b',
   /** Markers: neutral, they are notes and carry no timing meaning. */
   markerFill: 'rgba(232, 232, 236, 0.08)',
 } as const;

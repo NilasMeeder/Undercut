@@ -270,6 +270,22 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
 - [ ] Slipstream uit de omhullende houden (`DistanceToDriverAhead` staat alleen in het archief)
 - [ ] Clipping per lap over een stint/race als lap-chart (waar spaart of oogst een driver, en wanneer)
 - [ ] Clipstukken op de Track map en in Live lap (de lap die bezig is)
+- [x] **Terugschakelen bij vol gas** (2026-10-18, Nilas' vraag of rpm meer zegt): rpm per
+      versnelling ligt vast (8e ≈ 35, 7e ≈ 39,4, 6e ≈ 45 rpm per km/h), dus rpm alleen zegt weinig.
+      Terugschakelen bij vol gas boven 200 km/h wel: het komt bijna altijd **ná het clippunt**,
+      terwijl de auto bij vol gas snelheid verliest (oogsten, "super clipping"), op ~10.150–10.450
+      rpm (gemeten over 1 s vóór de wissel; de gear-sample loopt ~0,2 s achter op de rpm). De
+      verklaring: in 2026 is de brandstof-energieflow onder 10.500 rpm lager (EF = 0,27·N + 165
+      MJ/h, max 3000), dus een versnelling terug houdt de motor op volle flow, en daarmee meer
+      vermogen om te oogsten. Monza R: 186 van 189 ná het clippunt, mediaan 20 m vóór de lift;
+      Spa Q: ~5 s vastgehouden vanaf ~400 m voor het eind (Kemmel, Bus stop). Per team: Mercedes,
+      Audi, Williams, Haas, Alpine en Ferrari (Spa) doen het; Red Bull, Racing Bulls en McLaren
+      niet (die laten de rpm zakken tot ~10.000). Nu: kolom DOWN en een zin in Energy, SESSION-cel
+      "Downshifts (% of laps)", driehoekjes in de gear-chart
+- [x] Kanaal **Deploy** (2026-10-18, geschat) in de Telemetry-stack: a als % van de omhullende
+      (minstens 1 m/s²) van die straight, paars erboven, amber eronder (oogsten bij vol gas);
+      leeg in snelle bochten. Clipstrookjes in de speed-chart zijn nu amber (Nilas: deploy paars,
+      clipping een eigen kleur)
 
 ## Fase 9 — Twee werkplekken: Analyse en Pitwall — volgende
 

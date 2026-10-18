@@ -75,12 +75,14 @@ export function useComparison(laps: LapRef[], { step = 5, miniSectors = 25 }: Co
 
 /** Estimated energy deployment of the laps (2026): where they stop gaining at full throttle.
  * The first request for a session reads the telemetry of all its clean laps (seconds). */
-export function useEnergy(laps: LapRef[], enabled = true) {
+/** `step`: also each lap's deploy on /compare's grid for that step. */
+export function useEnergy(laps: LapRef[], enabled = true, step?: number) {
   const key = useSessionKey();
   const spec = laps.map((l) => `${l.driver}:${l.lap}`).join(',');
+  const extra = step != null ? `&step=${step}` : '';
   return useQuery({
-    queryKey: ['session', key, 'energy', spec],
-    queryFn: () => apiGet<EnergyComparison>(`${sessionPath(key!)}/energy?laps=${spec}`),
+    queryKey: ['session', key, 'energy', spec, step ?? null],
+    queryFn: () => apiGet<EnergyComparison>(`${sessionPath(key!)}/energy?laps=${spec}${extra}`),
     enabled: key != null && laps.length > 0 && enabled,
     staleTime: Infinity,
     placeholderData: keepPreviousData,

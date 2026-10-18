@@ -24,6 +24,9 @@
   --pw-pb: #34d36e;
   --pw-slow: #f2c230;
   --pw-pit: #ff5252;
+  /* Energy (2026, estimated): deploying vs not gaining / harvesting at full throttle. */
+  --pw-ers: #b46cff;
+  --pw-clip: #ffa62b;
 
   --pw-tyre-soft: #ff4040;
   --pw-tyre-medium: #ffd23a;
@@ -52,6 +55,8 @@
   --color-pb: var(--pw-pb);
   --color-slow: var(--pw-slow);
   --color-pit: var(--pw-pit);
+  --color-ers: var(--pw-ers);
+  --color-clip: var(--pw-clip);
 
   /* shadcn names used by components/ui */
   --color-background: var(--pw-bg);

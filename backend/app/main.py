@@ -398,6 +398,10 @@ def energy_laps(
         str,
         Query(description="Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference"),
     ],
+    step: Annotated[
+        float | None,
+        Query(ge=1, le=50, description="Also deploy per lap, on /compare's grid for this step"),
+    ] = None,
 ) -> EnergyComparison:
     """Where the laps stop gaining speed at full throttle (an estimate: there is no battery
     channel). The first request for a session reads the telemetry of all its clean laps."""
@@ -409,7 +413,7 @@ def energy_laps(
         resolved = [
             (code, sessions.resolve_lap(year, round, session, code, ref)) for code, ref in refs
         ]
-        return energies.compare(year, round, session, resolved)
+        return energies.compare(year, round, session, resolved, step)
 
     return _guard(load)
 

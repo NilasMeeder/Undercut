@@ -48,3 +48,30 @@ export function compareLaps(
     i >= 0 && (diffs[i] ?? 0) >= ENERGY_LEVEL ? `, most into T${straights[i].corner}` : '';
   return `${name} loses ≈${Math.abs(diff).toFixed(2)} s ${diff > 0 ? 'more' : 'less'} than ${refName} to clipping${where}.`;
 }
+
+/** Downshifts at full throttle on a lap's straights, or null if there are none. */
+export function explainDownshifts(
+  name: string,
+  lap: EnergyLap,
+  straights: EnergyStraight[]
+): string | null {
+  const where = lap.straights.flatMap((s, i) =>
+    s && s.downshifts.length > 0 ? [{ s, corner: straights[i].corner }] : []
+  );
+  if (where.length === 0) return null;
+  const [first] = where;
+  const shift = first.s.downshifts[0];
+  const before = Math.max(Math.round(first.s.end - shift.at), 0);
+  const more =
+    where.length > 1
+      ? ` and into ${where
+          .slice(1)
+          .map((w) => `T${w.corner}`)
+          .join(', ')}`
+      : '';
+  return (
+    `${name} downshifts at full throttle into T${first.corner} (to ${shift.gear}th at ` +
+    `${shift.speed.toFixed(0)} km/h, ${before} m before the ${first.s.coast > 0 ? 'lift' : 'brake'})` +
+    `${more}: keeping the engine above 10,500 rpm while harvesting.`
+  );
+}

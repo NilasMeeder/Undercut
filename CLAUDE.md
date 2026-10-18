@@ -440,10 +440,25 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   sessie; per generatie alleen de omhullende en de analyse (~0,1 s voor een race).
 - **API**: `/energy?laps=` (zoals `/compare`: afstanden op de schaal van de eerste lap) en
   `/energy/session` (per driver en straight de medianen over de schone laps).
-- **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen; SESSION: drivers ×
-  straights, kosten of meters). Telemetry: instelling "Clipping (2026)", strookjes van 3 px onderaan
-  de speed-chart (een rij per lap, in de lapkleur, `UPlotChart` `bands`) en CLIP in de readout. Alleen
-  zonder DRS (2026+), zodat een oude sessie niet al zijn telemetrie hoeft te lezen.
+- **Deploy** (`energy.deploy`, `/energy?step=`): a als % van de omhullende op die snelheid (de
+  noemer minstens 1 m/s², anders wordt 0,1 van 0,2 al 50% vlak voor de top; zo blijft snelheid
+  verliezen bij de top zichtbaar als oogsten), geklemd op −100…150, NaN in snelle bochten en
+  stukjes < 0,5 s ertussen. Op het raster van `/compare` (zelfde `make_grid` op de lengte van de
+  eerste lap), dus de frontend legt de arrays er alleen naast. Het stuk vlak voor de finish hoort
+  bij de straight van de volgende lap (`across_line`, `SessionEnergy.across`).
+- **Terugschakelen bij vol gas** (`energy.downshifts`, `Downshift`): gear omlaag op een straight,
+  boven 200 km/h. Komt na het clippunt, terwijl de auto oogst: onder 10.500 rpm krijgt een 2026-motor
+  minder brandstofflow (EF = 0,27·N + 165 MJ/h tot 10.500 rpm, daarboven 3000), dus een versnelling
+  terug houdt hem op vol vermogen. Teams verschillen (Mercedes wel, Red Bull niet). De gear-sample
+  loopt ~0,2 s achter op de rpm (de rpm springt eerst), dus de plek is ~15 m te laat. Rpm zelf
+  zegt verder weinig: per versnelling vast (8e ≈ 35 rpm per km/h).
+- **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen en DOWN; SESSION:
+  drivers × straights, kosten, meters of % laps met terugschakelen). Telemetry: kanaal Deploy (lijn in
+  de lapkleur, vulling paars `ers` boven nul en amber `clip` eronder, `ChartSeries.fill`), instelling
+  "Clipping and downshifts (2026)": amberen strookjes van 3 px onderaan de speed-chart (een rij per
+  lap, de eerste onderaan, `UPlotChart` `bands`), CLIP in de readout en driehoekjes in de lapkleur
+  bovenin de gear-chart (`ticks`). Alleen zonder DRS (2026+), zodat een oude sessie niet al zijn
+  telemetrie hoeft te lezen.
 
 ## Markeringen en views (fase 5)
 
@@ -573,7 +588,8 @@ Doel: dichte, rustige, functionele schermen. **Geen AI-slop**:
   Tijden altijd als `m:ss.mmm` en gaps als `+s.mmm`.
 - **Kleur alleen met betekenis**: paars = overall beste, groen = persoonlijk beste, geel = langzamer of
   in/out-lap, rood = in de pit, stop of probleem. Teamkleuren alleen voor de lijnen en labels van een driver.
-  Al het andere is wit of grijs.
+  Energie (2026) heeft eigen tokens: `ers` paars = inzet (Deploy), `clip` amber = clipping of oogsten
+  bij vol gas. Al het andere is wit of grijs.
 - Banden als letter in een gekleurd rondje (S rood, M geel, H wit, I groen, W blauw).
 - Kleine letters (11–12px in tabellen), korte labels in hoofdletters voor kolomkoppen.
 - Interactie: hover laat de waarde zien, klik selecteert, en alles is met het toetsenbord te bedienen.

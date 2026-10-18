@@ -16,7 +16,12 @@ more than on the engine alone (at 230 km/h roughly 9 against 3.5 m/s² at Monza 
   cost is the speed and time the car would have had by following the envelope from the first
   such point on, up the same hill, never faster than the top speed reached on that straight;
 - cornering at full throttle (Curva Grande, Raidillon, Blanchimont) is not judged: there grip
-  and drag set the speed, and a projection does what the lap did.
+  and drag set the speed, and a projection does what the lap did;
+- deploy is the acceleration as a share of the envelope at that speed: 100% = as hard as the
+  best laps there, 0 = not gaining, negative = losing speed at full throttle (harvesting);
+- a downshift at full throttle on a straight keeps the engine at or above 10,500 rpm, where the
+  2026 fuel energy flow is at its maximum (below it falls by 0.27 MJ/h per rpm): in the data it
+  comes when the car is losing speed at full throttle, near the end of a straight.
 """
 
 from dataclasses import dataclass, field
@@ -78,6 +83,19 @@ TOP_ACCEL = 0.05
 BRAKE_SEARCH = 400.0
 """After a lift, look this far (m) for the brake."""
 
+MIN_DOWNSHIFT_SPEED = 200.0
+"""km/h: a downshift at full throttle faster than this is not for a corner."""
+
+DEPLOY_MIN_ENVELOPE = 1.0
+"""m/s²: deploy is a share of at least this much. Near the top speed the envelope falls to
+zero, and 0.1 of 0.2 would read as 50%; losing speed there still shows as harvesting."""
+
+DEPLOY_MIN_STRETCH = 0.5
+"""Seconds: judged stretches shorter than this (between two fast corners) are noise."""
+
+DEPLOY_RANGE = (-100.0, 150.0)
+"""Deploy (%) is clamped to this: beyond it the noise of the speed trace dominates."""
+
 COAST = 60.0
 """Metres from lift to brake from which it is lift and coast (going from throttle to brake
 takes ~30 m at 300 km/h)."""
@@ -108,6 +126,8 @@ class Kinematics:
     full: np.ndarray
     """Full throttle, no brake, no hole in the data."""
     brake: np.ndarray
+    gear: np.ndarray
+    """The gear of the last sample (0 without a gear channel)."""
     slope: np.ndarray
     """Height gained per metre. Uphill a car accelerates g × slope less on the same power."""
     lateral: np.ndarray
@@ -137,6 +157,7 @@ def _shifted(trace: LapTrace, distance: float, time: float) -> dict[str, np.ndar
         "speed": ch["speed"],
         "throttle": ch["throttle"],
         "brake": ch["brake"],
+        "gear": ch["gear"] if "gear" in ch else np.zeros(trace.distance.size),
         **{
             axis: ch[axis] / POSITION_UNITS_PER_METRE
             if axis in ch
@@ -193,6 +214,7 @@ def kinematics(trace: LapTrace, previous: LapTrace | None = None) -> Kinematics:
         speed=speed,
         full=full,
         brake=brake,
+        gear=raw["gear"][sample],
         slope=slope,
         lateral=(speed / KMH) ** 2 * _curvature(behind, here, ahead),
         length=trace.length,
@@ -388,6 +410,8 @@ class Straight:
     clip_cost_speed: float
     """km/h more at `end` following the envelope from clip_at."""
     clip_cost_time: float
+    downshifts: list[tuple[float, int, float]] = field(default_factory=list)
+    """Downshifts at full throttle: (distance, gear after, km/h)."""
 
     @property
     def clipped(self) -> float:
@@ -409,20 +433,65 @@ def corner_before(corners: list[tuple[str, float]], distance: float) -> str:
     return before[-1] if before else corners[-1][0]
 
 
-def straights(k: Kinematics, corners: list[tuple[str, float]]) -> list[tuple[str, str, Run]]:
+def _cut(k: Kinematics, run: Run) -> bool:
+    return (
+        run.end >= len(k.distance) - 1 or float(k.distance[run.end - 1]) >= k.length - CORNER_SLACK
+    )
+
+
+def straights(
+    k: Kinematics, corners: list[tuple[str, float]], found: list[Run] | None = None
+) -> list[tuple[str, str, Run]]:
     """The lap's runs that brake for a corner, as (corner, after, run). `corners` are (label,
     distance) on this lap's scale, sorted. A run cut by the line belongs to the next lap; with
-    two runs into one corner (a lift on the way) the last one counts."""
+    two runs into one corner (a lift on the way) the last one counts. `found`: runs(k), if
+    already known."""
     out: dict[str, tuple[str, str, Run]] = {}
-    for run in runs(k):
+    for run in runs(k) if found is None else found:
         end = float(k.distance[run.end - 1])
-        if run.end >= len(k.distance) - 1 or end >= k.length - CORNER_SLACK:
+        if _cut(k, run):
             continue
         corner = corner_after(corners, end)
         if corner is None:
             continue
         out[corner] = (corner, corner_before(corners, float(k.distance[run.start])), run)
     return list(out.values())
+
+
+def across_line(k: Kinematics, found: list[Run]) -> Run | None:
+    """The run cut by the line (full throttle into the next lap), if any: the next lap judges
+    it, but its deploy belongs to the end of this one."""
+    return found[-1] if found and _cut(k, found[-1]) else None
+
+
+def downshifts(k: Kinematics, run: Run) -> list[tuple[float, int, float]]:
+    """Downshifts at full throttle faster than MIN_DOWNSHIFT_SPEED, as (distance, gear after,
+    km/h). The gear channel lags the rpm by ~0.2 s, so the shift itself began ~15 m earlier."""
+    gear = k.gear[run.start : run.end]
+    speed = k.speed[run.start : run.end]
+    at = np.flatnonzero((gear[1:] < gear[:-1]) & (gear[1:] > 0) & (speed[1:] > MIN_DOWNSHIFT_SPEED))
+    return [
+        (float(k.distance[run.start + i + 1]), int(gear[i + 1]), float(speed[i + 1])) for i in at
+    ]
+
+
+def deploy(k: Kinematics, run: Run, reference: Envelope) -> np.ndarray:
+    """Per point of the run its acceleration as % of the envelope at its speed (of at least
+    DEPLOY_MIN_ENVELOPE); NaN where it is not judged (cornering)."""
+    best = np.maximum(reference.at(k.speed[run.start : run.end]), DEPLOY_MIN_ENVELOPE)
+    share = np.clip(100.0 * run.accel / best, *DEPLOY_RANGE)
+    judged = run.judged & ~_short(run.judged, round(DEPLOY_MIN_STRETCH / DT))
+    return np.where(judged, share, np.nan)
+
+
+def _short(mask: np.ndarray, width: int) -> np.ndarray:
+    """The True stretches of `mask` shorter than `width` points."""
+    edges = np.flatnonzero(np.diff(np.concatenate(([0], mask.astype(np.int8), [0]))))
+    out = np.zeros_like(mask)
+    for start, end in zip(edges[::2], edges[1::2], strict=True):
+        if end - start < width:
+            out[start:end] = True
+    return out
 
 
 def samples(run: Run, k: Kinematics) -> Profile | None:
@@ -510,4 +579,5 @@ def analyse(
         clipping=clipping,
         clip_cost_speed=clip_speed,
         clip_cost_time=clip_time,
+        downshifts=downshifts(k, run),
     )

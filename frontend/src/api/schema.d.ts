@@ -708,6 +708,19 @@ export interface components {
             /** Compounds */
             compounds: components["schemas"]["CompoundPace"][];
         };
+        /**
+         * Downshift
+         * @description A downshift at full throttle on a straight, faster than 200 km/h: keeps the engine at or
+         *     above 10,500 rpm (full fuel flow in 2026) while the car loses speed and harvests.
+         */
+        Downshift: {
+            /** At */
+            at: number;
+            /** Gear */
+            gear: number;
+            /** Speed */
+            speed: number;
+        };
         /** DriverEnergy */
         DriverEnergy: {
             /** Driver */
@@ -812,6 +825,8 @@ export interface components {
             cost_time: number;
             /** Straights */
             straights: (components["schemas"]["EnergyStraightLap"] | null)[];
+            /** Deploy */
+            deploy: (number | null)[] | null;
         };
         /** EnergySession */
         EnergySession: {
@@ -860,6 +875,8 @@ export interface components {
             cost_speed: number;
             /** Cost Time */
             cost_time: number;
+            /** Downshifts */
+            downshifts: components["schemas"]["Downshift"][];
         };
         /**
          * EnergyStraightStats
@@ -876,6 +893,8 @@ export interface components {
             cost_time: number;
             /** Peak Speed */
             peak_speed: number;
+            /** Downshifts */
+            downshifts: number;
         };
         /** EventInfo */
         EventInfo: {
@@ -2347,6 +2366,8 @@ export interface operations {
             query: {
                 /** @description Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference */
                 laps: string;
+                /** @description Also deploy per lap, on /compare's grid for this step */
+                step?: number | null;
             };
             header?: never;
             path: {

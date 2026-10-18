@@ -251,6 +251,17 @@ class ClipStretch(BaseModel):
     end: float
 
 
+class Downshift(BaseModel):
+    """A downshift at full throttle on a straight, faster than 200 km/h: keeps the engine at or
+    above 10,500 rpm (full fuel flow in 2026) while the car loses speed and harvests."""
+
+    at: float
+    """Distance (m) where the gear channel shows it (it lags the rpm by ~0.2 s)."""
+    gear: int
+    """Gear after the shift."""
+    speed: float
+
+
 class EnergyStraightLap(BaseModel):
     """One lap on one straight. Distances (m) on the reference lap's scale, like /compare;
     negative = before the line (the main straight runs on from the previous lap)."""
@@ -276,6 +287,7 @@ class EnergyStraightLap(BaseModel):
     """km/h more at `end` had it kept accelerating like the best laps from clip_at."""
     cost_time: float
     """Seconds that would have saved up to `end`."""
+    downshifts: list[Downshift]
 
 
 class EnergyStraightStats(BaseModel):
@@ -290,6 +302,8 @@ class EnergyStraightStats(BaseModel):
     """Median seconds clipping cost."""
     peak_speed: float
     """Median top speed (km/h)."""
+    downshifts: float
+    """Share of the laps with a downshift at full throttle (0–1)."""
 
 
 class EnergyStraight(BaseModel):
@@ -312,6 +326,10 @@ class EnergyLap(BaseModel):
     """Seconds clipping cost on all straights."""
     straights: list[EnergyStraightLap | None]
     """Same order as EnergyComparison.straights; null if the lap has no run there (a lift)."""
+    deploy: list[float | None] | None
+    """With `step`: on /compare's distance grid, the acceleration at full throttle as % of the
+    best laps on that straight at that speed (100 = as hard, 0 = not gaining, negative = losing
+    speed: harvesting). Null off full throttle, in fast corners and near top speed."""
 
 
 class EnergyComparison(BaseModel):

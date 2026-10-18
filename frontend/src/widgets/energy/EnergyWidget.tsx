@@ -7,7 +7,13 @@ import type {
 } from '@/api/client';
 import { useEnergy, useEnergySession, useLaps, useSessionDetail } from '@/api/queries';
 import { DriverCell, LineSwatch, NoLapsMessage, PanelMessage } from '@/components/data/bits';
-import { compareLaps, ENERGY_LEVEL, explainLap, straightLabel } from '@/lib/energy';
+import {
+  compareLaps,
+  ENERGY_LEVEL,
+  explainDownshifts,
+  explainLap,
+  straightLabel,
+} from '@/lib/energy';
 import { rowStyle, td, th } from '@/lib/table';
 import { bestLaps, lapStyles, type LapStyle } from '@/lib/timing';
 import { cn } from '@/lib/utils';
@@ -113,9 +119,15 @@ function LapsTable({
       const line = compareLaps(names[0], ref, names[i + 1], lap, data.straights);
       if (line) out.push(line);
     });
+    data.laps.slice(0, 3).forEach((lap, i) => {
+      const line = explainDownshifts(names[i], lap, data.straights);
+      if (line) out.push(line);
+    });
     return out;
   }, [data, names]);
   const coasting = data.laps.some((l) => l.straights.some((s) => (s?.coast ?? 0) > 0));
+  const shifting = data.laps.some((l) => l.straights.some((s) => (s?.downshifts.length ?? 0) > 0));
+  const extra = (coasting ? 1 : 0) + (shifting ? 1 : 0);
 
   if (data.straights.length === 0)
     return <PanelMessage>No straights found in this session.</PanelMessage>;
@@ -160,6 +172,14 @@ function LapsTable({
                 Lift m
               </th>
             ) : null}
+            {shifting ? (
+              <th
+                className={cn(th, 'text-right')}
+                title="Downshift at full throttle above 200 km/h: the gear it goes to (keeps the engine above 10,500 rpm while harvesting)"
+              >
+                Down
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -173,6 +193,7 @@ function LapsTable({
               names={names}
               styles={styles}
               coasting={coasting}
+              shifting={shifting}
               zoom={zoom}
             />
           ))}
@@ -180,7 +201,7 @@ function LapsTable({
             <td className="px-1.5 pt-1 text-left text-[10px] uppercase text-faint" colSpan={3}>
               Lap
             </td>
-            <td colSpan={coasting ? 4 : 3} />
+            <td colSpan={3 + extra} />
           </tr>
           {data.laps.map((lap, i) => (
             <tr key={`${lap.driver}-${lap.lap}`}>
@@ -190,7 +211,7 @@ function LapsTable({
               </td>
               <td className={td}>{lap.clipped > 0 ? lap.clipped : ''}</td>
               <td className={cn(td, 'font-semibold')}>{seconds(lap.cost_time)}</td>
-              <td colSpan={coasting ? 2 : 1} />
+              <td colSpan={1 + extra} />
             </tr>
           ))}
         </tbody>
@@ -207,6 +228,7 @@ function StraightRows({
   names,
   styles,
   coasting,
+  shifting,
   zoom,
 }: {
   group: GroupId;
@@ -216,6 +238,7 @@ function StraightRows({
   names: string[];
   styles: LapStyle[];
   coasting: boolean;
+  shifting: boolean;
   zoom: Range | null;
 }) {
   const rows = data.laps.map((lap) => lap.straights[index]);
@@ -227,6 +250,7 @@ function StraightRows({
           Math.max(...present.map((r) => r.end + r.coast)) + 150,
         ]
       : null;
+  const extra = (coasting ? 1 : 0) + (shifting ? 1 : 0);
   const zoomed = range != null && zoom != null && zoom[0] === range[0] && zoom[1] === range[1];
   return (
     <>
@@ -235,7 +259,7 @@ function StraightRows({
         className={cn('cursor-pointer border-t border-line hover:bg-raised', zoomed && 'bg-raised')}
       >
         <td className="px-1.5 pt-0.5 text-left font-semibold">{straightLabel(straight)}</td>
-        <td className="px-1.5 pt-0.5 text-left text-[10px] text-faint" colSpan={coasting ? 6 : 5}>
+        <td className="px-1.5 pt-0.5 text-left text-[10px] text-faint" colSpan={5 + extra}>
           {sessionLine(straight.session)}
         </td>
       </tr>
@@ -256,7 +280,7 @@ function StraightRows({
               {names[i]}
             </td>
             {row == null ? (
-              <td className={cn(td, 'text-faint')} colSpan={coasting ? 6 : 5}>
+              <td className={cn(td, 'text-faint')} colSpan={5 + extra}>
                 no full-throttle run here
               </td>
             ) : (
@@ -280,6 +304,19 @@ function StraightRows({
                   {clipping ? `+${row.cost_speed.toFixed(0)}` : ''}
                 </td>
                 {coasting ? <td className={td}>{row.coast > 0 ? row.coast : ''}</td> : null}
+                {shifting ? (
+                  <td
+                    className={td}
+                    title={row.downshifts
+                      .map(
+                        (d) =>
+                          `To ${d.gear}th at ${d.speed.toFixed(0)} km/h, ${Math.max(Math.round(row.end - d.at), 0)} m before the end of full throttle`
+                      )
+                      .join('\n')}
+                  >
+                    {row.downshifts.map((d) => d.gear).join(' ')}
+                  </td>
+                ) : null}
               </>
             )}
           </tr>
@@ -288,6 +325,12 @@ function StraightRows({
     </>
   );
 }
+
+const METRIC_TITLES: Record<EnergyConfig['metric'], string> = {
+  cost: 'median cost (s)',
+  clipped: 'median metres clipping',
+  downshifts: 'share of laps with a downshift at full throttle',
+};
 
 function SessionTable({
   group,
@@ -314,7 +357,14 @@ function SessionTable({
     if (stats == null) return { text: '', faint: true, title: undefined };
     const title =
       `${stats.laps} laps, ${Math.round(stats.clipping * 100)}% clip, median ` +
-      `${stats.clipped} m, ${stats.cost_time.toFixed(3)} s, top ${stats.peak_speed.toFixed(0)}`;
+      `${stats.clipped} m, ${stats.cost_time.toFixed(3)} s, top ${stats.peak_speed.toFixed(0)}, ` +
+      `downshift at full throttle in ${Math.round(stats.downshifts * 100)}%`;
+    if (metric === 'downshifts')
+      return {
+        text: stats.downshifts > 0 ? `${Math.round(stats.downshifts * 100)}%` : '–',
+        faint: stats.downshifts === 0,
+        title,
+      };
     if (metric === 'clipped')
       return {
         text: stats.clipped > 0 ? String(stats.clipped) : '–',
@@ -341,7 +391,7 @@ function SessionTable({
             <th
               key={s.corner}
               className={cn(th, 'text-right')}
-              title={`${straightLabel(s)}: ${metric === 'cost' ? 'median cost (s)' : 'median metres clipping'}`}
+              title={`${straightLabel(s)}: ${METRIC_TITLES[metric]}`}
             >
               →T{s.corner}
             </th>

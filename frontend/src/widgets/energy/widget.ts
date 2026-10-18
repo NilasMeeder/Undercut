@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type EnergyConfig = { view: 'laps' | 'session'; metric: 'cost' | 'clipped' };
+export type EnergyConfig = { view: 'laps' | 'session'; metric: 'cost' | 'clipped' | 'downshifts' };
 
 export const energyWidget = defineWidget<EnergyConfig>({
   id: 'energy',
@@ -24,6 +24,10 @@ export const energyWidget = defineWidget<EnergyConfig>({
       'The best laps include tows and (in a race) overtake mode, so in a race everyone looks ' +
         'to clip more. Fast corners at full throttle (Curva Grande, Raidillon) are not judged: ' +
         'there grip and drag set the speed.',
+      'Down: a downshift at full throttle above 200 km/h. The 2026 fuel flow falls below ' +
+        '10,500 rpm, so when a car loses speed harvesting at full throttle some teams drop a ' +
+        'gear to keep the engine there; others let the rpm fall. It comes after the clip point, ' +
+        'near the end of the straight. SESSION can show it per driver (Session cells).',
       'Precision is about half a second of the speed trace (~40 m at 300 km/h). Built from the ' +
         'session’s clean laps; the first time it reads all their telemetry (a few seconds).',
     ],
@@ -49,6 +53,7 @@ export const energyWidget = defineWidget<EnergyConfig>({
       options: [
         { value: 'cost', label: 'Time cost (s)' },
         { value: 'clipped', label: 'Metres clipping' },
+        { value: 'downshifts', label: 'Downshifts (% of laps)' },
       ],
     },
   ],

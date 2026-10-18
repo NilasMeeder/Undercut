@@ -274,3 +274,53 @@ def test_corner_names():
     assert energy.corner_after(corners, 5100.0) is None
     assert energy.corner_before(corners, 1000.0) == "1"
     assert energy.corner_before(corners, -400.0) == "11"  # from the previous lap
+
+
+def test_deploy_is_the_share_of_the_envelope():
+    env = envelope_of(lap(), lap(power=POWER * 0.98))
+    k, _, _, run = straight_of(lap())
+    full = energy.deploy(k, run, env)
+    gaining = env.at(k.speed[run.start : run.end]) >= energy.DEPLOY_MIN_ENVELOPE
+    assert np.nanmedian(full[gaining]) == pytest.approx(100, abs=8)
+    k, _, _, run = straight_of(lap(clip_from=500.0))
+    clipped = energy.deploy(k, run, env)
+    after = (k.distance[run.start : run.end] > 600) & ~np.isnan(clipped)
+    assert after.any()
+    assert np.median(clipped[after]) == pytest.approx(0, abs=8)
+
+
+def test_deploy_is_not_judged_in_a_bend_but_near_top_speed():
+    env = envelope_of(lap(), lap(power=POWER * 0.98))
+    k, _, _, run = straight_of(lap(bend=(600.0, 900.0, 120.0)))
+    share = energy.deploy(k, run, env)
+    d = k.distance[run.start : run.end]
+    assert np.isnan(share[(d > 650) & (d < 850)]).all()
+    # Near the top speed the share is of DEPLOY_MIN_ENVELOPE: a car holding speed reads ~0.
+    v = k.speed[run.start : run.end]
+    top = (env.at(v) < 0.5 * energy.DEPLOY_MIN_ENVELOPE) & ~np.isnan(share)
+    assert top.any() and np.all(np.abs(share[top]) < 60)
+
+
+def test_downshift_at_full_throttle():
+    trace = lap(clip_from=1200.0)
+    gear = np.full(trace.distance.size, 8.0)
+    gear[trace.distance > 2200] = 7.0
+    gear[trace.distance < 300] = 4.0  # out of the corner: upshifts only
+    trace.channels["gear"] = gear
+    k, corner, after, run = straight_of(trace)
+    [(at, to, speed)] = energy.downshifts(k, run)
+    assert at == pytest.approx(2200, abs=30)
+    assert to == 7 and speed > energy.MIN_DOWNSHIFT_SPEED
+    assert energy.analyse(k, corner, after, run, None).downshifts == [(at, to, speed)]
+
+
+def test_run_across_the_line():
+    trace = lap()
+    trace.channels["throttle"][trace.distance > CORNER] = 100.0
+    k = energy.kinematics(trace)
+    found = energy.runs(k)
+    across = energy.across_line(k, found)
+    assert across is not None and k.distance[across.start] > BRAKE_AT
+    assert (
+        energy.across_line(energy.kinematics(lap()), energy.runs(energy.kinematics(lap()))) is None
+    )

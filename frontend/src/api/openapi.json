@@ -1403,6 +1403,26 @@
               "title": "Laps"
             },
             "description": "Comma-separated DRV:lap, e.g. VER:17,NOR:fastest; first = reference"
+          },
+          {
+            "name": "step",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 50,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Also deploy per lap, on /compare's grid for this step",
+              "title": "Step"
+            },
+            "description": "Also deploy per lap, on /compare's grid for this step"
           }
         ],
         "responses": {
@@ -2644,6 +2664,30 @@
         ],
         "title": "Degradation"
       },
+      "Downshift": {
+        "properties": {
+          "at": {
+            "type": "number",
+            "title": "At"
+          },
+          "gear": {
+            "type": "integer",
+            "title": "Gear"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "gear",
+          "speed"
+        ],
+        "title": "Downshift",
+        "description": "A downshift at full throttle on a straight, faster than 200 km/h: keeps the engine at or\nabove 10,500 rpm (full fuel flow in 2026) while the car loses speed and harvests."
+      },
       "DriverEnergy": {
         "properties": {
           "driver": {
@@ -2990,6 +3034,27 @@
             },
             "type": "array",
             "title": "Straights"
+          },
+          "deploy": {
+            "anyOf": [
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deploy"
           }
         },
         "type": "object",
@@ -2998,7 +3063,8 @@
           "lap",
           "clipped",
           "cost_time",
-          "straights"
+          "straights",
+          "deploy"
         ],
         "title": "EnergyLap"
       },
@@ -3113,6 +3179,13 @@
           "cost_time": {
             "type": "number",
             "title": "Cost Time"
+          },
+          "downshifts": {
+            "items": {
+              "$ref": "#/components/schemas/Downshift"
+            },
+            "type": "array",
+            "title": "Downshifts"
           }
         },
         "type": "object",
@@ -3127,7 +3200,8 @@
           "clipping",
           "clipped",
           "cost_speed",
-          "cost_time"
+          "cost_time",
+          "downshifts"
         ],
         "title": "EnergyStraightLap",
         "description": "One lap on one straight. Distances (m) on the reference lap's scale, like /compare;\nnegative = before the line (the main straight runs on from the previous lap)."
@@ -3153,6 +3227,10 @@
           "peak_speed": {
             "type": "number",
             "title": "Peak Speed"
+          },
+          "downshifts": {
+            "type": "number",
+            "title": "Downshifts"
           }
         },
         "type": "object",
@@ -3161,7 +3239,8 @@
           "clipping",
           "clipped",
           "cost_time",
-          "peak_speed"
+          "peak_speed",
+          "downshifts"
         ],
         "title": "EnergyStraightStats",
         "description": "A straight over a set of clean laps: shares and medians."
