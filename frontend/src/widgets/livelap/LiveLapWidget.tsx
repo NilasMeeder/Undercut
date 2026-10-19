@@ -1,12 +1,15 @@
 import { useMemo, useRef } from 'react';
+import type { LapProgress } from '@/api/client';
 import type uPlot from 'uplot';
 import { useSessionDetail } from '@/api/queries';
 import { UPlotChart, type ChartSeries } from '@/components/chart/UPlotChart';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import { formatGap, formatLapTime } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { useGroupLaps } from '@/store/groups';
 import { useClockDraw } from '../hooks';
+import { driverStyles } from '../useStrategy';
 import type { WidgetProps } from '../types';
 import { progressAt, useLiveLap } from './useLiveLap';
 import type { LiveLapConfig } from './widget';
@@ -55,128 +58,179 @@ function formatElapsed(seconds: number): string {
   return `${minutes}:${(seconds - minutes * 60).toFixed(1).padStart(4, '0')}`;
 }
 
+/** At most this many drivers at once (one useLiveLap each). */
+const MAX_DRIVERS = 4;
+
+const padded = (values: Values, length: number): Values =>
+  values.length >= length ? values : [...values, ...Array<null>(length - values.length).fill(null)];
+
 /**
- * The lap the group's driver is on at the clock, as far as it got, over a finished lap of the
- * same driver, with the delta at the car's position (backend: /lap-progress).
+ * The lap each driver of the group is on at the clock, as far as it got, on one distance axis,
+ * each with the delta to his own reference lap (backend: /lap-progress). With one driver his
+ * reference lap is drawn too (dashed).
  */
 export function LiveLapWidget({ group, config }: WidgetProps<LiveLapConfig>) {
   const laps = useGroupLaps(group);
-  const driver = laps[0]?.driver;
-  const progress = useLiveLap(driver, config.reference);
-  const data = progress.data;
+  const codes = useMemo(() => {
+    const unique = [...new Set(laps.map((l) => l.driver))];
+    return config.drivers === 'first' ? unique.slice(0, 1) : unique.slice(0, MAX_DRIVERS);
+  }, [laps, config.drivers]);
+  // A fixed number of hooks; the slots past the drivers ask for nothing.
+  const p0 = useLiveLap(codes[0], config.reference);
+  const p1 = useLiveLap(codes[1], config.reference);
+  const p2 = useLiveLap(codes[2], config.reference);
+  const p3 = useLiveLap(codes[3], config.reference);
+  const [d0, d1, d2, d3] = [p0.data, p1.data, p2.data, p3.data];
+  const progresses = [p0, p1, p2, p3].slice(0, codes.length);
+  const error = progresses.find((p) => p.error && !p.data)?.error;
   const detail = useSessionDetail();
-  const color = detail.data?.drivers.find((d) => d.code === driver)?.color ?? COLORS.text;
+  const styles = useMemo(() => driverStyles(codes, detail.data?.drivers), [codes, detail.data]);
 
   const charts = useMemo(() => {
-    if (!data) return null;
-    const x = data.distance;
-    const current: ChartSeries = { color, width: 1.5 };
-    const speed = smooth(data.speed);
-    // An out-lap counts from the garage or the pit lane: its delta says nothing.
-    const delta = data.out_lap ? data.delta.map(() => null) : smooth(data.delta);
-    const reference = data.reference ? smooth(data.reference.speed) : null;
+    const rows = [d0, d1, d2, d3]
+      .slice(0, codes.length)
+      .filter((d): d is LapProgress => d != null && codes.includes(d.driver));
+    if (rows.length === 0) return null;
+    const longest = rows.reduce((a, b) => (b.distance.length > a.distance.length ? b : a));
+    const x = longest.distance;
+    const lines = rows.map((d) => {
+      const style = styles.get(d.driver) ?? { color: COLORS.text, dash: undefined };
+      return {
+        data: d,
+        series: { color: style.color, dash: style.dash, width: 1.5 } as ChartSeries,
+        speed: padded(smooth(d.speed), x.length),
+        throttle: padded(d.throttle, x.length),
+        // An out-lap counts from the garage or the pit lane: its delta says nothing.
+        delta: padded(d.out_lap ? d.delta.map(() => null) : smooth(d.delta), x.length),
+      };
+    });
+    const only = rows.length === 1 ? rows[0] : null;
+    const reference = only?.reference ? padded(smooth(only.reference.speed), x.length) : null;
+    const speedSeries = lines.map((l) => l.series);
+    if (reference) speedSeries.push({ color: lines[0].series.color, dash: [6, 4], width: 1 });
     return {
       x,
-      speed,
+      lines,
       reference,
-      throttle: data.throttle,
-      delta,
-      speedChart: {
-        data: (reference ? [x, speed, reference] : [x, speed]) as uPlot.AlignedData,
-        series: data.reference ? [current, { color, dash: [6, 4], width: 1 }] : [current],
-      },
-      throttleChart: { data: [x, data.throttle] as uPlot.AlignedData, series: [current] },
-      deltaChart: { data: [x, delta] as uPlot.AlignedData, series: [current] },
+      speedSeries,
+      speedData: [x, ...lines.map((l) => l.speed), ...(reference ? [reference] : [])],
+      throttleData: [x, ...lines.map((l) => l.throttle)],
+      deltaData: [x, ...lines.map((l) => l.delta)],
     };
-  }, [data, color]);
+  }, [d0, d1, d2, d3, codes, styles]);
 
   const speedRef = useRef<uPlot | null>(null);
   const throttleRef = useRef<uPlot | null>(null);
   const deltaRef = useRef<uPlot | null>(null);
-  const elapsedRef = useRef<HTMLSpanElement>(null);
-  const kmRef = useRef<HTMLSpanElement>(null);
-  const gapRef = useRef<HTMLSpanElement>(null);
-  const predictedRef = useRef<HTMLSpanElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
-  // Every frame: the lines up to where the car is at the clock, and the numbers there.
+  // Every frame: the lines up to where each car is at the clock, and the numbers there.
   const draw = useMemo(() => {
-    if (!data || !charts) return null;
-    let drawn = -2;
+    if (!charts) return null;
+    let drawn = '';
     // A chart built again (another group, throttle switched on) starts from the whole answer.
     let on: (uPlot | null)[] = [];
     return (now: number) => {
-      const { n, elapsed, gap } = progressAt(data, now);
-      if (elapsedRef.current) elapsedRef.current.textContent = formatElapsed(elapsed);
+      const at = charts.lines.map((l) => progressAt(l.data, now));
+      const field = (i: number, name: string) =>
+        headerRef.current?.querySelector<HTMLElement>(`[data-row="${i}"] [data-f="${name}"]`);
+      at.forEach(({ elapsed }, i) => {
+        const el = field(i, 'elapsed');
+        if (el) el.textContent = formatElapsed(elapsed);
+      });
       const instances = [speedRef.current, throttleRef.current, deltaRef.current];
-      if (n === drawn && instances.every((u, i) => u === on[i])) return;
-      drawn = n;
+      const key = at.map((a) => a.n).join(',');
+      if (key === drawn && instances.every((u, i) => u === on[i])) return;
+      drawn = key;
       on = instances;
-      const { x } = charts;
-      const speed = upTo(charts.speed, n);
-      set(speedRef.current, charts.reference ? [x, speed, charts.reference] : [x, speed]);
-      set(throttleRef.current, [x, upTo(charts.throttle, n)]);
-      set(deltaRef.current, [x, upTo(charts.delta, n)]);
-      if (kmRef.current) kmRef.current.textContent = `${((n < 0 ? 0 : x[n]) / 1000).toFixed(2)} km`;
-      // On course for: the reference lap plus the delta here (from 300 m, like the tower's Pred).
-      if (predictedRef.current) {
-        const lapTime = data.reference?.lap_time;
-        const far = n >= 0 && x[n] >= 300;
-        predictedRef.current.textContent =
-          gap != null && lapTime != null && far ? `→ ${formatLapTime(lapTime + gap)}` : '';
-      }
-      if (gapRef.current) {
-        gapRef.current.textContent = gap == null ? '' : formatGap(gap);
-        gapRef.current.style.color =
-          gap == null ? COLORS.textFaint : gap < 0 ? COLORS.pb : COLORS.slow;
-      }
+      const { x, lines } = charts;
+      const cut = (pick: (l: (typeof lines)[number]) => Values) =>
+        lines.map((l, i) => upTo(pick(l), at[i].n));
+      set(speedRef.current, [
+        x,
+        ...cut((l) => l.speed),
+        ...(charts.reference ? [charts.reference] : []),
+      ]);
+      set(throttleRef.current, [x, ...cut((l) => l.throttle)]);
+      set(deltaRef.current, [x, ...cut((l) => l.delta)]);
+      at.forEach(({ n, gap }, i) => {
+        const { data } = lines[i];
+        const km = field(i, 'km');
+        if (km) km.textContent = `${((n < 0 ? 0 : data.distance[n]) / 1000).toFixed(2)} km`;
+        // On course for: the reference lap plus the delta here (from 300 m, like the tower's Pred).
+        const predicted = field(i, 'predicted');
+        if (predicted) {
+          const lapTime = data.reference?.lap_time;
+          const far = n >= 0 && data.distance[n] >= 300;
+          predicted.textContent =
+            gap != null && lapTime != null && far ? `→ ${formatLapTime(lapTime + gap)}` : '';
+        }
+        const delta = field(i, 'gap');
+        if (delta) {
+          delta.textContent = gap == null ? '' : formatGap(gap);
+          delta.style.color = gap == null ? COLORS.textFaint : gap < 0 ? COLORS.pb : COLORS.slow;
+        }
+      });
     };
-  }, [data, charts]);
+  }, [charts]);
   useClockDraw(draw);
 
-  if (!driver) return <NoLapsMessage group={group} />;
-  if (progress.error && !data) return <PanelMessage>{progress.error.message}</PanelMessage>;
-  if (!data || !charts) return <PanelMessage>Loading…</PanelMessage>;
+  if (codes.length === 0) return <NoLapsMessage group={group} />;
+  if (error && !charts) return <PanelMessage>{error.message}</PanelMessage>;
+  if (!charts) return <PanelMessage>Loading…</PanelMessage>;
+  const single = charts.lines.length === 1;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center gap-3 px-1.5 py-0.5 text-[11px] tabular-nums">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-[3px]" style={{ background: color }} />
-          <span className="font-semibold">{data.driver}</span>
-          <span className="text-dim">LAP {data.lap}</span>
-        </span>
-        <span ref={elapsedRef} />
-        <span ref={kmRef} className="text-dim" />
-        {data.out_lap ? (
-          <span className="text-[10px] font-semibold text-faint">OUT LAP</span>
-        ) : null}
-        {progress.error ? (
-          <span className="truncate text-faint" title={progress.error.message}>
-            {progress.error.message}
-          </span>
-        ) : null}
-        <span className="ml-auto text-faint">
-          {data.reference
-            ? `vs L${data.reference.lap} ${formatLapTime(data.reference.lap_time)}`
-            : 'no finished lap to compare'}
-        </span>
-        <span
-          ref={predictedRef}
-          className="text-dim"
-          title="On course for: the reference lap time plus the delta at the car's position"
-        />
-        <span
-          className="min-w-[76px] text-right text-[18px] font-semibold leading-6"
-          title="Time behind the reference lap at the car's position"
-          ref={gapRef}
-        />
+      <div ref={headerRef} className="shrink-0">
+        {charts.lines.map(({ data, series }, i) => (
+          <div
+            key={data.driver}
+            data-row={i}
+            className="flex items-center gap-3 px-1.5 py-0.5 text-[11px] tabular-nums"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-[3px]" style={{ background: series.color }} />
+              <span className="font-semibold">{data.driver}</span>
+              <span className="text-dim">LAP {data.lap}</span>
+            </span>
+            <span data-f="elapsed" />
+            <span data-f="km" className="text-dim" />
+            {data.out_lap ? (
+              <span className="text-[10px] font-semibold text-faint">OUT LAP</span>
+            ) : null}
+            {i === 0 && error ? (
+              <span className="truncate text-faint" title={error.message}>
+                {error.message}
+              </span>
+            ) : null}
+            <span className="ml-auto text-faint">
+              {data.reference
+                ? `vs L${data.reference.lap} ${formatLapTime(data.reference.lap_time)}`
+                : 'no finished lap to compare'}
+            </span>
+            <span
+              data-f="predicted"
+              className="text-dim"
+              title="On course for: the reference lap time plus the delta at the car's position"
+            />
+            <span
+              data-f="gap"
+              className={cn(
+                'text-right font-semibold',
+                single ? 'min-w-[76px] text-[18px] leading-6' : 'min-w-[60px] text-[14px] leading-5'
+              )}
+              title="Time behind the reference lap at the car's position"
+            />
+          </div>
+        ))}
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 border-t border-line" style={{ flex: 3 }}>
           <UPlotChart
             group={group}
-            data={charts.speedChart.data}
-            series={charts.speedChart.series}
+            data={charts.speedData as uPlot.AlignedData}
+            series={charts.speedSeries}
             chartRef={speedRef}
             label="Speed km/h"
           />
@@ -185,8 +239,8 @@ export function LiveLapWidget({ group, config }: WidgetProps<LiveLapConfig>) {
           <div className="flex min-h-0 border-t border-line" style={{ flex: 1.2 }}>
             <UPlotChart
               group={group}
-              data={charts.throttleChart.data}
-              series={charts.throttleChart.series}
+              data={charts.throttleData as uPlot.AlignedData}
+              series={charts.lines.map((l) => l.series)}
               chartRef={throttleRef}
               label="Throttle %"
               yRange={THROTTLE_RANGE}
@@ -196,8 +250,8 @@ export function LiveLapWidget({ group, config }: WidgetProps<LiveLapConfig>) {
         <div className="flex min-h-0 border-t border-line" style={{ flex: 2 }}>
           <UPlotChart
             group={group}
-            data={charts.deltaChart.data}
-            series={charts.deltaChart.series}
+            data={charts.deltaData as uPlot.AlignedData}
+            series={charts.lines.map((l) => l.series)}
             chartRef={deltaRef}
             label="Delta s"
             yFormat={deltaFormat}

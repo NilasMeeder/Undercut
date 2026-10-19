@@ -434,6 +434,10 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   bovenin lopen per frame mee. Tot de klok op de nieuwe lap is en 3 s erna (`HOLD`) staat de
   afgeronde lap er, apart gevraagd op zijn eindtijd − 1 ms (`precise`), met de eind-delta. Lijnen
   zijn voor het tekenen licht gladgestreken (driehoek over ±10 m); de getallen zijn ruw.
+  **Meerdere drivers** (instelling `drivers`: `group` standaard, max 4, of `first`): vier vaste
+  `useLiveLap`-aanroepen (lege plekken vragen niets), alle lijnen op de 5 m-as van de langste
+  (aangevuld met null), teamgenoot gestippeld (`driverStyles`), een kopregel per driver (velden
+  per frame via `data-row`/`data-f`); de referentielap alleen met één driver.
 - **Live delta** (widget `livedelta`, fase 12, Nilas): dezelfde delta als Live lap als één groot
   getal (groen voor, geel achter, zoals Live lap), erboven het gat naar de auto ervoor en eronder
   dat naar de auto erachter. Race: elk frame uit het positiespoor (`lib/replay.ts` `timeGap`: hoe

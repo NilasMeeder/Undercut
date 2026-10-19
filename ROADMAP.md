@@ -519,7 +519,10 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       passes; die laatste vier standaard alleen voor de drivers in de link-groepen. Bel in de topbalk.
       Getest in replay: Monza 2025 R (VER PIT L37 24,4 s M → H, LEC snelste lap), Q (NOR 1:18.869,
       VER 1:18.792)
-- [ ] **Live lap voor meerdere drivers** (uit fase 7)
+- [x] **Live lap voor meerdere drivers** (2026-10-19): instelling Drivers (standaard alle drivers
+      van de groep, max 4; of alleen de eerste), elk zijn lap tot de klok op één afstandsas met een
+      eigen delta en "→" per regel; met één driver de referentielap gestippeld zoals eerst. Getest
+      in het quali board (Monza 2025 Q3: VER L17 en NOR L20 tegelijk)
 - [ ] **Corners live**: de bochten van de lap die bezig is, per bocht bijgewerkt (uit Ideeën)
 - [ ] **Voorspelde einduitslag**: met het tempo en de trends van nu, en waar gaten nul worden
 - [ ] **Safety car-calculator**: bij SC/VSC per auto wat stoppen nu oplevert, als tabel

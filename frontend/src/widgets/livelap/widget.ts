@@ -2,7 +2,11 @@ import { lazy } from 'react';
 import type { ProgressReference } from '@/api/queries';
 import { defineWidget } from '../types';
 
-export type LiveLapConfig = { reference: 'auto' | ProgressReference; throttle: boolean };
+export type LiveLapConfig = {
+  reference: 'auto' | ProgressReference;
+  throttle: boolean;
+  drivers: 'group' | 'first';
+};
 
 export const liveLapWidget = defineWidget<LiveLapConfig>({
   id: 'livelap',
@@ -10,11 +14,13 @@ export const liveLapWidget = defineWidget<LiveLapConfig>({
   description: 'The lap a driver is on at the clock, growing, with the live delta',
   help: {
     summary:
-      'The lap the driver of this group (the first selected lap) is on at the session clock, as ' +
-      'far as it got, over a finished lap of the same driver: the previous one or the best so ' +
-      'far (Auto: the previous lap in a race, the best one in qualifying and practice, where the ' +
-      'lap before is mostly an out- or cool-down lap). The number on the right is the live delta ' +
-      'at the car’s position, as on TV.',
+      'The lap each driver of this group (the drivers of the selected laps, up to four) is on ' +
+      'at the session clock, as far as it got, on one distance axis. Each has his own delta to ' +
+      'a finished lap of his own: the previous one or the best so far (Auto: the previous lap ' +
+      'in a race, the best one in qualifying and practice, where the lap before is mostly an ' +
+      'out- or cool-down lap). The number on the right of each row is that live delta at the ' +
+      'car’s position, as on TV. With one driver his reference lap is drawn dashed in the speed ' +
+      'chart. Drivers: Only the first shows the first selected lap’s driver.',
     watch: [
       'Below zero (green): the lap is quicker than the reference so far; above (yellow): slower.',
       '→ 1:18.862: what the lap is on course for, the reference lap time plus the delta at the ' +
@@ -30,7 +36,7 @@ export const liveLapWidget = defineWidget<LiveLapConfig>({
     controls:
       'Follows the clock: press play or LIVE. Hover moves the group cursor; drag zooms the group.',
   },
-  defaults: { reference: 'auto', throttle: true },
+  defaults: { reference: 'auto', throttle: true, drivers: 'group' },
   settings: [
     {
       key: 'reference',
@@ -40,6 +46,15 @@ export const liveLapWidget = defineWidget<LiveLapConfig>({
         { value: 'auto', label: 'Auto: previous in a race, else best' },
         { value: 'previous', label: 'Previous lap' },
         { value: 'best', label: 'Best lap so far' },
+      ],
+    },
+    {
+      key: 'drivers',
+      label: 'Drivers',
+      kind: 'choice',
+      options: [
+        { value: 'group', label: 'Every driver in the group (up to 4)' },
+        { value: 'first', label: 'Only the first' },
       ],
     },
     { key: 'throttle', label: 'Throttle', kind: 'toggle' },
