@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from app import (
     analysis,
     energies,
+    evolution,
     overtake,
     progress,
     replays,
@@ -67,6 +68,7 @@ from app.schemas import (
     Teammates,
     Telemetry,
     TimingState,
+    TrackEvolution,
     TrackSectors,
     TrackZones,
     TyreWeekend,
@@ -522,6 +524,15 @@ def overtake_checks(year: int, round: int, session: SessionCode) -> OvertakeChec
     """Races (2026): every passage of the overtake detection line, with the gap to the car ahead
     and whether it gave overtake mode. Needs the position track (404 until it is prepared)."""
     return _guard(lambda: overtake.get_checks(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/track-evolution")
+def track_evolution(
+    year: int, round: int, session: SessionCode, until: Until = None
+) -> TrackEvolution:
+    """Qualifying: how much quicker the track got over the session (per driver corrected for
+    his level and the tyre), and what each best lap was worth on the track of the end."""
+    return _guard(lambda: evolution.get_evolution(year, round, session, until))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/sectors")

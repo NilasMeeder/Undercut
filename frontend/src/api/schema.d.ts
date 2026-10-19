@@ -517,6 +517,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/track-evolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Track Evolution
+         * @description Qualifying: how much quicker the track got over the session (per driver corrected for
+         *     his level and the tyre), and what each best lap was worth on the track of the end.
+         */
+        get: operations["track_evolution_api_sessions__year___round___session__track_evolution_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/sectors": {
         parameters: {
             query?: never;
@@ -1140,6 +1161,38 @@ export interface components {
             date: string;
             /** Sessions */
             sessions: components["schemas"]["SessionInfo"][];
+        };
+        /**
+         * EvolutionDriver
+         * @description A driver's best push lap, and what it was worth on the track of the end.
+         */
+        EvolutionDriver: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Lap Time */
+            lap_time: number;
+            /** Time */
+            time: number;
+            /** Gain */
+            gain: number;
+            /** Worth */
+            worth: number;
+        };
+        /**
+         * EvolutionLap
+         * @description A push lap in the track-evolution fit.
+         */
+        EvolutionLap: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Time */
+            time: number;
+            /** Gain */
+            gain: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2161,6 +2214,29 @@ export interface components {
             timing: "best" | "pb" | "none";
             /** Current */
             current: boolean;
+        };
+        /**
+         * TrackEvolution
+         * @description Qualifying: how much quicker the track got, per driver corrected for his level and the
+         *     tyre (an estimate; anything that makes everyone quicker over time counts).
+         */
+        TrackEvolution: {
+            /** Times */
+            times: number[];
+            /** Gain */
+            gain: number[];
+            /** Total */
+            total: number;
+            /** Recent */
+            recent: number;
+            /** Recent Minutes */
+            recent_minutes: number;
+            /** Spread */
+            spread: number;
+            /** Points */
+            points: components["schemas"]["EvolutionLap"][];
+            /** Drivers */
+            drivers: components["schemas"]["EvolutionDriver"][];
         };
         /**
          * TrackSectors
@@ -3382,6 +3458,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OvertakeChecks"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    track_evolution_api_sessions__year___round___session__track_evolution_get: {
+        parameters: {
+            query?: {
+                /** @description Session time (s): only laps completed by then count; omit for all */
+                until?: number | null;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackEvolution"];
                 };
             };
             /** @description Validation Error */

@@ -487,6 +487,33 @@ qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) 
 - [ ] Na Austin: klopt de 1 s uit het positiespoor met wat F1 doet (een opname heeft geen OT-kanaal,
       maar de race control en de inhaalacties wel)?
 
+## Fase 13 — Meer voor de race en de analyse
+
+Nilas (2026-10-19): "ja allemaal heel nice, vooral ook baanevolutie". Volgorde: baanevolutie eerst,
+dan wat in Austin al helpt (race), dan de analyse en de rest.
+
+- [x] **Baanevolutie** (2026-10-19, `evolution.py`, `/track-evolution`, widget Track evolution):
+      per push-lap niveau van de driver + band + baan(t), baan als gladde curve (knopen per 10 min,
+      Huber). Monza 2025 Q +0,94 s, 2026 Q +0,90 s (ANT's Q2-lap was op de baan van het eind
+      1:21.770 waard, sneller dan GAS' pole), Zandvoort/Baku 2026 ~2 s. Alleen Q/SQ: in FP1/FP2
+      lijkt de baan aan het eind langzamer (long runs, brandstof staat niet in de data), ook met
+      alleen de snelste lap per run
+- [ ] **Penalty tracker**: track-limits-strikes per driver, onderzoeken en straffen uit race control
+- [ ] **Inhaalacties**: elke inhaalactie op de baan (wie, waar, lap, met of zonder OT), op de kaart;
+      per driver hoe vaak OT en wat hij ermee deed
+- [ ] **Meldingen op het bord**: toasts voor pitstops, snelste lap, OT, onderzoek, SC/VSC, gat < 1 s
+- [ ] **Live lap voor meerdere drivers** (uit fase 7)
+- [ ] **Corners live**: de bochten van de lap die bezig is, per bocht bijgewerkt (uit Ideeën)
+- [ ] **Voorspelde einduitslag**: met het tempo en de trends van nu, en waar gaten nul worden
+- [ ] **Safety car-calculator**: bij SC/VSC per auto wat stoppen nu oplevert, als tabel
+- [ ] **Remwegen en bochtfases**: rempunt, apex en uitgang per bocht, vergeleken tussen laps
+- [ ] **Gear- en throttle-map** op de baan
+- [ ] **Long runs in FP**: herkennen en vergelijken
+- [ ] **Starts**: posities en snelheid in de eerste 500 m uit het positiespoor
+- [ ] **Team radio** op de tijdlijn (OpenF1)
+- [ ] **Dashboard delen als URL**
+- [ ] **Seizoensoverzicht**: quali-gaps tussen teamgenoten over het jaar
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`

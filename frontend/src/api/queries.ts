@@ -33,6 +33,7 @@ import {
   type SessionDetail,
   type SessionTimeline,
   type TimingState,
+  type TrackEvolution,
   type Weather,
 } from './client';
 
@@ -172,6 +173,10 @@ function useStrategyQuery<T>(
 
 /** Cutoff in session time: null = the whole session, undefined = not known yet (no query). */
 type Until = number | null | undefined;
+
+/** Qualifying: how much quicker the track got, from the push laps done by the cutoff. */
+export const useTrackEvolution = (until: Until, enabled = true) =>
+  useStrategyQuery<TrackEvolution>('/track-evolution', { until }, enabled && until !== undefined);
 
 /** Tyre degradation per stint up to the cutoff; `fuel` in s per kg. */
 export const useDegradation = (until: Until, fuel: number) =>

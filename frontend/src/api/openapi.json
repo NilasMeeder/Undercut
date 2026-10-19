@@ -2076,6 +2076,92 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/track-evolution": {
+      "get": {
+        "summary": "Track Evolution",
+        "description": "Qualifying: how much quicker the track got over the session (per driver corrected for\nhis level and the tyre), and what each best lap was worth on the track of the end.",
+        "operationId": "track_evolution_api_sessions__year___round___session__track_evolution_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Session time (s): only laps completed by then count; omit for all",
+              "title": "Until"
+            },
+            "description": "Session time (s): only laps completed by then count; omit for all"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackEvolution"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/sectors": {
       "get": {
         "summary": "Track Sectors",
@@ -4073,6 +4159,74 @@
           "sessions"
         ],
         "title": "EventInfo"
+      },
+      "EvolutionDriver": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "lap_time": {
+            "type": "number",
+            "title": "Lap Time"
+          },
+          "time": {
+            "type": "number",
+            "title": "Time"
+          },
+          "gain": {
+            "type": "number",
+            "title": "Gain"
+          },
+          "worth": {
+            "type": "number",
+            "title": "Worth"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "lap_time",
+          "time",
+          "gain",
+          "worth"
+        ],
+        "title": "EvolutionDriver",
+        "description": "A driver's best push lap, and what it was worth on the track of the end."
+      },
+      "EvolutionLap": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "time": {
+            "type": "number",
+            "title": "Time"
+          },
+          "gain": {
+            "type": "number",
+            "title": "Gain"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "time",
+          "gain"
+        ],
+        "title": "EvolutionLap",
+        "description": "A push lap in the track-evolution fit."
       },
       "HTTPValidationError": {
         "properties": {
@@ -7390,6 +7544,67 @@
           "current"
         ],
         "title": "TowerSector"
+      },
+      "TrackEvolution": {
+        "properties": {
+          "times": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Times"
+          },
+          "gain": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Gain"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          },
+          "recent": {
+            "type": "number",
+            "title": "Recent"
+          },
+          "recent_minutes": {
+            "type": "integer",
+            "title": "Recent Minutes"
+          },
+          "spread": {
+            "type": "number",
+            "title": "Spread"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/EvolutionLap"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/EvolutionDriver"
+            },
+            "type": "array",
+            "title": "Drivers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "times",
+          "gain",
+          "total",
+          "recent",
+          "recent_minutes",
+          "spread",
+          "points",
+          "drivers"
+        ],
+        "title": "TrackEvolution",
+        "description": "Qualifying: how much quicker the track got, per driver corrected for his level and the\ntyre (an estimate; anything that makes everyone quicker over time counts)."
       },
       "TrackSectors": {
         "properties": {

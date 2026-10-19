@@ -4,6 +4,7 @@ import { clockWidget } from './clock/widget';
 import { cornersWidget } from './corners/widget';
 import { deltaWidget } from './delta/widget';
 import { energyWidget } from './energy/widget';
+import { evolutionWidget } from './evolution/widget';
 import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
 import { liveDeltaWidget } from './livedelta/widget';
@@ -47,6 +48,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   setupsWidget,
   teammatesWidget,
   timelineWidget,
+  evolutionWidget,
   cornersWidget,
   miniSectorsWidget,
   energyWidget,

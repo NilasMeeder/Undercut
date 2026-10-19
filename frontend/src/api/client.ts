@@ -8,6 +8,7 @@ export type SessionCode = SessionInfo['code'];
 export type SessionDetail = Schemas['SessionDetail'];
 export type DriverInfo = Schemas['DriverInfo'];
 export type Lap = Schemas['Lap'];
+export type TrackEvolution = Schemas['TrackEvolution'];
 export type Comparison = Schemas['Comparison'];
 export type ComparedLap = Schemas['ComparedLap'];
 export type Circuit = Schemas['Circuit'];

@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -153,6 +153,7 @@ backend/app/energy.py      pure energie-logica (2026): kinematica op een tijdras
 backend/app/straight_mode.py straight-mode-zones (2026): de FIA-punten uit straight_mode.json op de lap, eind
                            waar de straight remt; sources/fia.py leest de FIA-kaart en schrijft die JSON
 backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
+backend/app/evolution.py   baanevolutie in Q (fit per push-lap: driver + band + baan(t)), zie "Baanevolutie"
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
                            pure functies (long_runs, start_moves, stop_extremes, undercuts, flags) getest
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
@@ -716,6 +717,19 @@ en het gat op beste lap; de langste long run uit de trainingen (`reports.long_ru
 dan de snelste mediaan: een korte run is vaak met weinig brandstof) en het racetempo
 (`setups.race_pace`). In de preset Session overview als tab naast de Run timeline. Monza 2025:
 VER P6/P4 in FP2/FP3, maar het snelste racetempo (1:22.874).
+
+## Baanevolutie (fase 13)
+
+`evolution.py` (puur + `get_evolution`), `/track-evolution?until=`, widget Track evolution
+(`evolution`, in de Analyse-preset Qualifying als tab). Alleen Q/SQ/SS. Push-laps: getimed, slicks,
+track status alleen 1, geen pit in/out, binnen 102,5% van de eigen beste (verwijderde laps tellen:
+de tijd is gereden), tijd = halverwege de lap. Model: laptijd = niveau[driver] + compound +
+leeftijd × k + baan(t); baan lineair tussen knopen ~10 min uit elkaar met een straf op de tweede
+verschillen (`SMOOTHING` 0,5: 2 vlakt het steile begin te veel af, Monza −0,08 s), Huber-gewichten
+(1,345 σ). Per driver: TRACK = wat de baan na zijn beste lap nog won, WORTH = beste − dat, ± =
+plaatsen. De frontend vraagt met `until` = eindtijd van de laatste lap die op de klok af is
+(`useLapsAtClock`, instelling "Laps shown"). Alles wat iedereen sneller maakt telt als baan (ook
+meer risico in Q3). FP geprobeerd en weggelaten (zie ROADMAP fase 13).
 
 ## Markeringen en views (fase 5)
 

@@ -505,6 +505,52 @@ class StraightMode(BaseModel):
     """When race control had overtake mode enabled (OVERTAKE ENABLED until DISABLED)."""
 
 
+class EvolutionLap(BaseModel):
+    """A push lap in the track-evolution fit."""
+
+    driver: str
+    lap: int
+    time: float
+    """Session time (s) halfway round the lap."""
+    gain: float
+    """What this lap says about the track: seconds quicker than at the first push lap, after
+    the driver's level and the tyre (the curve plus this lap's own noise)."""
+
+
+class EvolutionDriver(BaseModel):
+    """A driver's best push lap, and what it was worth on the track of the end."""
+
+    driver: str
+    lap: int
+    lap_time: float
+    time: float
+    """Session time (s) halfway round the lap."""
+    gain: float
+    """The track's gain (s) at that moment."""
+    worth: float
+    """The lap time on the track of the end: lap_time minus what the track gained after it."""
+
+
+class TrackEvolution(BaseModel):
+    """Qualifying: how much quicker the track got, per driver corrected for his level and the
+    tyre (an estimate; anything that makes everyone quicker over time counts)."""
+
+    times: list[float]
+    """Session time (s), every 30 s from the first push lap to the last."""
+    gain: list[float]
+    """Seconds quicker than at the first push lap."""
+    total: float
+    """Gain (s) from the first push lap to the last."""
+    recent: float
+    """Gain (s) over the last `recent_minutes`."""
+    recent_minutes: int
+    spread: float
+    """Robust standard deviation (s) of a push lap around the fit."""
+    points: list[EvolutionLap]
+    drivers: list[EvolutionDriver]
+    """Ordered by `worth`."""
+
+
 class TrackSectors(BaseModel):
     """Where the timing sectors end along the lap, for the map."""
 

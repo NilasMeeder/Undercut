@@ -94,6 +94,7 @@ function qualifying(api: DockviewApi) {
   addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });
   addWidget(api, 'energy', 'blue', { referencePanel: mini, direction: 'within' });
   addWidget(api, 'setups', 'blue', { referencePanel: mini, direction: 'within' });
+  addWidget(api, 'evolution', 'blue', { referencePanel: mini, direction: 'within' });
   mini.api.setActive();
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
   bests.group.api.setSize({ width: 430 });
@@ -364,7 +365,8 @@ export const PRESETS = [
   {
     id: 'qualifying',
     title: 'Qualifying',
-    description: 'Bests, run timeline, two laps compared, mini-sectors, corners, energy',
+    description:
+      'Bests, run timeline, two laps compared, mini-sectors, corners, energy, track evolution',
     workspaces: ['analysis'],
     apply: qualifying,
   },
