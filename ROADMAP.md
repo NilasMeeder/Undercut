@@ -601,6 +601,17 @@ Starts gelijk aan de officiële (S en R), alle presets in beide werkplekken in h
       nog geen rij; nu begint hij op de laatste lijn van de leider
 - [x] Season: teammates: "UNI" → USA (ook São Paulo BRA, Las Vegas LVG)
 
+## Fase 14 — De ideeënlijst (vóór Austin)
+
+Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de lijst hieronder dus nu.
+
+- [x] **Starts in het race board** (2026-10-19): in een breed, laag paneel (≥ 480 px en ≥ 2× zo
+      breed als hoog) staan de chart en de tabel naast elkaar; het race board (574×188) toont nu
+      8 rijen in plaats van 3. Kolommen zonder "m" als ze dicht op elkaar staan
+- [ ] Starts: herstarts na een rode vlag (staande start halverwege) ook meten
+- [ ] Presets naar schermgrootte voor de analyse-presets
+- [ ] Automatische analyses: opvallende momenten als markeringen
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
@@ -622,5 +633,3 @@ Starts gelijk aan de officiële (S en R), alle presets in beide werkplekken in h
   meer panelen in de presets dan op de MacBook. Pitwall doet dit sinds fase 9 (`window.innerWidth`);
   de analyse-presets nog niet
 
-- Starts: herstarts na een rode vlag (staande start halverwege) ook meten
-- Starts: de chart is krap in het race board (tab naast Passes)

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { type ReactNode, useRef } from 'react';
 import type { DriverInfo, StartCar, Starts } from '@/api/client';
 import { useSessionDetail, useStarts } from '@/api/queries';
 import { DriverCell, PanelMessage } from '@/components/data/bits';
@@ -41,93 +41,128 @@ export function StartsWidget({ group, config }: WidgetProps<StartsConfig>) {
   const leader = data.cars.find((c) => c.positions[last] === 1);
 
   return (
-    <div className="flex h-full flex-col">
-      {config.chart ? (
-        <PlacesChart data={data} drivers={drivers} seen={seen} strong={selected} />
-      ) : null}
-      <div className="min-h-0 flex-1 overflow-auto border-t border-line">
-        <table className="w-full whitespace-nowrap text-[11px] tabular-nums">
-          <thead>
-            <tr>
-              <th className={cn(th, 'text-right')} title="Place 500 m past the pole slot">
-                Pos
-              </th>
-              <th className={cn(th, 'text-left')}>Drv</th>
-              <th className={cn(th, 'text-right')}>Grid</th>
-              <th className={cn(th, 'text-right')} title="Places gained (+) or lost by 500 m">
-                ±
-              </th>
-              <th className={cn(th, 'text-right')} title="Behind the first car at 500 m">
-                Gap
-              </th>
-              <th className={cn(th, 'text-right')} title="Top speed up to 500 m (km/h)">
-                Vmax
-              </th>
-              <th className={cn(th, 'text-right')} title="Seconds from lights out (±0.25 s)">
-                0–100
-              </th>
-              <th className={cn(th, 'text-right')} title="Seconds from lights out (±0.25 s)">
-                0–200
-              </th>
-              <th className={cn(th, 'text-right')} title="Place at the end of lap 1">
-                L1
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.cars.map((car) => {
-              const lap = { driver: car.driver, lap: 1 };
-              const picked = isSelected(lap);
-              const at500 = passed(car, last, seen);
-              const pos = at500 ? car.positions[last] : null;
-              const gained = pos != null && car.grid != null ? car.grid - pos : null;
-              const lap1 = car.lap_1_end != null && car.lap_1_end <= t ? car.lap_1 : null;
-              const note = car.pit_lane ? 'PIT' : !car.moved ? (car.lap_1 ? 'NO DATA' : 'DNS') : '';
-              return (
-                <tr
-                  key={car.driver}
-                  onClick={() => toggle(lap)}
-                  style={rowStyle(picked, group)}
-                  className={cn('cursor-pointer hover:bg-raised', picked && 'bg-raised')}
-                >
-                  <td className={cn(td, 'font-semibold')}>{pos ?? ''}</td>
-                  <DriverCell code={car.driver} drivers={drivers} />
-                  <td className={cn(td, 'text-dim')}>{car.grid ?? ''}</td>
-                  <td className={cn(td, gained ? 'text-text' : 'text-faint')}>
-                    {gained == null
-                      ? ''
-                      : gained > 0
-                        ? `+${gained}`
-                        : gained < 0
-                          ? `−${-gained}`
-                          : '0'}
-                  </td>
-                  <td className={cn(td, 'text-dim')}>
-                    {note ? (
-                      <span className="text-faint">{note}</span>
-                    ) : at500 && leader && car !== leader ? (
-                      formatGap(car.times[last]! - leader.times[last]!)
-                    ) : (
-                      ''
-                    )}
-                  </td>
-                  <td className={cn(td, 'text-dim')}>{at500 ? (car.speed ?? '') : ''}</td>
-                  <td className={td}>
-                    {car.to_100 != null && data.lights_out + car.to_100 <= t
-                      ? car.to_100.toFixed(2)
-                      : ''}
-                  </td>
-                  <td className={td}>
-                    {car.to_200 != null && data.lights_out + car.to_200 <= t
-                      ? car.to_200.toFixed(2)
-                      : ''}
-                  </td>
-                  <td className={cn(td, 'text-dim')}>{lap1 ?? ''}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+    <Split
+      chart={
+        config.chart
+          ? (beside) => (
+              <PlacesChart
+                data={data}
+                drivers={drivers}
+                seen={seen}
+                strong={selected}
+                beside={beside}
+              />
+            )
+          : null
+      }
+    >
+      <table className="w-full whitespace-nowrap text-[11px] tabular-nums">
+        <thead>
+          <tr>
+            <th className={cn(th, 'text-right')} title="Place 500 m past the pole slot">
+              Pos
+            </th>
+            <th className={cn(th, 'text-left')}>Drv</th>
+            <th className={cn(th, 'text-right')}>Grid</th>
+            <th className={cn(th, 'text-right')} title="Places gained (+) or lost by 500 m">
+              ±
+            </th>
+            <th className={cn(th, 'text-right')} title="Behind the first car at 500 m">
+              Gap
+            </th>
+            <th className={cn(th, 'text-right')} title="Top speed up to 500 m (km/h)">
+              Vmax
+            </th>
+            <th className={cn(th, 'text-right')} title="Seconds from lights out (±0.25 s)">
+              0–100
+            </th>
+            <th className={cn(th, 'text-right')} title="Seconds from lights out (±0.25 s)">
+              0–200
+            </th>
+            <th className={cn(th, 'text-right')} title="Place at the end of lap 1">
+              L1
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.cars.map((car) => {
+            const lap = { driver: car.driver, lap: 1 };
+            const picked = isSelected(lap);
+            const at500 = passed(car, last, seen);
+            const pos = at500 ? car.positions[last] : null;
+            const gained = pos != null && car.grid != null ? car.grid - pos : null;
+            const lap1 = car.lap_1_end != null && car.lap_1_end <= t ? car.lap_1 : null;
+            const note = car.pit_lane ? 'PIT' : !car.moved ? (car.lap_1 ? 'NO DATA' : 'DNS') : '';
+            return (
+              <tr
+                key={car.driver}
+                onClick={() => toggle(lap)}
+                style={rowStyle(picked, group)}
+                className={cn('cursor-pointer hover:bg-raised', picked && 'bg-raised')}
+              >
+                <td className={cn(td, 'font-semibold')}>{pos ?? ''}</td>
+                <DriverCell code={car.driver} drivers={drivers} />
+                <td className={cn(td, 'text-dim')}>{car.grid ?? ''}</td>
+                <td className={cn(td, gained ? 'text-text' : 'text-faint')}>
+                  {gained == null
+                    ? ''
+                    : gained > 0
+                      ? `+${gained}`
+                      : gained < 0
+                        ? `−${-gained}`
+                        : '0'}
+                </td>
+                <td className={cn(td, 'text-dim')}>
+                  {note ? (
+                    <span className="text-faint">{note}</span>
+                  ) : at500 && leader && car !== leader ? (
+                    formatGap(car.times[last]! - leader.times[last]!)
+                  ) : (
+                    ''
+                  )}
+                </td>
+                <td className={cn(td, 'text-dim')}>{at500 ? (car.speed ?? '') : ''}</td>
+                <td className={td}>
+                  {car.to_100 != null && data.lights_out + car.to_100 <= t
+                    ? car.to_100.toFixed(2)
+                    : ''}
+                </td>
+                <td className={td}>
+                  {car.to_200 != null && data.lights_out + car.to_200 <= t
+                    ? car.to_200.toFixed(2)
+                    : ''}
+                </td>
+                <td className={cn(td, 'text-dim')}>{lap1 ?? ''}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </Split>
+  );
+}
+
+/** The chart over the table, or beside it when the panel is wide and low (the race board). */
+function Split({
+  chart,
+  children,
+}: {
+  chart: ((beside: boolean) => ReactNode) | null;
+  children: ReactNode;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const { width, height } = useElementSize(box);
+  const beside = chart != null && width >= 480 && width >= 2 * height;
+  return (
+    <div ref={box} className={cn('flex h-full', beside ? 'flex-row' : 'flex-col')}>
+      {chart?.(beside)}
+      <div
+        className={cn(
+          'min-h-0 overflow-auto border-line',
+          beside ? 'shrink-0 border-l' : 'flex-1 border-t'
+        )}
+      >
+        {children}
       </div>
     </div>
   );
@@ -143,11 +178,14 @@ function PlacesChart({
   drivers,
   seen,
   strong,
+  beside,
 }: {
   data: Starts;
   drivers: DriverInfo[];
   seen: Seen;
   strong: string[];
+  /** Next to the table: the full height of the panel. */
+  beside: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
@@ -160,6 +198,8 @@ function PlacesChart({
   const color = (code: string) => drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
   // Every car's name only when the rows have room; else only those of the group.
   const roomy = (height - PAD.top - PAD.bottom) / Math.max(field - 1, 1) >= LABEL_ROW;
+  // "100 m" needs about 30 px; closer together the column says only "100".
+  const metres = (width - PAD.left - PAD.right) / (columns.length - 1) >= 32;
   const lines = data.cars.map((car) => {
     const places: (number | null)[] = [
       car.grid,
@@ -175,8 +215,12 @@ function PlacesChart({
   return (
     <div
       ref={box}
-      className="relative min-h-[90px] shrink-0"
-      style={{ height: `min(55%, ${field * LABEL_ROW + PAD.top + PAD.bottom + 4}px)` }}
+      className={cn('relative', beside ? 'min-w-0 flex-1' : 'min-h-[90px] shrink-0')}
+      style={
+        beside
+          ? undefined
+          : { height: `min(55%, ${field * LABEL_ROW + PAD.top + PAD.bottom + 4}px)` }
+      }
     >
       {width > 0 ? (
         <svg width={width} height={height} className="block">
@@ -190,7 +234,7 @@ function PlacesChart({
                 stroke={COLORS.line}
               />
               <text x={x(k)} y={9} fill={COLORS.textFaint} fontSize={9} textAnchor="middle">
-                {k > 0 && k < columns.length - 1 ? `${label} m` : label}
+                {k > 0 && k < columns.length - 1 && metres ? `${label} m` : label}
               </text>
             </g>
           ))}
