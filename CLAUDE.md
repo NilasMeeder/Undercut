@@ -574,9 +574,11 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
 - **Analyse**: bij binnenkomst de klok op het einde; preset **Debrief** = Report + Delta,
   Telemetry, kaart, Corners/Race pace; preset **Qualifying** = Bests/Laps/Run timeline, Delta,
   Telemetry, kaart, Mini-sectors/Corners/Energy.
-- **Qualifying board** (Pitwall, `quali-board`): tower (fit, met Cut en Pred), kaart met alle auto's
-  en Live lap, Clock op de sessieklok (`mode: 'session'`, tijd over), Race control, Run timeline,
-  Track line.
+- **Qualifying board** (Pitwall, `quali-board`, Nilas' eigen indeling van 2026-10-18, screenshot in
+  `~/Projecten/f1dash/screenshots`): links de tower (fit, Laps als tab) boven Corners, in het midden
+  de kaart met alle auto's boven Live lap, rechts Clock op de sessieklok (lokale tijd als tab), Race
+  control en Release, onderin Track line en Weather. Maten als deel van het scherm (tower 40%,
+  rechts 24%, onderin 19%), dus op de MacBook en een breed scherm dezelfde indeling.
 - **Release** (widget `release`, `lib/release.ts`, alleen frontend): voor de eerste driver van de
   groep: als hij nu (of over w s) de pit uit gaat, begint zijn push op t + w + zijn typische
   out-lap (pit-uit tot de lijn). Elke auto op de baan (status uit de tower, lap-voortgang uit het

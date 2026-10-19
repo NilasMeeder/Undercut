@@ -229,13 +229,18 @@ function pitwall(api: DockviewApi) {
 }
 
 /**
- * Preset: the qualifying board. The tower with the cut and the predicted lap times, every car on
- * the map with the live lap of the selected driver under it, the session clock (time left), race
- * control and the run timeline on the right, the track line along the bottom.
+ * Preset: the qualifying board, as Nilas laid it out (2026-10-18). The tower (laps as a tab) over
+ * corners on the left; every car on the map over the live lap in the middle; the session clock
+ * (local time as a tab), race control and release on the right; the track line and the weather
+ * along the bottom. Sizes are shares of the screen, so it fits a laptop and a wide screen alike.
  */
 function qualiBoard(api: DockviewApi) {
   const width = window.innerWidth;
+  // The panels' height: the screen minus the top bar and the clock bar.
+  const height = window.innerHeight - 60;
   const tower = addWidget(api, 'tower', 'blue', undefined, { size: 'fit' });
+  addWidget(api, 'laps', 'blue', { referencePanel: tower, direction: 'within' });
+  tower.api.setActive();
   const map = addWidget(
     api,
     'trackmap',
@@ -251,25 +256,23 @@ function qualiBoard(api: DockviewApi) {
     { referencePanel: feed, direction: 'above' },
     { mode: 'session' }
   );
-  const runs = addWidget(api, 'timeline', 'blue', { referencePanel: feed, direction: 'below' });
-  addWidget(api, 'tyres', 'blue', { referencePanel: runs, direction: 'within' });
-  addWidget(api, 'release', 'blue', { referencePanel: runs, direction: 'within' });
-  runs.api.setActive();
+  addWidget(api, 'clock', 'blue', { referencePanel: clock, direction: 'within' });
+  clock.api.setActive();
+  const release = addWidget(api, 'release', 'blue', { referencePanel: feed, direction: 'below' });
+  const corners = addWidget(api, 'corners', 'blue', { referencePanel: tower, direction: 'below' });
+  const live = addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'below' });
   const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
-  if (width < NARROW) {
-    addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'within' });
-    map.api.setActive();
-    tower.group.api.setSize({ width: Math.round(width * 0.42) });
-    feed.group.api.setSize({ width: 320 });
-  } else {
-    addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'below' });
-    tower.group.api.setSize({ width: Math.min(Math.round(width * 0.36), 950) });
-    feed.group.api.setSize({ width: width >= WIDE ? 520 : 380 });
-    map.group.api.setSize({ height: Math.round((window.innerHeight - 210) * 0.55) });
-  }
-  runs.group.api.setSize({ height: Math.round((window.innerHeight - 210) * 0.5) });
-  clock.group.api.setSize({ height: 64 });
-  line.group.api.setSize({ height: 120 });
+  const weather = addWidget(api, 'weather', 'blue', { referencePanel: line, direction: 'right' });
+
+  const top = Math.round(height * 0.81);
+  line.group.api.setSize({ height: height - top });
+  weather.group.api.setSize({ width: Math.round(width * 0.32) });
+  tower.group.api.setSize({ width: Math.round(width * 0.4) });
+  feed.group.api.setSize({ width: Math.round(width * 0.24) });
+  corners.group.api.setSize({ height: Math.round(top * 0.24) });
+  live.group.api.setSize({ height: Math.round(top * 0.64) });
+  clock.group.api.setSize({ height: Math.max(64, Math.round(top * 0.14)) });
+  release.group.api.setSize({ height: Math.round(top * 0.4) });
 }
 
 /** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */
@@ -347,7 +350,7 @@ export const PRESETS = [
     id: 'quali-board',
     title: 'Qualifying board',
     description:
-      'Tower with the cut and predicted lap times, every car on the map, live lap, time left, run timeline',
+      'Tower and corners, every car on the map over the live lap, time left, race control, release, track line, weather',
     workspaces: ['pitwall'],
     apply: qualiBoard,
   },
