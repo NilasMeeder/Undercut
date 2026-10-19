@@ -581,7 +581,10 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       (sessie, laps per groep, zoom, klok, layout) plus de werkplek als deflate-JSON in `#share=`,
       niets opgeslagen. Getest: race board Monza 2025 R op LAP 22 → vers venster op Q in Analyse
       opent Pitwall, R, LAP 22/53, NOR L53/VER L52, eigen tab (link 1,5 KB); kapotte link = niets
-- [ ] **Seizoensoverzicht**: quali-gaps tussen teamgenoten over het jaar
+- [x] **Seizoensoverzicht** quali-gaps teamgenoten (2026-10-19, `season.py`, `/season-quali?kind=Q|SQ`,
+      widget Season: teammates, tab in Session overview): per ronde de beste laps in het laatste
+      deel dat beiden reden, H2H (wie verder kwam, dan sneller), mediaan (gaten > 3% eruit), klik =
+      die Q openen met beide laps. Monza 2025 t/m R16: ALO–STR 16–0, VER–TSU 14–0, PIA–NOR 9–7
 
 ## Later / backlog
 

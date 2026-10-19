@@ -1540,6 +1540,55 @@ class TeamRadio(BaseModel):
     """Session time (s); null while the session has no lap timing yet."""
 
 
+class QualiDuel(BaseModel):
+    """Two teammates in one qualifying: their best laps in the last part both set a time in."""
+
+    round: int
+    segment: str | None
+    """Q1, Q2 or Q3 (null for a session without parts)."""
+    a: float | None
+    b: float | None
+    """Best lap (s) of SeasonPair.drivers[0] and [1]; null without a time."""
+    a_lap: int | None
+    b_lap: int | None
+    gap: float | None
+    """b − a (s): positive = the first driver was quicker."""
+    pct: float | None
+    """The gap as % of the quicker lap; null when it is over 3% (a problem, not pace)."""
+    ahead: int | None
+    """0 when the first driver was ahead (he got further, or was quicker in the same part, or
+    was the only one with a time), 1 the second, null when neither set a time."""
+
+
+class SeasonPair(BaseModel):
+    team: str
+    color: str
+    drivers: list[str]
+    """The two drivers, the one ahead more often first."""
+    duels: list[QualiDuel | None]
+    """Per round of SeasonQuali.rounds; null when the two were not teammates there."""
+    ahead: list[int]
+    """Rounds each was quicker (head to head)."""
+    median_gap: float | None
+    median_pct: float | None
+    """Over the rounds both set a time; positive = the first driver quicker."""
+
+
+class SeasonRound(BaseModel):
+    round: int
+    name: str
+
+
+class SeasonQuali(BaseModel):
+    """Teammates in qualifying over the season up to this round."""
+
+    year: int
+    session: str
+    """Q or SQ."""
+    rounds: list[SeasonRound]
+    pairs: list[SeasonPair]
+
+
 class WeekendLongRun(BaseModel):
     """A driver's longest run in practice (the race simulation; median lap, no fuel correction)."""
 

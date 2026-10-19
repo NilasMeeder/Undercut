@@ -2780,6 +2780,85 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/season-quali": {
+      "get": {
+        "summary": "Season Quali",
+        "description": "Teammates in qualifying (or sprint qualifying) over the season up to this round.",
+        "operationId": "season_quali_api_sessions__year___round___session__season_quali_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(Q|SQ)$",
+              "default": "Q",
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonQuali"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/stewards": {
       "get": {
         "summary": "Stewarding",
@@ -7049,6 +7128,116 @@
         "title": "ProgressReference",
         "description": "The finished lap the lap in progress is measured against, on the same grid."
       },
+      "QualiDuel": {
+        "properties": {
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "segment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment"
+          },
+          "a": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "A"
+          },
+          "b": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "B"
+          },
+          "a_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "A Lap"
+          },
+          "b_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "B Lap"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct"
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "round",
+          "segment",
+          "a",
+          "b",
+          "a_lap",
+          "b_lap",
+          "gap",
+          "pct",
+          "ahead"
+        ],
+        "title": "QualiDuel",
+        "description": "Two teammates in one qualifying: their best laps in the last part both set a time in."
+      },
       "RaceControlMessage": {
         "properties": {
           "utc": {
@@ -7847,6 +8036,132 @@
           "events"
         ],
         "title": "SeasonEvents"
+      },
+      "SeasonPair": {
+        "properties": {
+          "team": {
+            "type": "string",
+            "title": "Team"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "drivers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "duels": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/QualiDuel"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Duels"
+          },
+          "ahead": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Ahead"
+          },
+          "median_gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Gap"
+          },
+          "median_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team",
+          "color",
+          "drivers",
+          "duels",
+          "ahead",
+          "median_gap",
+          "median_pct"
+        ],
+        "title": "SeasonPair"
+      },
+      "SeasonQuali": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "rounds": {
+            "items": {
+              "$ref": "#/components/schemas/SeasonRound"
+            },
+            "type": "array",
+            "title": "Rounds"
+          },
+          "pairs": {
+            "items": {
+              "$ref": "#/components/schemas/SeasonPair"
+            },
+            "type": "array",
+            "title": "Pairs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "session",
+          "rounds",
+          "pairs"
+        ],
+        "title": "SeasonQuali",
+        "description": "Teammates in qualifying over the season up to this round."
+      },
+      "SeasonRound": {
+        "properties": {
+          "round": {
+            "type": "integer",
+            "title": "Round"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "round",
+          "name"
+        ],
+        "title": "SeasonRound"
       },
       "SectorFlag": {
         "properties": {

@@ -680,6 +680,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/season-quali": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Season Quali
+         * @description Teammates in qualifying (or sprint qualifying) over the season up to this round.
+         */
+        get: operations["season_quali_api_sessions__year___round___session__season_quali_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/stewards": {
         parameters: {
             query?: never;
@@ -2009,6 +2029,30 @@ export interface components {
             /** Speed */
             speed: (number | null)[];
         };
+        /**
+         * QualiDuel
+         * @description Two teammates in one qualifying: their best laps in the last part both set a time in.
+         */
+        QualiDuel: {
+            /** Round */
+            round: number;
+            /** Segment */
+            segment: string | null;
+            /** A */
+            a: number | null;
+            /** B */
+            b: number | null;
+            /** A Lap */
+            a_lap: number | null;
+            /** B Lap */
+            b_lap: number | null;
+            /** Gap */
+            gap: number | null;
+            /** Pct */
+            pct: number | null;
+            /** Ahead */
+            ahead: number | null;
+        };
         /** RaceControlMessage */
         RaceControlMessage: {
             /**
@@ -2266,6 +2310,44 @@ export interface components {
             year: number;
             /** Events */
             events: components["schemas"]["EventInfo"][];
+        };
+        /** SeasonPair */
+        SeasonPair: {
+            /** Team */
+            team: string;
+            /** Color */
+            color: string;
+            /** Drivers */
+            drivers: string[];
+            /** Duels */
+            duels: (components["schemas"]["QualiDuel"] | null)[];
+            /** Ahead */
+            ahead: number[];
+            /** Median Gap */
+            median_gap: number | null;
+            /** Median Pct */
+            median_pct: number | null;
+        };
+        /**
+         * SeasonQuali
+         * @description Teammates in qualifying over the season up to this round.
+         */
+        SeasonQuali: {
+            /** Year */
+            year: number;
+            /** Session */
+            session: string;
+            /** Rounds */
+            rounds: components["schemas"]["SeasonRound"][];
+            /** Pairs */
+            pairs: components["schemas"]["SeasonPair"][];
+        };
+        /** SeasonRound */
+        SeasonRound: {
+            /** Round */
+            round: number;
+            /** Name */
+            name: string;
         };
         /**
          * SectorFlag
@@ -4279,6 +4361,41 @@ export interface operations {
                 };
                 content: {
                     "audio/mpeg": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    season_quali_api_sessions__year___round___session__season_quali_get: {
+        parameters: {
+            query?: {
+                kind?: string;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonQuali"];
                 };
             };
             /** @description Validation Error */

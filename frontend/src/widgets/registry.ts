@@ -24,6 +24,7 @@ import { raceControlWidget } from './racecontrol/widget';
 import { radioWidget } from './radio/widget';
 import { releaseWidget } from './release/widget';
 import { reportWidget } from './report/widget';
+import { seasonWidget } from './season/widget';
 import { setupsWidget } from './setups/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
 import { startsWidget } from './starts/widget';
@@ -56,6 +57,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   speedTrapsWidget,
   setupsWidget,
   teammatesWidget,
+  seasonWidget,
   timelineWidget,
   evolutionWidget,
   cornersWidget,

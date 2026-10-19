@@ -23,6 +23,7 @@ from app import (
     replays,
     reports,
     schedule,
+    season,
     sessions,
     setups,
     starts,
@@ -69,6 +70,7 @@ from app.schemas import (
     ReplayStatus,
     ScheduledSession,
     SeasonEvents,
+    SeasonQuali,
     SessionCode,
     SessionDetail,
     SessionReport,
@@ -656,6 +658,17 @@ def team_radio_audio(year: int, round: int, session: SessionCode, clip: int) -> 
     return Response(
         audio, media_type="audio/mpeg", headers={"Cache-Control": "max-age=86400, immutable"}
     )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/season-quali")
+def season_quali(
+    year: int,
+    round: int,
+    session: SessionCode,
+    kind: Annotated[str, Query(pattern=r"^(Q|SQ)$")] = "Q",
+) -> SeasonQuali:
+    """Teammates in qualifying (or sprint qualifying) over the season up to this round."""
+    return _guard(lambda: season.season_quali(year, round, session, kind))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/stewards")

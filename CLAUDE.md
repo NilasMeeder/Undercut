@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta, Corners live,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs, Starts, Team radio), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs, Starts, Team radio, Season: teammates), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -826,6 +826,15 @@ van passeren. Pitstraat-starter = ≥ 3 s na de mediaan weg (niet getimed). Valk
 lap-1-telemetrie met x/y maar speed 0 en afstand 0 (Monza 2025 ALB): `moved` false, buiten de
 volgorde ("NO DATA"; zonder lap-1-positie "DNS"). De widget toont elke waarde pas als de klok erlangs
 is (replay en live). Herstarts na een rode vlag (`STANDING START`) zitten er nog niet in.
+
+## Season: teammates (fase 13)
+
+`season.py` (`duel`, `round_duels`, `pairs`: puur, getest), `/season-quali?kind=Q|SQ` (rondes tot en
+met de geselecteerde die gereden zijn, 6 tegelijk gelezen), widget `season`. Per team en ronde de
+beste laps in het laatste deel dat beide drivers een tijd zetten; `ahead`: wie verder kwam, anders
+sneller, een driver zonder tijd verliest; gat > 3% (`OUTLIER_PCT`) telt niet voor de mediaan.
+Paren per (team, drivers), wie vaker voor zat eerst. Klik op een ronde: sessie wisselen, dan
+`setLaps` (de wissel leegt de groepen eerst).
 
 ## Meldingen (fase 13)
 

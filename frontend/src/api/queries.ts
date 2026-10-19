@@ -24,6 +24,7 @@ import {
   type LongRuns,
   type Starts,
   type TeamRadio,
+  type SeasonQuali,
   type SessionReport,
   type Lap,
   type LapPrediction,
@@ -123,6 +124,9 @@ export const useSetupMap = () => useSessionQuery<SetupMap>('/setups');
 export const useTeammates = () => useSessionQuery<Teammates>('/teammates');
 /** Every driver from the first practice up to this session. */
 export const useWeekend = () => useSessionQuery<WeekendOverview>('/weekend');
+/** Teammates in qualifying over the season up to this round (Q or SQ). */
+export const useSeasonQuali = (kind: 'Q' | 'SQ') =>
+  useStrategyQuery<SeasonQuali>('/season-quali', { kind });
 /** The session's team radio clips in time order. */
 export const useTeamRadio = (enabled = true) =>
   useSessionQuery<TeamRadio[]>('/team-radio', enabled);
