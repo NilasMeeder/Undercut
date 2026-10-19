@@ -11,6 +11,7 @@ import { useViewFromUrl } from '@/features/views/hooks';
 import { ViewsMenu } from '@/features/views/ViewsMenu';
 import { AlertToasts, AlertsMenu } from '@/features/alerts/Alerts';
 import { FollowLatest } from '@/features/session/FollowLatest';
+import { RadioAutoplay } from '@/features/radio/RadioAutoplay';
 import { GroupBar } from '@/features/session/GroupBar';
 import { SessionPicker } from '@/features/session/SessionPicker';
 import { useDefaultSelection } from '@/features/session/useDefaultSelection';
@@ -57,6 +58,7 @@ export default function App() {
       {session ? <ClockBar /> : null}
       {session ? <MarkerEditor /> : null}
       {session ? <FollowLatest /> : null}
+      {session ? <RadioAutoplay /> : null}
       {session && pitwall ? <AlertToasts /> : null}
     </div>
   );

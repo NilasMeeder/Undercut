@@ -78,6 +78,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Where the audio of a team radio clip is served. */
+export const radioUrl = (session: string, clip: number) => `/api${session}/team-radio/${clip}`;
+
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
   if (!response.ok) {
@@ -112,6 +115,7 @@ export type Teammates = Schemas['Teammates'];
 export type WeekendOverview = Schemas['WeekendOverview'];
 export type LongRun = Schemas['LongRun'];
 export type Starts = Schemas['Starts'];
+export type TeamRadio = Schemas['TeamRadio'];
 export type StartCar = Schemas['StartCar'];
 export type LongRuns = Schemas['LongRuns'];
 export type TyreSet = Schemas['TyreSet'];

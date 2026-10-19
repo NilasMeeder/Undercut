@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Flag, Pause, Play } from 'lucide-react';
-import type { Marker, SessionTimeline } from '@/api/client';
+import { radioUrl, type Marker, type SessionTimeline } from '@/api/client';
 import { useMarkers } from '@/api/markers';
-import { usePositionsStatus, usePreparePositions, useTimeline } from '@/api/queries';
+import {
+  usePositionsStatus,
+  usePreparePositions,
+  useSessionDetail,
+  useTeamRadio,
+  useTimeline,
+} from '@/api/queries';
 import { HeaderMenu, headerButton } from '@/dashboard/HeaderMenu';
 import { followsClock } from '@/dashboard/layout';
 import { COLORS, TRACK_STATUS_COLORS } from '@/lib/colors';
@@ -12,7 +18,10 @@ import { cn } from '@/lib/utils';
 import { useAtClock, useAtClockOn } from '@/store/atClock';
 import { clock, SPEEDS, useClockControls, useClockTime } from '@/store/clock';
 import { useDashboards } from '@/store/dashboards';
+import { useGroups } from '@/store/groups';
 import { editMarker, markNew } from '@/store/markerEditor';
+import { useRadio } from '@/store/radio';
+import { sessionPath, useSessionKey } from '@/store/selection';
 
 /** A moment counts as "now" this long after it, so its note can be read while playing. */
 const MOMENT_SHOWN = 8;
@@ -194,6 +203,7 @@ function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marke
           onDoubleClick={() => editMarker(m)}
         />
       ))}
+      <RadioTicks pct={pct} start={start} end={end} />
       {range ? (
         <div
           className="absolute inset-y-0 bg-marker-fill"
@@ -206,6 +216,53 @@ function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marke
       <div ref={playedRef} className="absolute bottom-0 left-0 h-[2px] bg-dim" />
       <div ref={handleRef} className="absolute inset-y-[-2px] w-[2px] -translate-x-px bg-text" />
     </div>
+  );
+}
+
+/** Team radio along the bar: a tick per clip at the top, in the team colour for the drivers in
+ * the link groups (the rest faint). Click: the clock goes there and the clip plays. */
+function RadioTicks({
+  pct,
+  start,
+  end,
+}: {
+  pct: (t: number) => string;
+  start: number;
+  end: number;
+}) {
+  const clips = useTeamRadio().data;
+  const drivers = useSessionDetail().data?.drivers;
+  const key = useSessionKey();
+  const groupLaps = useGroups((s) => s.laps);
+  const watched = useMemo(
+    () => new Set(Object.values(groupLaps).flatMap((l) => l.map((x) => x.driver))),
+    [groupLaps]
+  );
+  if (!clips || !key) return null;
+  return (
+    <>
+      {clips.map((c) =>
+        c.t == null || c.t < start || c.t > end ? null : (
+          <div
+            key={c.id}
+            className="absolute top-0 h-[40%] w-[2px] -translate-x-px cursor-pointer"
+            style={{
+              left: pct(c.t),
+              background: watched.has(c.driver)
+                ? (drivers?.find((d) => d.code === c.driver)?.color ?? COLORS.textDim)
+                : COLORS.textFaint,
+            }}
+            title={`${c.driver} team radio. Click to go there and listen.`}
+            onPointerDown={(e) => {
+              if (e.shiftKey) return;
+              e.stopPropagation();
+              clock.seek(c.t!);
+              useRadio.getState().play(c.id, radioUrl(sessionPath(key), c.id));
+            }}
+          />
+        )
+      )}
+    </>
   );
 }
 

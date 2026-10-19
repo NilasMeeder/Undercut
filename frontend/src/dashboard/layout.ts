@@ -253,6 +253,8 @@ function qualiBoard(api: DockviewApi) {
     { cars: 'all' }
   );
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
+  addWidget(api, 'radio', 'blue', { referencePanel: feed, direction: 'within' });
+  feed.api.setActive();
   const clock = addWidget(
     api,
     'clock',
@@ -301,6 +303,7 @@ function raceBoard(api: DockviewApi) {
   );
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
   addWidget(api, 'stewards', 'blue', { referencePanel: feed, direction: 'within' });
+  addWidget(api, 'radio', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
   const clock = addWidget(
     api,

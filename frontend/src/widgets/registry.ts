@@ -21,6 +21,7 @@ import { passesWidget } from './passes/widget';
 import { pitWindowWidget } from './pitwindow/widget';
 import { positionsWidget } from './positions/widget';
 import { raceControlWidget } from './racecontrol/widget';
+import { radioWidget } from './radio/widget';
 import { releaseWidget } from './release/widget';
 import { reportWidget } from './report/widget';
 import { setupsWidget } from './setups/widget';
@@ -67,6 +68,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   longRunsWidget,
   clockWidget,
   raceControlWidget,
+  radioWidget,
   stewardsWidget,
   weatherWidget,
   towerWidget,

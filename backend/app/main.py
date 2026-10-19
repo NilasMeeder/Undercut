@@ -19,6 +19,7 @@ from app import (
     overtake,
     passes,
     progress,
+    radio,
     replays,
     reports,
     schedule,
@@ -78,6 +79,7 @@ from app.schemas import (
     StraightMode,
     TagCount,
     Teammates,
+    TeamRadio,
     Telemetry,
     TimingState,
     TrackEvolution,
@@ -635,6 +637,25 @@ def race_start(year: int, round: int, session: SessionCode) -> Starts:
     """Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100–500 m
     past the pole slot, 0–100 and 0–200 km/h); 404 until lap 1 has telemetry."""
     return _guard(lambda: starts.get_starts(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/team-radio")
+def team_radio(year: int, round: int, session: SessionCode) -> list[TeamRadio]:
+    """The session's team radio clips in time order (none when the archive has none)."""
+    return _guard(lambda: radio.get_team_radio(year, round, session))
+
+
+@app.get(
+    "/api/sessions/{year}/{round}/{session}/team-radio/{clip}",
+    response_class=Response,
+    responses={200: {"content": {"audio/mpeg": {}}}},
+)
+def team_radio_audio(year: int, round: int, session: SessionCode, clip: int) -> Response:
+    """One clip's audio (mp3), fetched once and cached."""
+    audio = _guard(lambda: radio.get_audio(year, round, session, clip))
+    return Response(
+        audio, media_type="audio/mpeg", headers={"Cache-Control": "max-age=86400, immutable"}
+    )
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/stewards")

@@ -23,6 +23,7 @@ import {
   type WeekendOverview,
   type LongRuns,
   type Starts,
+  type TeamRadio,
   type SessionReport,
   type Lap,
   type LapPrediction,
@@ -122,6 +123,9 @@ export const useSetupMap = () => useSessionQuery<SetupMap>('/setups');
 export const useTeammates = () => useSessionQuery<Teammates>('/teammates');
 /** Every driver from the first practice up to this session. */
 export const useWeekend = () => useSessionQuery<WeekendOverview>('/weekend');
+/** The session's team radio clips in time order. */
+export const useTeamRadio = (enabled = true) =>
+  useSessionQuery<TeamRadio[]>('/team-radio', enabled);
 /** Races: the start from each car's first-lap telemetry. */
 export const useStarts = (enabled = true) => useSessionQuery<Starts>('/starts', enabled);
 /** Deleted laps, black-and-white flags, incidents and penalties from race control. */

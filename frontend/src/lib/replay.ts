@@ -121,3 +121,19 @@ export function timeGap(
   }
   return null;
 }
+
+/** A moment as the pitwall says it: the lap in a race, else the part and the session clock. */
+export function momentLabel(
+  t: number,
+  timeline: SessionTimeline | undefined,
+  race: boolean
+): string {
+  if (!timeline) return '';
+  if (race) {
+    const done = timeline.lap_starts.filter((s) => s <= t).length;
+    return done > 0 ? `LAP ${done + timeline.first_lap - 1}` : '';
+  }
+  const part = timeline.segments.findLast((s) => s.start <= t)?.name;
+  const remaining = sessionClockAt(timeline.clock, t)?.remaining;
+  return [part, remaining != null ? formatClock(remaining) : null].filter(Boolean).join(' ');
+}

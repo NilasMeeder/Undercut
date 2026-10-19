@@ -567,7 +567,15 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       (volgorde van passeren), top speed, 0–100 en 0–200, plaats na lap 1; vult zich op de klok.
       Pitstraat-starters (≥ 3 s na het veld weg) niet getimed. Monza 2025 R: PIA P3 → P2 op 500 m,
       ANT 6 → 11 (0–100 3,58 s), LAW 18 → 13; HUL DNS, ALB zonder car data in het archief
-- [ ] **Team radio** op de tijdlijn (OpenF1)
+- [x] **Team radio** op de tijdlijn (2026-10-19, `radio.py`, `/team-radio`, `/team-radio/{clip}`,
+      widget Team radio, tab naast Race control in het race en quali board): niet OpenF1 maar
+      TracingInsights' `team_radio.json` (die heeft ook de mp3's; F1 static als terugval), live
+      uit het TeamRadio-topic van de opname. Tikjes bovenin de klokbalk (teamkleur voor de
+      drivers in de link-groepen; klik = erheen en luisteren), AUTO OFF/GROUP/ALL speelt clips af
+      als de klok erlangs loopt (zelfde regels als Meldingen, `useClockPassing`). Monza 2025 R:
+      32 clips; getest: autoplay VER L20, klik op rij en tikje
+- [ ] Na Austin: klopt het aangenomen formaat van het TeamRadio-topic (Captures, Utc,
+      RacingNumber, Path) en speelt een live clip van F1 static?
 - [ ] **Dashboard delen als URL**
 - [ ] **Seizoensoverzicht**: quali-gaps tussen teamgenoten over het jaar
 

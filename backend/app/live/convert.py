@@ -387,5 +387,41 @@ def clock_columns(messages: list[Message], origin: datetime) -> dict[str, list]:
     return columns
 
 
+STATIC = "https://livetiming.formula1.com/static/"
+
+
+def team_radio_columns(messages: list[Message], numbers: dict[str, str]) -> dict[str, list]:
+    """team_radio.json columns (as the archive has them) from F1's TeamRadio topic: the state is
+    a list of captures, updates a dict by index; each has Utc, RacingNumber and Path (relative
+    to the session's SessionInfo Path)."""
+    base = ""
+    captures: dict[str, dict] = {}
+    for message in messages:
+        if not isinstance(message.data, dict):
+            continue
+        if message.topic == "SessionInfo" and message.data.get("Path"):
+            base = str(message.data["Path"])
+        if message.topic != "TeamRadio":
+            continue
+        found = message.data.get("Captures")
+        items = enumerate(found) if isinstance(found, list) else (found or {}).items()
+        for key, capture in items:
+            if isinstance(capture, dict):
+                captures[str(key)] = captures.get(str(key), {}) | capture
+    columns: dict[str, list] = {"drv": [], "dNum": [], "date": [], "file": [], "url": []}
+    for capture in sorted(captures.values(), key=lambda c: str(c.get("Utc", ""))):
+        number, path = str(capture.get("RacingNumber", "")), str(capture.get("Path", ""))
+        driver, utc = numbers.get(number), parse_utc(str(capture.get("Utc", "")))
+        if not driver or utc is None or not path:
+            continue
+        name = path.rsplit("/", 1)[-1]
+        columns["drv"].append(driver)
+        columns["dNum"].append(number)
+        columns["date"].append(utc.isoformat())
+        columns["file"].append(f"{driver}/radio/{name}")
+        columns["url"].append(f"{STATIC}{base}{path}")
+    return columns
+
+
 def session_time(utc: datetime, origin: datetime) -> float:
     return (utc - origin) / timedelta(seconds=1)

@@ -149,6 +149,7 @@ class Simulation:
             "SessionData": {"Series": [], "StatusSeries": []},
             "Heartbeat": {"Utc": feed.format_utc(self.utc(self.begin))},
             "RaceControlMessages": {"Messages": []},
+            "TeamRadio": {"Captures": []},
         }
         if kind == "race":
             state["LapCount"] = {"CurrentLap": 1, "TotalLaps": self.timeline.total_laps}
@@ -162,6 +163,7 @@ class Simulation:
         out += self._timing()
         out += self._track_status()
         out += self._race_control()
+        out += self._team_radio()
         out += self._weather()
         out += self._lap_count()
         out += self._clock()
@@ -391,6 +393,27 @@ class Simulation:
             out.append(
                 Update(max(at, self.begin), "RaceControlMessages", {"Messages": {str(i): entry}})
             )
+        return out
+
+    def _team_radio(self) -> list[Update]:
+        """The archive's clips as F1 sends them: a capture per update, the path relative to the
+        session (the simulated SessionInfo path does not exist at F1; the archive has the audio)."""
+        try:
+            cols = ti.fetch_json(self.key[0], self.event, self.session, "team_radio.json")
+        except ti.SourceNotAvailable:
+            return []
+        out = []
+        for i, (number, date, file) in enumerate(
+            zip(cols.get("dNum", []), cols.get("date", []), cols.get("file", []), strict=False)
+        ):
+            utc = datetime.fromisoformat(str(date))
+            capture = {
+                "Utc": feed.format_utc(utc),
+                "RacingNumber": str(number),
+                "Path": f"TeamRadio/{str(file).rsplit('/', 1)[-1]}",
+            }
+            at = (utc - self.t0).total_seconds()
+            out.append(Update(max(at, self.begin), "TeamRadio", {"Captures": {str(i): capture}}))
         return out
 
     def _weather(self) -> list[Update]:

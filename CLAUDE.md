@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta, Corners live,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs, Starts), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs, Starts, Team radio), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -155,6 +155,7 @@ backend/app/straight_mode.py straight-mode-zones (2026): de FIA-punten uit strai
 backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
 backend/app/longruns.py    long runs in FP: herkennen per set, vergelijken per compound (zie "Long runs")
 backend/app/starts.py      de start uit de lap-1-telemetrie: gridplek, checkpoints tot 500 m (zie "Starts")
+backend/app/radio.py       team radio: clips (archief of live) en hun audio (zie "Team radio")
 backend/app/evolution.py   baanevolutie in Q (fit per push-lap: driver + band + baan(t)), zie "Baanevolutie"
 backend/app/stewards.py    race control → deleted laps, zwart-wit, incidenten en straffen (zie "Stewards")
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
@@ -839,6 +840,22 @@ klok telt nog. Sleutels zijn stabiel over live-verversingen (driver + lap, of de
 Snelste lap: in races vanaf lap 3, verwijderde laps niet. Gat < 1 s: op de lijn, van ≥ 1 s de lap
 ervoor naar < 1 s tegen dezelfde auto, niet op pit-laps. Deleted laps, gaten, OT en passes standaard
 alleen voor de drivers in de link-groepen. 9 s per toast, max 4, klik = weg.
+
+## Team radio (fase 13)
+
+`radio.py` (`clips`: team_radio.json-kolommen → `TeamRadio` met sessietijd via `sessions.get_t0`;
+`get_audio`), `/team-radio` en `/team-radio/{clip}` (mp3 via de backend, `ti.fetch_radio`: cache
+in `.cache/radio/` zoals hij is, eerst TracingInsights `<DRV>/radio/<file>`, dan de F1-static-url;
+alleen bestandsnamen `^[A-Za-z0-9_-]+\.mp3$`). Live: `convert.team_radio_columns` maakt dezelfde
+kolommen uit het TeamRadio-topic (toestand = lijst Captures, updates dict per index; Utc,
+RacingNumber, Path relatief aan SessionInfo `Path`), elke omzetting; de simulator stuurt de
+archiefclips zo (zijn SessionInfo-pad bestaat niet bij F1, het archief heeft de audio). Frontend:
+`store/radio.ts` (één `Audio` voor de hele app, `autoplay` off/group/all in localStorage
+`f1dash-radio`), `features/radio/RadioAutoplay.tsx` (in App: clips van de groepsdrivers of alle,
+na elkaar, ouder dan 45 s in de wachtrij vervalt), `RadioTicks` in de klokbalk, widget `radio`.
+`features/clock/useClockPassing.ts` is de klok-passeer-logica van Meldingen (een keer per item,
+niets na een seek, `LOOKBACK` 30 s); Alerts gebruikt hem ook. `momentLabel` (LAP n of deel +
+sessieklok) staat in `lib/replay.ts`.
 
 ## Markeringen en views (fase 5)
 

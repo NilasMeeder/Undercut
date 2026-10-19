@@ -640,6 +640,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/team-radio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team Radio
+         * @description The session's team radio clips in time order (none when the archive has none).
+         */
+        get: operations["team_radio_api_sessions__year___round___session__team_radio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/team-radio/{clip}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team Radio Audio
+         * @description One clip's audio (mp3), fetched once and cached.
+         */
+        get: operations["team_radio_audio_api_sessions__year___round___session__team_radio__clip__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/stewards": {
         parameters: {
             query?: never;
@@ -2521,6 +2561,23 @@ export interface components {
             /** Count */
             count: number;
         };
+        /**
+         * TeamRadio
+         * @description A team radio clip; the audio is at /team-radio/{id}.
+         */
+        TeamRadio: {
+            /** Id */
+            id: number;
+            /** Driver */
+            driver: string;
+            /**
+             * Utc
+             * Format: date-time
+             */
+            utc: string;
+            /** T */
+            t: number | null;
+        };
         /** TeammateCorner */
         TeammateCorner: {
             /** Label */
@@ -4155,6 +4212,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Starts"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    team_radio_api_sessions__year___round___session__team_radio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamRadio"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    team_radio_audio_api_sessions__year___round___session__team_radio__clip__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+                clip: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": unknown;
                 };
             };
             /** @description Validation Error */

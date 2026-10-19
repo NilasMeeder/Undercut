@@ -22,6 +22,7 @@ import requests
 from app.config import (
     HTTP_TIMEOUT_SECONDS,
     LIVE_DIR,
+    RADIO_CACHE_DIR,
     TRACINGINSIGHTS_BASE_URL,
     TRACINGINSIGHTS_CACHE_DIR,
 )
@@ -94,6 +95,30 @@ def _download(year: int, event: str, session: str, file: str, path: Path) -> Any
     data = response.json()
     write_gzip(path, json.dumps(data, separators=(",", ":")).encode())
     return data
+
+
+def fetch_radio(year: int, event: str, session: str, driver: str, file: str, url: str) -> bytes:
+    """A team radio clip (mp3), cached as is: from the archive (which keeps the clips beside the
+    telemetry), else from where F1 published it (a live recording only knows that)."""
+    path = RADIO_CACHE_DIR / str(year) / event / session / driver / file
+    if path.exists():
+        return path.read_bytes()
+    with _lock_for(path):
+        if path.exists():
+            return path.read_bytes()
+        archive = (
+            f"{TRACINGINSIGHTS_BASE_URL}/{year}/main/{quote(event)}/{quote(session)}/"
+            f"{quote(driver)}/radio/{quote(file)}"
+        )
+        for source in (archive, url):
+            response = _http.get(source, timeout=HTTP_TIMEOUT_SECONDS)
+            if response.ok and response.content:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+                tmp.write_bytes(response.content)
+                tmp.replace(path)
+                return response.content
+    raise SourceNotAvailable(f"{year} {event} {session}: radio {file} not found")
 
 
 def write_gzip(path: Path, raw: bytes) -> None:

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Bell, BellOff } from 'lucide-react';
-import type { DriverInfo, SessionTimeline } from '@/api/client';
+import type { DriverInfo } from '@/api/client';
 import {
   useLaps,
   useOvertake,
@@ -14,20 +14,16 @@ import {
 import { HeaderMenu, headerButton } from '@/dashboard/HeaderMenu';
 import { Segment } from '@/dashboard/PanelMenus';
 import { ALERT_KINDS, PER_CAR, buildAlerts, type Alert, type AlertTone } from '@/lib/alerts';
-import { formatClock, sessionClockAt } from '@/lib/replay';
+import { momentLabel } from '@/lib/replay';
 import { cn } from '@/lib/utils';
+import { useClockPassing } from '@/features/clock/useClockPassing';
 import { useAlerts } from '@/store/alerts';
-import { clock } from '@/store/clock';
 import { useGroups } from '@/store/groups';
 import { useSessionKey } from '@/store/selection';
 
 /** How long a toast stays (ms of wall time), and how many at once. */
 const LIFETIME = 9000;
 const MAX_SHOWN = 4;
-/** Session seconds an event may lag the clock and still alert: live data arrives a few seconds
- * after the moment it is about. */
-const LOOKBACK = 30;
-const TICK = 250;
 
 const TONE_BAR: Record<AlertTone, string> = {
   best: 'bg-best',
@@ -99,48 +95,20 @@ export function AlertToasts() {
   ]);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const list = useRef(alerts);
-  const seen = useRef(new Set<string>());
-  const last = useRef<{ t: number; wall: number; settings: string } | null>(null);
   const nextId = useRef(0);
   // A new session or other settings: everything up to the clock counts as seen.
   const settings = `${session?.year}/${session?.round}/${session?.session}/${on}/${allCars}/${JSON.stringify(kinds)}`;
-  const settingsRef = useRef(settings);
-  useEffect(() => {
-    list.current = alerts;
-    settingsRef.current = settings;
-  }, [alerts, settings]);
-
-  useEffect(() => {
-    const tick = () => {
-      const now = clock.time();
-      const wall = performance.now();
-      let prev = last.current;
-      if (prev && prev.settings !== settingsRef.current) {
-        prev = null;
-        setToasts([]);
-      }
-      last.current = { t: now, wall, settings: settingsRef.current };
-      const allowed = prev ? ((wall - prev.wall) / 1000) * clock.controls().speed * 2 + 3 : 0;
-      const jumped = !prev || now < prev.t - 0.5 || now - prev.t > allowed;
-      // After a jump (also back) exactly what lies before the new time counts as seen.
-      if (jumped) seen.current = new Set();
-      const fresh: Alert[] = [];
-      for (const a of list.current) {
-        if (a.time > now) break;
-        if (seen.current.has(a.key)) continue;
-        seen.current.add(a.key);
-        if (!jumped && a.time > now - LOOKBACK) fresh.push(a);
-      }
-      if (fresh.length === 0) return;
+  useClockPassing(
+    alerts,
+    settings,
+    (fresh) => {
       const added = fresh.map((alert) => ({ alert, id: nextId.current++ }));
       setToasts((shown) => [...added.reverse(), ...shown].slice(0, MAX_SHOWN));
       for (const toast of added)
         setTimeout(() => setToasts((shown) => shown.filter((s) => s.id !== toast.id)), LIFETIME);
-    };
-    const timer = setInterval(tick, TICK);
-    return () => clearInterval(timer);
-  }, []);
+    },
+    () => setToasts([])
+  );
 
   if (!on || toasts.length === 0) return null;
   return (
@@ -153,23 +121,12 @@ export function AlertToasts() {
           key={id}
           alert={alert}
           drivers={drivers}
-          when={whenLabel(alert.time, timeline, race)}
+          when={momentLabel(alert.time, timeline, race)}
           onClose={() => setToasts((shown) => shown.filter((s) => s.id !== id))}
         />
       ))}
     </div>
   );
-}
-
-function whenLabel(t: number, timeline: SessionTimeline | undefined, race: boolean): string {
-  if (!timeline) return '';
-  if (race) {
-    const done = timeline.lap_starts.filter((s) => s <= t).length;
-    return done > 0 ? `LAP ${done + timeline.first_lap - 1}` : '';
-  }
-  const part = timeline.segments.findLast((s) => s.start <= t)?.name;
-  const remaining = sessionClockAt(timeline.clock, t)?.remaining;
-  return [part, remaining != null ? formatClock(remaining) : null].filter(Boolean).join(' ');
 }
 
 function AlertToast({

@@ -1530,6 +1530,16 @@ class Starts(BaseModel):
     """In the order at the last checkpoint; cars that did not get there last."""
 
 
+class TeamRadio(BaseModel):
+    """A team radio clip; the audio is at /team-radio/{id}."""
+
+    id: int
+    driver: str
+    utc: datetime
+    t: float | None
+    """Session time (s); null while the session has no lap timing yet."""
+
+
 class WeekendLongRun(BaseModel):
     """A driver's longest run in practice (the race simulation; median lap, no fuel correction)."""
 

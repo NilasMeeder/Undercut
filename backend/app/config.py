@@ -16,3 +16,4 @@ session, the recording is the only copy."""
 TRACINGINSIGHTS_BASE_URL = "https://raw.githubusercontent.com/TracingInsights"
 JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1"
 HTTP_TIMEOUT_SECONDS = 30
+RADIO_CACHE_DIR = CACHE_DIR / "radio"
