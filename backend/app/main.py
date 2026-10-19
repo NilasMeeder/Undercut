@@ -15,6 +15,7 @@ from app import (
     analysis,
     energies,
     evolution,
+    longruns,
     overtake,
     passes,
     progress,
@@ -50,6 +51,7 @@ from app.schemas import (
     LapProgress,
     LiveCorner,
     LiveSessionInfo,
+    LongRuns,
     Marker,
     MarkerIn,
     MiniSectors,
@@ -469,6 +471,20 @@ def teammate_pairs(year: int, round: int, session: SessionCode) -> Teammates:
 def weekend_overview(year: int, round: int, session: SessionCode) -> WeekendOverview:
     """Every driver from the first practice up to this session."""
     return _guard(lambda: weekend.overview(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/long-runs")
+def long_runs(
+    year: int,
+    round: int,
+    session: SessionCode,
+    until: Until = None,
+    fuel: Fuel = strategy.FUEL_EFFECT,
+    weekend: bool = False,
+) -> LongRuns:
+    """Long runs in practice (≥ 5 laps at pace on one set), per compound; with `weekend` also
+    those of the practice sessions before this one."""
+    return _guard(lambda: longruns.get_long_runs(year, round, session, until, fuel, weekend))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/compare")

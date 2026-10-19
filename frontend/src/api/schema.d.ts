@@ -456,6 +456,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/long-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Long Runs
+         * @description Long runs in practice (≥ 5 laps at pace on one set), per compound; with `weekend` also
+         *     those of the practice sessions before this one.
+         */
+        get: operations["long_runs_api_sessions__year___round___session__long_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/compare": {
         parameters: {
             query?: never;
@@ -1595,6 +1616,53 @@ export interface components {
             status: string | null;
             /** Error */
             error: string | null;
+        };
+        /**
+         * LongRun
+         * @description A long run in practice: at least 5 laps at pace on one set (a race simulation).
+         */
+        LongRun: {
+            /** Session */
+            session: string;
+            /** Driver */
+            driver: string;
+            /** Stint */
+            stint: number;
+            /** Compound */
+            compound: string | null;
+            /** Used */
+            used: number | null;
+            /** Start Lap */
+            start_lap: number;
+            /** End Lap */
+            end_lap: number;
+            /** Start */
+            start: number | null;
+            /** Laps */
+            laps: number;
+            /** Median */
+            median: number;
+            /** Best */
+            best: number;
+            /** Slope */
+            slope: number | null;
+            /** Deg */
+            deg: number | null;
+            /** Gap */
+            gap: number;
+            /** Times */
+            times: (number | null)[];
+            /** Typical */
+            typical: number;
+            /** Open */
+            open: boolean;
+        };
+        /** LongRuns */
+        LongRuns: {
+            /** Runs */
+            runs: components["schemas"]["LongRun"][];
+            /** Fuel Per Lap */
+            fuel_per_lap: number;
         };
         /** Marker */
         Marker: {
@@ -3710,6 +3778,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeekendOverview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    long_runs_api_sessions__year___round___session__long_runs_get: {
+        parameters: {
+            query?: {
+                /** @description Session time (s): only laps completed by then count; omit for all */
+                until?: number | null;
+                /** @description Fuel effect in s per kg (100 kg at the start of a race) */
+                fuel?: number;
+                weekend?: boolean;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LongRuns"];
                 };
             };
             /** @description Validation Error */

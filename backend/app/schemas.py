@@ -1450,6 +1450,47 @@ class WeekendCell(BaseModel):
     """Best lap to the session's quickest."""
 
 
+class LongRun(BaseModel):
+    """A long run in practice: at least 5 laps at pace on one set (a race simulation)."""
+
+    session: str
+    """The practice session it was driven in (FP1–FP3)."""
+    driver: str
+    stint: int
+    compound: str | None
+    used: int | None
+    """Laps already on the set when the stint began (0 = a new set)."""
+    start_lap: int
+    end_lap: int
+    """First and last lap at pace."""
+    start: float | None
+    """Session time (s) the first lap at pace began."""
+    laps: int
+    """Laps at pace (clean, within 107% of the driver's best)."""
+    median: float
+    best: float
+    slope: float | None
+    """Seconds per lap the run got slower, raw: tyres and fuel burn together."""
+    deg: float | None
+    """The slope with the fuel burn put back (PRACTICE_BURN kg per lap × the fuel effect): the
+    tyres alone, if the car burnt that much. Null under 5 laps."""
+    gap: float
+    """Median against the quickest median on the same compound (s)."""
+    times: list[float | None]
+    """Lap times from start_lap to end_lap; null for a lap not at pace (traffic, a cool lap)."""
+    typical: int
+    """The lap nearest the median, to compare."""
+    open: bool
+    """The set is still on the car at the cutoff (no in-lap yet): the run may go on."""
+
+
+class LongRuns(BaseModel):
+    runs: list[LongRun]
+    """Per compound, quickest median first."""
+    fuel_per_lap: float
+    """Seconds a lap gets quicker from the fuel burnt on the lap before (assumed)."""
+
+
 class WeekendLongRun(BaseModel):
     """A driver's longest run in practice (the race simulation; median lap, no fuel correction)."""
 

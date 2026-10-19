@@ -7,6 +7,7 @@ import { energyWidget } from './energy/widget';
 import { evolutionWidget } from './evolution/widget';
 import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
+import { longRunsWidget } from './longruns/widget';
 import { liveDeltaWidget } from './livedelta/widget';
 import { forecastWidget } from './forecast/widget';
 import { phasesWidget } from './phases/widget';
@@ -62,6 +63,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   energyWidget,
   reportWidget,
   weekendWidget,
+  longRunsWidget,
   clockWidget,
   raceControlWidget,
   stewardsWidget,

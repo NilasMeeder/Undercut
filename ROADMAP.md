@@ -552,7 +552,14 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       throttle als Corner phases, gear 1–8), de andere laps (max 4) als rijtjes buiten de baan;
       GEAR zet de laagste versnelling per bocht op de baan. Monza 2025 Q, VER L17 / NOR L20: T1–2 2,
       T4–5 3, Lesmo 5, Ascari 5, Parabolica 6 / 5
-- [ ] **Long runs in FP**: herkennen en vergelijken
+- [x] **Long runs in FP** (2026-10-19, `longruns.py`, `/long-runs?until=&fuel=&weekend=`, widget
+      Long runs, tab naast Weekend in Session overview): ≥ 5 laps at pace (schoon, ≤ 107%) op
+      één set, een run stopt bij 2 trage laps op rij en moet voor ≥ 60% uit laps at pace bestaan
+      (push–cool–push is geen long run); per compound de snelste mediaan eerst met het gat, DEG =
+      helling + aangenomen verbranding (1,8 kg/lap), een lijntje per run, en de runs van de
+      groep lap voor lap. Standaard ook de trainingen ervoor. `reports.long_runs` (Report,
+      Weekend) gebruikt dezelfde herkenning. Monza 2025 FP2: NOR M 11 laps 1:23.616, VER +0.072,
+      RUS snelste op hard 1:24.016; FP1 hield 2 runs over (ARO's push-laps vielen af)
 - [ ] **Starts**: posities en snelheid in de eerste 500 m uit het positiespoor
 - [ ] **Team radio** op de tijdlijn (OpenF1)
 - [ ] **Dashboard delen als URL**

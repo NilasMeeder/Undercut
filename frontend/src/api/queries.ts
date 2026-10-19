@@ -21,6 +21,7 @@ import {
   type SetupMap,
   type Teammates,
   type WeekendOverview,
+  type LongRuns,
   type SessionReport,
   type Lap,
   type LapPrediction,
@@ -218,6 +219,14 @@ export const usePitCalculator = (until: Until, status: 'sc' | 'vsc' | 'green', e
     '/pit-calculator',
     { until, status },
     enabled && until !== undefined
+  );
+
+/** Practice long runs up to the cutoff; with `weekend` also those of earlier practice. */
+export const useLongRuns = (until: Until, fuel: number, weekend: boolean) =>
+  useStrategyQuery<LongRuns>(
+    '/long-runs',
+    { until, fuel, weekend: weekend ? 'true' : null },
+    until !== undefined
   );
 
 /** Tyre degradation per stint up to the cutoff; `fuel` in s per kg. */

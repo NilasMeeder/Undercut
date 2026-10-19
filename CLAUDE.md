@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta, Corners live,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -153,6 +153,7 @@ backend/app/energy.py      pure energie-logica (2026): kinematica op een tijdras
 backend/app/straight_mode.py straight-mode-zones (2026): de FIA-punten uit straight_mode.json op de lap, eind
                            waar de straight remt; sources/fia.py leest de FIA-kaart en schrijft die JSON
 backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
+backend/app/longruns.py    long runs in FP: herkennen per set, vergelijken per compound (zie "Long runs")
 backend/app/evolution.py   baanevolutie in Q (fit per push-lap: driver + band + baan(t)), zie "Baanevolutie"
 backend/app/stewards.py    race control → deleted laps, zwart-wit, incidenten en straffen (zie "Stewards")
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
@@ -751,6 +752,19 @@ en het gat op beste lap; de langste long run uit de trainingen (`reports.long_ru
 dan de snelste mediaan: een korte run is vaak met weinig brandstof) en het racetempo
 (`setups.race_pace`). In de preset Session overview als tab naast de Run timeline. Monza 2025:
 VER P6/P4 in FP2/FP3, maar het snelste racetempo (1:22.874).
+
+## Long runs (fase 13)
+
+`longruns.py` (`find_runs`, `blocks`: puur, getest), `/long-runs?until=&fuel=&weekend=`, widget Long
+runs (`longruns`, tab in Session overview). Per stint de laps at pace (`strategy.is_clean`, ≤ 107%
+van de eigen beste); een run eindigt bij `BREAK` (2) trage laps op rij en telt met ≥ 5 laps at pace
+die ≥ 60% van zijn laps zijn. `used` = laps al op de set (tyre_life − 1 van de eerste lap van de
+stint), `deg` = helling + `fuel_per_lap(None, fuel)` (de lichtere auto verbergt bandenslijtage),
+`open` = nog geen in-lap tot de cutoff. `weekend` neemt de FP-sessies ervoor mee (zonder cutoff).
+Klik: een run van deze sessie zet zijn typische lap (dichtst bij de mediaan) in de groep, een van
+een eerdere sessie de beste lap van die driver hier (lap-refs zijn per sessie). Monza 2025 FP2:
+de baan wordt sneller, dus veel runs hebben een negatieve DEG. `reports.long_runs` (Report,
+Weekend) gebruikt `find_runs`.
 
 ## Baanevolutie (fase 13)
 

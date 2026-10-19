@@ -110,4 +110,6 @@ export type TyreWeekend = Schemas['TyreWeekend'];
 export type SetupMap = Schemas['SetupMap'];
 export type Teammates = Schemas['Teammates'];
 export type WeekendOverview = Schemas['WeekendOverview'];
+export type LongRun = Schemas['LongRun'];
+export type LongRuns = Schemas['LongRuns'];
 export type TyreSet = Schemas['TyreSet'];

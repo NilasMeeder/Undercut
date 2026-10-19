@@ -4,11 +4,9 @@ The backend finds them (pure functions below, tested), the frontend writes the s
 item carries a ReportAction: laps to compare, a distance range to zoom to, or a moment on the clock.
 """
 
-from collections import defaultdict
-
 import numpy as np
 
-from app import analysis, energies, replays, sessions, strategies, strategy
+from app import analysis, energies, longruns, replays, sessions, strategies, strategy
 from app.generations import session_cache
 from app.replay import driven
 from app.schemas import (
@@ -29,12 +27,6 @@ from app.sources import tracinginsights as ti
 
 CORNER_DRIVERS = 10
 """Best laps of this many drivers (quickest first) are held against the fastest lap."""
-
-LONG_RUN = 5
-"""Laps at pace on one set from which a practice stint is a long run."""
-
-RUN_PACE = 1.07
-"""Laps slower than this × the driver's best lap are not at pace (cool-down, traffic)."""
 
 DEG_MIN_LAPS = 8
 """A stint needs this many fitted laps to be named for its degradation."""
@@ -71,49 +63,27 @@ def _action(laps: list[str], zoom: tuple[float, float] | None = None, t: float |
 
 
 def long_runs(laps: list[Lap]) -> list[ReportRun]:
-    """Stints with at least LONG_RUN laps at pace, quickest median first per compound. The click
-    compares the lap nearest the median with that of the quickest run on the same compound."""
-    runs: list[tuple[ReportRun, int]] = []
-    for driver, own in strategy.by_driver(laps).items():
-        timed = [lap.lap_time for lap in own if lap.lap_time is not None and not lap.deleted]
-        if not timed:
-            continue
-        limit = min(timed) * RUN_PACE
-        per_stint: dict[int, list[Lap]] = defaultdict(list)
-        for lap in own:
-            if (
-                strategy.is_clean(lap)
-                and lap.lap_time is not None
-                and lap.lap_time <= limit
-                and lap.stint is not None
-            ):
-                per_stint[lap.stint].append(lap)
-        for stint, at_pace in per_stint.items():
-            if len(at_pace) < LONG_RUN:
-                continue
-            times = np.array([lap.lap_time for lap in at_pace], dtype=float)
-            numbers = np.array([lap.lap for lap in at_pace], dtype=float)
-            median = float(np.median(times))
-            typical = at_pace[int(np.argmin(np.abs(times - median)))].lap
-            slope = float(np.polyfit(numbers, times, 1)[0]) if np.ptp(numbers) > 0 else None
-            run = ReportRun(
-                driver=driver,
-                stint=stint,
-                compound=at_pace[0].compound,
-                laps=len(at_pace),
-                median=round(median, 3),
-                best=round(float(times.min()), 3),
-                slope=None if slope is None else round(slope, 3),
-                action=_action([_ref(driver, typical)]),
-            )
-            runs.append((run, typical))
-    runs.sort(key=lambda r: (r[0].compound or "", r[0].median))
+    """Stints with at least LONG_RUN laps at pace (longruns.find_runs), quickest median first per
+    compound. The click compares the lap nearest the median with that of the quickest run on the
+    same compound."""
     quickest: dict[str | None, str] = {}
-    for run, typical in runs:
-        own = _ref(run.driver, typical)
+    out = []
+    for run in longruns.find_runs(laps, ""):
+        own = _ref(run.driver, run.typical)
         lead = quickest.setdefault(run.compound, own)
-        run.action.laps = [lead] if lead == own else [lead, own]
-    return [run for run, _ in runs]
+        out.append(
+            ReportRun(
+                driver=run.driver,
+                stint=run.stint,
+                compound=run.compound,
+                laps=run.laps,
+                median=run.median,
+                best=run.best,
+                slope=run.slope,
+                action=_action([lead] if lead == own else [lead, own]),
+            )
+        )
+    return out
 
 
 # --- Race moments -------------------------------------------------------------------------------
