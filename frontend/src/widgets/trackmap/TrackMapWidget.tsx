@@ -28,6 +28,16 @@ import type { DistanceMark } from '@/lib/markers';
 import { describeCheck, hasOvertake, overtakeIndex, type OvertakeIndex } from '@/lib/overtake';
 import { activeZones, describeZone, useLowGripAtClock } from '@/lib/straightMode';
 import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
+import {
+  cornerGear,
+  levelOpacity,
+  levelRuns,
+  levels,
+  speedRange,
+  SPEED_BANDS,
+  THROTTLE_LEVELS,
+  type TrackChannel,
+} from '@/lib/trackColour';
 import type { LapStyle } from '@/lib/timing';
 import { useClockTime } from '@/store/clock';
 import { cursorBus, useZoom, useZoomKind } from '@/store/cursor';
@@ -127,7 +137,7 @@ function offsetPath(along: Along, { start, end }: Stretch, offset: number): stri
     .join('');
 }
 
-export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
+export function TrackMapWidget({ group, config, setConfig }: WidgetProps<TrackMapConfig>) {
   const circuit = useCircuit();
   const { laps, data, styles, detail } = useGroupComparison(group, {
     miniSectors: config.miniSectors,
@@ -210,6 +220,8 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       lapClips={lapClips}
       lapEnergy={lapEnergy}
       sectors={config.sectors ? sectors : undefined}
+      colour={config.colour}
+      onColour={(colour) => setConfig({ colour })}
     />
   );
 }
@@ -346,6 +358,8 @@ function TrackMap({
   lapClips,
   lapEnergy,
   sectors,
+  colour = 'sectors',
+  onColour,
 }: {
   group: GroupId;
   circuit: Circuit;
@@ -367,6 +381,9 @@ function TrackMap({
   lapClips?: LapClips[];
   lapEnergy?: LapEnergy;
   sectors?: TrackSectors;
+  /** With compared laps: mini-sectors, or the laps' telemetry along the track. */
+  colour?: 'sectors' | TrackChannel;
+  onColour?: (colour: 'sectors' | TrackChannel) => void;
 }) {
   const zoom = useZoom(group);
   const ghostsRef = useRef<SVGGElement>(null);
@@ -439,6 +456,16 @@ function TrackMap({
     };
   }, [comparison, styles, circuit.rotation, zoom, lapEnergy]);
 
+  const channel = colour !== 'sectors' && comparison && lap ? colour : null;
+  const lanesFrom = zones && zones.zones.length > 0 ? LANE_STEP * (1 + (lapClips?.length ?? 0)) : 0;
+  const telemetry = useMemo(
+    () =>
+      channel && comparison && lap
+        ? channelLayer(channel, comparison, lap.laps[0], styles, geometry.along)
+        : null,
+    [channel, comparison, lap, styles, geometry.along]
+  );
+
   // Cursor dots move imperatively: no React render per mouse move.
   useEffect(() => {
     if (!comparison || !lap) return;
@@ -506,10 +533,15 @@ function TrackMap({
     cars?.drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
   return (
     <div className="relative h-full">
-      {lap || note ? (
-        <div className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">
-          {note ?? 'Mini-sectors: fastest lap colours the track'}
-        </div>
+      {note ? (
+        <div className="absolute left-1.5 top-1 z-10 text-[10px] text-faint">{note}</div>
+      ) : lap ? (
+        <ColourLegend
+          colour={colour}
+          onColour={onColour}
+          names={comparison!.laps.slice(0, MAX_CHANNEL_LAPS).map((l) => `${l.driver} L${l.lap}`)}
+          range={telemetry?.range}
+        />
       ) : null}
       {(zones && zones.zones.length > 0) || straightMode || overtake || (passes && cars) ? (
         <div className="absolute bottom-1 left-1.5 z-10 flex flex-col gap-0.5 text-[10px] text-faint">
@@ -588,7 +620,16 @@ function TrackMap({
         {sectors && sectors.boundaries.length > 0 ? (
           <SectorLayer along={geometry.along} boundaries={sectors.boundaries} unit={u} />
         ) : null}
-        {lap?.sectors.map((s, i) => (
+        {telemetry ? (
+          <ChannelLayer
+            layer={telemetry}
+            along={geometry.along}
+            unit={u}
+            lanesFrom={lanesFrom}
+            dim={lap?.zoomed != null}
+          />
+        ) : null}
+        {(telemetry || !lap ? [] : lap.sectors).map((s, i) => (
           <path
             key={i}
             d={s.d}
@@ -596,7 +637,7 @@ function TrackMap({
             stroke={s.color}
             strokeWidth={u * 0.9}
             strokeLinecap="round"
-            opacity={lap.zoomed ? 0.35 : 1}
+            opacity={lap?.zoomed ? 0.35 : 1}
           />
         ))}
         {lap?.zoomed?.map((piece, i) => (
@@ -699,6 +740,212 @@ function TrackMap({
         </g>
       </svg>
     </div>
+  );
+}
+
+/** Compared laps coloured by their telemetry: the first on the track, the rest as rows outside. */
+const MAX_CHANNEL_LAPS = 4;
+const CHANNEL_WIDTH = 1.2;
+const CHANNEL_LANE_WIDTH = 0.8;
+
+type ChannelPiece = { from: number; to: number; opacity: number };
+type ChannelLayerData = {
+  channel: TrackChannel;
+  /** Per lap: its colour, name and the stretches (grid indices) to draw. */
+  laps: { color: string; name: string; pieces: ChannelPiece[] }[];
+  /** The first lap's points on the comparison grid. */
+  points: Point[];
+  /** Comparison grid distance → outline distance. */
+  scale: number;
+  distance: number[];
+  /** Gear: the lowest gear per corner and per lap, at the first lap's slowest point. */
+  gears: { label: string; at: Point; gears: number[] }[];
+  range: [number, number];
+};
+
+function channelLayer(
+  channel: TrackChannel,
+  comparison: Comparison,
+  points: Point[],
+  styles: LapStyle[],
+  along: Along
+): ChannelLayerData {
+  const shown = comparison.laps.slice(0, MAX_CHANNEL_LAPS);
+  const range = speedRange(shown);
+  const { distance } = comparison;
+  const scale = along.length / (distance[distance.length - 1] || 1);
+  const laps = shown.map((l, n) => ({
+    color: styles[n]?.color ?? COLORS.textDim,
+    name: `${l.driver} L${l.lap}`,
+    pieces: levelRuns(levels(channel, l, range)).flatMap((run) => {
+      const opacity = levelOpacity(channel, run.level);
+      return opacity > 0 ? [{ from: run.from, to: run.to, opacity }] : [];
+    }),
+  }));
+  const gears =
+    channel === 'gear'
+      ? comparison.corners.flatMap((c) => {
+          const from = indexAt(distance, c.start);
+          const to = indexAt(distance, c.end);
+          const first = cornerGear(shown[0], from, to);
+          if (!first) return [];
+          const all = shown.map((l) => cornerGear(l, from, to)?.gear ?? first.gear);
+          return [{ label: c.label, at: points[first.at], gears: all }];
+        })
+      : [];
+  return { channel, laps, points, scale, distance, gears, range };
+}
+
+function ChannelLayer({
+  layer,
+  along,
+  unit,
+  lanesFrom,
+  dim,
+}: {
+  layer: ChannelLayerData;
+  along: Along;
+  unit: number;
+  /** Rows already taken outside the track (zones, clipping rows), in units. */
+  lanesFrom: number;
+  dim: boolean;
+}) {
+  const { distance, scale, points } = layer;
+  return (
+    <g fill="none" strokeLinejoin="round" opacity={dim ? 0.35 : 1}>
+      {layer.laps.map((lap, n) => (
+        <g key={n} stroke={lap.color}>
+          <title>{lap.name}</title>
+          {lap.pieces.map((p) => (
+            <path
+              key={p.from}
+              d={
+                n === 0
+                  ? toPath(points.slice(p.from, p.to + 1))
+                  : offsetPath(
+                      along,
+                      { start: distance[p.from] * scale, end: distance[p.to] * scale },
+                      unit * (ZONE_OFFSET + lanesFrom + LANE_STEP * (n - 1))
+                    )
+              }
+              strokeOpacity={p.opacity}
+              strokeWidth={unit * (n === 0 ? CHANNEL_WIDTH : CHANNEL_LANE_WIDTH)}
+              strokeLinecap={n === 0 ? 'round' : 'butt'}
+            />
+          ))}
+        </g>
+      ))}
+      {layer.gears.map((g) => {
+        const same = g.gears.every((x) => x === g.gears[0]);
+        const text = same ? String(g.gears[0]) : g.gears.join('·');
+        return (
+          <g key={g.label} transform={`translate(${g.at[0]},${g.at[1]})`}>
+            <title>{`${g.label}: lowest gear ${layer.laps.map((l, n) => `${l.name} ${g.gears[n]}`).join(', ')}`}</title>
+            <rect
+              x={-unit * (0.9 + 0.75 * text.length)}
+              y={-unit * 1.5}
+              width={unit * (1.8 + 1.5 * text.length)}
+              height={unit * 3}
+              fill={COLORS.bg}
+              stroke={COLORS.lineStrong}
+              strokeWidth={unit * 0.3}
+            />
+            <text
+              fill={COLORS.text}
+              fontSize={unit * 2.3}
+              fontWeight={600}
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {text}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+const COLOUR_CHOICES: { value: 'sectors' | TrackChannel; label: string; title: string }[] = [
+  { value: 'sectors', label: 'SECTORS', title: 'Mini-sectors in the colour of the fastest lap' },
+  { value: 'speed', label: 'SPEED', title: 'The laps’ speed: the stronger, the faster' },
+  { value: 'throttle', label: 'THROTTLE', title: 'Braking, rolling, part and full throttle' },
+  { value: 'gear', label: 'GEAR', title: 'The gear, and the lowest gear of every corner' },
+];
+
+/** Top left over the map: what colours the track (buttons) and the key to it. */
+function ColourLegend({
+  colour,
+  onColour,
+  names,
+  range,
+}: {
+  colour: 'sectors' | TrackChannel;
+  onColour?: (colour: 'sectors' | TrackChannel) => void;
+  names: string[];
+  range?: [number, number];
+}) {
+  return (
+    <div className="absolute left-1.5 top-1 z-10 flex flex-col gap-0.5 text-[10px] text-faint">
+      <div className="flex items-center gap-2">
+        {COLOUR_CHOICES.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            title={c.title}
+            onClick={() => onColour?.(c.value)}
+            className={
+              c.value === colour ? 'font-semibold text-text' : 'font-semibold hover:text-dim'
+            }
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      {colour === 'sectors' ? (
+        <span>Mini-sectors: fastest lap colours the track</span>
+      ) : (
+        <>
+          <span className="flex items-center gap-1.5">
+            {colour === 'throttle'
+              ? THROTTLE_LEVELS.map((l) => (
+                  <Swatch key={l.label} opacity={l.opacity} label={l.label} />
+                ))
+              : colour === 'gear'
+                ? Array.from({ length: 8 }, (_, g) => (
+                    <Swatch key={g} opacity={levelOpacity('gear', g + 1)} label={String(g + 1)} />
+                  ))
+                : [
+                    <span key="lo" className="tabular-nums">
+                      {range ? Math.round(range[0]) : ''}
+                    </span>,
+                    ...Array.from({ length: SPEED_BANDS }, (_, b) => (
+                      <Swatch key={b} opacity={levelOpacity('speed', b + 1)} />
+                    )),
+                    <span key="hi" className="tabular-nums">
+                      {range ? `${Math.round(range[1])} km/h` : ''}
+                    </span>,
+                  ]}
+            {names.length > 1 ? (
+              <span className="ml-1">
+                {names[0]} on the track, {names.slice(1).join(', ')} outside
+              </span>
+            ) : null}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Swatch({ opacity, label }: { opacity: number; label?: string }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      <span className="h-1.5 w-2.5 border border-line-strong">
+        <span className="block h-full w-full bg-dim" style={{ opacity }} />
+      </span>
+      {label}
+    </span>
   );
 }
 

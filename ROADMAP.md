@@ -546,7 +546,12 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       gas, apex) van vlak voor het eerste rempunt tot na vol gas, en de tweede lap tegen de eerste:
       rempunt, meters op de rem, apexsnelheid, vol gas. Alleen frontend, uit `/compare`. Getest op
       Monza 2025 Q, VER L17 tegen NOR L20
-- [ ] **Gear- en throttle-map** op de baan
+- [x] **Gear- en throttle-map** op de baan (2026-10-19, `lib/trackColour.ts`, Track map
+      SECTORS/SPEED/THROTTLE/GEAR linksboven of "Colour the track by"): de eerste vergeleken lap
+      op de baan in zijn eigen kleur met dekking per niveau (speed in 6 banden over de laps,
+      throttle als Corner phases, gear 1–8), de andere laps (max 4) als rijtjes buiten de baan;
+      GEAR zet de laagste versnelling per bocht op de baan. Monza 2025 Q, VER L17 / NOR L20: T1–2 2,
+      T4–5 3, Lesmo 5, Ascari 5, Parabolica 6 / 5
 - [ ] **Long runs in FP**: herkennen en vergelijken
 - [ ] **Starts**: posities en snelheid in de eerste 500 m uit het positiespoor
 - [ ] **Team radio** op de tijdlijn (OpenF1)

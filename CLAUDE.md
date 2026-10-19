@@ -466,6 +466,13 @@ de apex (laagste snelheid) en het eerste remstuk vóór de apex (chicane: het ee
 Kleur = de lapkleur met dekking per fase (geen nieuwe betekeniskleuren). Let op: `DriverCell` is
 zelf een `<td>`.
 
+**Gear-/throttle-map** (Track map, `colour`: `sectors` | `speed` | `throttle` | `gear`, knoppen
+linksboven via `setConfig`, `lib/trackColour.ts`): alleen met vergeleken laps. Zelfde codering als
+Corner phases: de lapkleur met een dekking per niveau (`levelOpacity`; throttle = remmen 1, rollen
+0,5, deels 0,22, vol gas niets), geen nieuwe kleuren. De eerste lap op zijn eigen x/y, de rest
+(max 4) via `offsetPath` buiten de baan, na de zone- en cliprijtjes (`lanesFrom`). GEAR: per
+`comparison.corners`-segment de laagste versnelling op het langzaamste punt van de eerste lap.
+
 ## Energie (fase 8)
 
 Er is geen kanaal voor de batterij of de MGU-K, dus het is een schatting, en de UI zegt dat ook. Het

@@ -1,8 +1,11 @@
 import { lazy } from 'react';
+import type { TrackChannel } from '@/lib/trackColour';
 import { defineWidget } from '../types';
 
 export type TrackMapConfig = {
   cars: 'laps' | 'all';
+  /** With compared laps: what colours the track. */
+  colour: 'sectors' | TrackChannel;
   miniSectors: number;
   corners: boolean;
   markers: boolean;
@@ -26,6 +29,13 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     watch: [
       'Runs of one colour show where a driver is consistently quicker, for example all the slow corners.',
       'Mini-sectors shorter than ~50 m mostly show noise: telemetry is only sampled at ~4 Hz.',
+      'SPEED, THROTTLE and GEAR (top left, or “Colour the track by”) colour the first lap by its ' +
+        'telemetry instead, in its own colour: the stronger, the faster or the higher the gear; ' +
+        'for throttle the phases of Corner phases (braking strongest, rolling, part throttle, ' +
+        'full throttle the bare track). Other compared laps run as thin rows outside the track ' +
+        'in the same way, the second nearest. With GEAR the lowest gear of every corner sits on ' +
+        'the track at its slowest point (one number per lap when they differ). Brake is on/off ' +
+        'and the data ~4 Hz, so edges are ±10–20 m.',
       'A zoomed range in the charts is highlighted in white on the map. From 2026, after a click ' +
         'on a straight in Energy, the first lap’s stretch is purple where it probably deployed ' +
         '(it gains more than the engine alone could), faint amber where it clipped and amber ' +
@@ -66,6 +76,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
   },
   defaults: {
     cars: 'laps',
+    colour: 'sectors',
     miniSectors: 25,
     corners: true,
     markers: true,
@@ -85,6 +96,17 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
       options: [
         { value: 'laps', label: 'Compared laps at the cursor' },
         { value: 'all', label: 'All cars at the session clock' },
+      ],
+    },
+    {
+      key: 'colour',
+      label: 'Colour the track by (compared laps)',
+      kind: 'choice',
+      options: [
+        { value: 'sectors', label: 'Mini-sectors: the fastest lap' },
+        { value: 'speed', label: 'Speed' },
+        { value: 'throttle', label: 'Throttle and brake' },
+        { value: 'gear', label: 'Gear' },
       ],
     },
     {
