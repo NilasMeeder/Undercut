@@ -22,9 +22,10 @@ export function explainLap(name: string, lap: EnergyLap, straights: EnergyStraig
   const i = worst(lap.straights.map((s) => s?.cost_time ?? null));
   const s = lap.straights[i]!;
   const end = s.coast > 0 ? 'lift' : 'brake';
+  const losing = s.superclip ? `, ${s.lost.toFixed(0)} km/h of it lost at full throttle` : '';
   return (
     `${name}: clipping costs ≈${lap.cost_time.toFixed(2)} s, most into T${straights[i].corner}: ` +
-    `${s.clipped} m without gaining, ${s.cost_speed.toFixed(0)} km/h down at the ${end}.`
+    `${s.clipped} m without gaining${losing}; ${s.cost_speed.toFixed(0)} km/h down at the ${end}.`
   );
 }
 

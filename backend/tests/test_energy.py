@@ -26,11 +26,15 @@ def lap(
     lift_at: float | None = None,
     entry: float = EXIT,
     length: float = LENGTH,
+    lose: float = 0.0,
+    pause: tuple[float, float] | None = None,
 ) -> LapTrace:
     """Out of a corner at `entry` km/h, full throttle to BRAKE_AT, brake for corner 1, then
     part throttle to the line. From `clip_from` the car holds its speed at full throttle.
     `slope` climbs over the whole straight; `bend` = (start, end, radius) of a curve in it.
-    `lift_at`: off the throttle there, braking only at BRAKE_AT (lift and coast)."""
+    `lift_at`: off the throttle there, braking only at BRAKE_AT (lift and coast). `lose`: from
+    `clip_from` it loses this many m/s² instead (superclipping). `pause` = (start, end): holds its
+    speed there and then gains again."""
     rows = []
     t, x, v = 0.0, 0.0, entry / 3.6
     heading, px, py = 0.0, 0.0, 0.0
@@ -43,8 +47,11 @@ def lap(
             a, throttle, brake = 0.0, 40.0, 0
         elif lifted:
             a, throttle, brake = -1.5, 0.0, 0
-        elif clip_from is not None and x >= clip_from:
-            a, throttle, brake = -9.81 * slope, 100.0, 0
+        elif (clip_from is not None and x >= clip_from) or (
+            pause is not None and pause[0] <= x < pause[1]
+        ):
+            lost = lose if clip_from is not None and x >= clip_from else 0.0
+            a, throttle, brake = -9.81 * slope - lost, 100.0, 0
         else:
             a = min(GRIP, power / v - DRAG * v * v) - 9.81 * slope
             throttle, brake = 100.0, 0
@@ -134,6 +141,80 @@ def test_clipping_and_what_it_costs():
         BRAKE_AT - 20, clipped.distance, clipped.channels["speed"]
     )
     assert result.clip_cost_speed == pytest.approx(true_speed, abs=4)
+
+
+def test_superclipping_where_nobody_was_faster():
+    """Losing speed at full throttle near the top: no lap gained there, but it is the battery."""
+    superclipped = lap(clip_from=800.0, lose=0.8)
+    env = envelope_of(superclipped, superclipped, superclipped)
+    k, corner, after, run = straight_of(superclipped)
+    result = energy.analyse(k, corner, after, run, env)
+    assert result.clip_at == pytest.approx(800.0, abs=60)
+    assert result.superclip is not None
+    assert result.superclip[0] == pytest.approx(800.0, abs=80)
+    peak = np.interp(800.0, superclipped.distance, superclipped.channels["speed"])
+    end = np.interp(BRAKE_AT - 30, superclipped.distance, superclipped.channels["speed"])
+    assert result.lost == pytest.approx(peak - end, abs=3)
+    # The cost: holding the speed it had instead of losing it.
+    assert result.clip_cost_speed == pytest.approx(result.lost, abs=3)
+
+
+def test_clipping_without_losing_speed_is_not_superclipping():
+    full, clipped = lap(), lap(clip_from=600.0)
+    env = envelope_of(full, full, full, clipped)
+    k, corner, after, run = straight_of(clipped)
+    result = energy.analyse(k, corner, after, run, env)
+    assert result.clip_at is not None
+    assert result.superclip is None
+    assert result.lost == 0
+
+
+def test_clipping_then_deploying_again():
+    """Flat for a while where the best laps gained, then deploying again (Baku): it clipped."""
+    full, again = lap(), lap(pause=(300.0, 450.0), clip_from=700.0)
+    env = envelope_of(full, full, full, again)
+    k, corner, after, run = straight_of(again)
+    result = energy.analyse(k, corner, after, run, env)
+    assert result.clip_at == pytest.approx(300.0, abs=60)
+    assert len(result.clipping) == 2
+    assert result.clipping[1][0] == pytest.approx(700.0, abs=60)
+
+
+def _ending(rpm_falls: bool) -> tuple[energy.Kinematics, energy.Run]:
+    """3 s at 320 km/h, then 0.4 s losing 9 m/s² at full throttle, the rpm with it or not."""
+    n, fast = 34, 4
+    t = np.arange(n) * energy.DT
+    speed = np.concatenate(
+        [np.full(n - fast, 320.0), 320.0 - 9 * 3.6 * energy.DT * np.arange(1, fast + 1)]
+    )
+    rpm = (speed if rpm_falls else np.full(n, 320.0)) * 34.4
+    k = energy.Kinematics(
+        distance=np.cumsum(speed / 3.6 * energy.DT),
+        time=t,
+        speed=speed,
+        full=np.ones(n, dtype=bool),
+        brake=np.zeros(n, dtype=bool),
+        gear=np.full(n, 8.0),
+        rpm=rpm,
+        slope=np.zeros(n),
+        lateral=np.zeros(n),
+        length=LENGTH,
+    )
+    accel = np.concatenate([np.zeros(n - fast), np.full(fast, -9.0)])
+    return k, energy.Run(start=0, end=n, accel=accel, judged=np.ones(n, dtype=bool))
+
+
+def test_a_fast_loss_at_the_end_with_the_rpm_is_superclipping():
+    """Monza 2026 R into T8: 312 to 302 km/h in 0.65 s at full throttle, the rpm falling too."""
+    k, run = _ending(rpm_falls=True)
+    assert energy._held_to(k, run) == run.end
+
+
+def test_a_fast_loss_at_the_end_without_the_rpm_is_the_lift():
+    """The speed falls a fraction of a second before the throttle shows the lift; the rpm (the
+    wheels, in one gear) does not yet."""
+    k, run = _ending(rpm_falls=False)
+    assert energy._held_to(k, run) == run.end - 4
 
 
 def test_less_power_while_still_gaining_is_not_clipping():

@@ -12,9 +12,14 @@ more than on the engine alone (at 230 km/h roughly 9 against 3.5 m/s² at Monza 
 - the envelope of a straight is, per speed, the 95th percentile over the clean laps of the
   session of each lap's median acceleration on that straight: what the best laps managed there,
   taken as full deployment (tow and overtake mode included, so in a race it sits higher);
-- clipping is full throttle without gaining speed (a < FLAT) where the envelope still gains. Its
-  cost is the speed and time the car would have had by following the envelope from the first
-  such point on, up the same hill, never faster than the top speed reached on that straight;
+- clipping is measured per lap: the clip point is where the car itself stops gaining speed at
+  full throttle (a < FLAT), when that is the battery and not the drag: the best laps still gained
+  there, or the car goes on to lose speed at full throttle. Superclipping is that loss, from where
+  the speed falls from its top (the rpm falls with it in the same gear): the MGU-K harvests while
+  the driver is still flat. The cost is
+  the speed and time the car would have had by following the envelope from the clip point on, up
+  the same hill, never faster than the top speed reached on that straight (at or above it, the
+  speed it had there);
 - cornering at full throttle (Curva Grande, Raidillon, Blanchimont) is not judged: there grip
   and drag set the speed, and a projection does what the lap did;
 - deploy is the acceleration as a share of the envelope at that speed: 100% = as hard as the
@@ -71,6 +76,14 @@ MIN_GAIN = 3.0
 """km/h: a flat stretch counts as clipping only if the envelope says the car could still gain
 this much. Otherwise the car is at the top speed its drag allows, battery or not."""
 
+CLIP_BRIDGE = 1.0
+"""Seconds: a car that gains again for less than this between two flat stretches (a blip in the
+speed trace, a gear) still clips across it."""
+
+TOP_SLACK = 1.0
+"""km/h: superclipping starts where the speed falls more than this below the top it held (the
+speed comes in whole km/h)."""
+
 SPEED_BIN = 5.0
 """km/h per envelope bin."""
 
@@ -118,6 +131,16 @@ DEPLOY_MIN_SPEED = 200.0
 """km/h: slower, grip limits the acceleration with or without the battery, so the data cannot
 tell whether it deploys."""
 
+LIFT_EDGE = 2.0
+"""m/s²: a run that ends losing speed faster than this is either superclipping hard (a race:
+Monza 2026 R into T8, 312 to 302 km/h in 0.65 s at full throttle) or the lift showing in the
+speed before the throttle (Q, RUS into T4: 6 km/h in 0.3 s). The rpm tells them apart."""
+
+RPM_SHARE = 0.5
+"""In one gear the rpm is the wheel speed: a loss at the end is real when the rpm falls at least
+this share of what the speed does. Where the speed falls and the rpm does not, the channels are
+a fraction of a second apart and the driver is lifting."""
+
 COAST = 60.0
 """Metres from lift to brake from which it is lift and coast (going from throttle to brake
 takes ~30 m at 300 km/h)."""
@@ -150,6 +173,8 @@ class Kinematics:
     brake: np.ndarray
     gear: np.ndarray
     """The gear of the last sample (0 without a gear channel)."""
+    rpm: np.ndarray
+    """0 without an rpm channel."""
     slope: np.ndarray
     """Height gained per metre. Uphill a car accelerates g × slope less on the same power."""
     lateral: np.ndarray
@@ -180,6 +205,7 @@ def _shifted(trace: LapTrace, distance: float, time: float) -> dict[str, np.ndar
         "throttle": ch["throttle"],
         "brake": ch["brake"],
         "gear": ch["gear"] if "gear" in ch else np.zeros(trace.distance.size),
+        "rpm": ch["rpm"] if "rpm" in ch else np.zeros(trace.distance.size),
         **{
             axis: ch[axis] / POSITION_UNITS_PER_METRE
             if axis in ch
@@ -237,6 +263,7 @@ def kinematics(trace: LapTrace, previous: LapTrace | None = None) -> Kinematics:
         full=full,
         brake=brake,
         gear=raw["gear"][sample],
+        rpm=np.interp(grid, t, raw["rpm"]),
         slope=slope,
         lateral=(speed / KMH) ** 2 * _curvature(behind, here, ahead),
         length=trace.length,
@@ -432,6 +459,11 @@ class Straight:
     clip_cost_speed: float
     """km/h more at `end` following the envelope from clip_at."""
     clip_cost_time: float
+    superclip: tuple[float, float] | None = None
+    """From where it starts to lose speed at full throttle (after clip_at) to the end of that."""
+    lost: float = 0.0
+    """km/h lost at full throttle from clip_at on, from its top to the end of each piece between
+    fast corners (not what a fast corner takes, nor the lift showing early: `_held_to`)."""
     downshifts: list[tuple[float, int, float]] = field(default_factory=list)
     """Downshifts at full throttle: (distance, gear after, km/h)."""
     deploying: list[tuple[float, float]] = field(default_factory=list)
@@ -576,6 +608,45 @@ def _coast(k: Kinematics, end: int) -> float:
     return coast if coast >= COAST else 0.0
 
 
+def _held_to(k: Kinematics, run: Run) -> int:
+    """Points of the run that are full throttle for the battery: all of them, unless the run
+    ends losing speed faster than LIFT_EDGE while the rpm (same gear) does not fall with it, and
+    then up to that ending. Without an rpm channel all of them."""
+    n = run.end - run.start
+    steep = run.accel < -LIFT_EDGE
+    if not steep[-1] or not k.rpm.any():
+        return n
+    calm = np.flatnonzero(~steep)
+    tail = int(calm[-1]) + 1 if calm.size else 0
+    if tail == 0:
+        return n
+    s = run.start
+    gear = k.gear[s + tail - 1 : run.end]
+    if (gear != gear[0]).any():
+        return n  # a downshift at full throttle: harvesting
+    speed, rpm = k.speed[s : run.end], k.rpm[s : run.end]
+    same = (k.gear[s : s + tail] == gear[0]) & (speed[:tail] > 150) & (rpm[:tail] > 0)
+    if same.sum() < 5:
+        return n
+    ratio = float(np.median(rpm[:tail][same] / speed[:tail][same]))
+    fell = speed[tail - 1] - speed[-1]
+    rpm_fell = (rpm[tail - 1] - rpm[-1]) / ratio
+    return n if rpm_fell >= RPM_SHARE * fell else tail
+
+
+def _bridged(
+    stretches: list[tuple[int, int]], judged: np.ndarray, time: np.ndarray
+) -> list[tuple[int, int]]:
+    """Stretches less than CLIP_BRIDGE apart joined, unless a fast corner lies between."""
+    out: list[tuple[int, int]] = []
+    for a, b in stretches:
+        if out and time[a] - time[out[-1][1] - 1] < CLIP_BRIDGE and judged[out[-1][1] : a].all():
+            out[-1] = (out[-1][0], b)
+        else:
+            out.append((a, b))
+    return out
+
+
 def _stretches(mask: np.ndarray, distance: np.ndarray) -> list[tuple[int, int]]:
     """Runs of True as [start, end) of at least MIN_CLIP metres, over glitches of a sample."""
     mask = _close_short(mask, np.zeros_like(mask), round(THROTTLE_GLITCH / DT))
@@ -607,19 +678,58 @@ def analyse(
         else [(float(d[a]), float(d[b - 1])) for a, b in deploying_stretches(k, run, full)]
     )
 
+    superclip, lost = None, 0.0
     if reference is not None:
-        # Not gaining, where the best on this straight still gained CLIP_MARGIN more.
+        # Not gaining, from where the car itself stops (not where the envelope says it could
+        # still gain: near the top nobody gains, and that hid the fastest laps). It is the
+        # battery when the best on this straight still gained CLIP_MARGIN more somewhere in the
+        # stretch, or when the car goes on to lose speed at full throttle.
         gap = reference.at(v) - run.accel
-        stuck = (run.accel < FLAT) & (gap >= CLIP_MARGIN) & run.judged
-        stretches = _stretches(stuck, d)
+        # A fast loss at the end: superclipping when the rpm falls with it, else the lift.
+        held = _held_to(k, run)
+
+        def pieces(a: int, b: int) -> list[tuple[int, int, float]]:
+            """Per piece between fast corners in [a, b) up to `held`: where it starts to fall from
+            its top (more than TOP_SLACK below it), its end, and the km/h it loses: not what a
+            fast corner takes."""
+            b = min(b, held)
+            edges = np.flatnonzero(np.diff(np.concatenate(([0], run.judged[a:b], [0]))))
+            out = []
+            for x, y in zip(edges[::2] + a, edges[1::2] + a, strict=True):
+                top = x + int(np.argmax(v[x:y]))
+                below = np.flatnonzero(v[top:y] < v[top] - TOP_SLACK)
+                start = top + int(below[0]) - 1 if below.size else y - 1
+                out.append((start, y, float(v[top] - v[y - 1])))
+            return out
+
+        def fell(a: int, b: int) -> float:
+            return sum(drop for _, _, drop in pieces(a, b))
+
+        # A car can deploy again after clipping (Baku: flat at 275 km/h, then 4 m/s² to the
+        # line): every stretch counts. Losing speed counts when the stretch loses MIN_GAIN, not
+        # the little a car loses running out of a fast corner (Curva Grande).
+        stretches = []
+        for a, b in _bridged(_stretches((run.accel < FLAT) & run.judged, d), run.judged, t):
+            if (gap[a:b] >= CLIP_MARGIN).any() or fell(a, b) >= MIN_GAIN:
+                stretches.append((a, b))
         if stretches:
             first = stretches[0][0]
-            v1, time = follow(reference, run, k, first)
-            if v1 - v[-1] >= MIN_GAIN:
+            # The cost up to where the lift starts to show, if it does: following the envelope
+            # through the lift would count the lift as clipping.
+            last = max(held, first + 1) - 1
+            upto = Run(
+                run.start, run.start + last + 1, run.accel[: last + 1], run.judged[: last + 1]
+            )
+            v1, time = follow(reference, upto, k, first)
+            if v1 - v[last] >= MIN_GAIN:
                 clip_at = float(d[first])
                 clipping = [(float(d[a]), float(d[b - 1])) for a, b in stretches]
-                clip_speed = float(v1 - v[-1])
-                clip_time = max(float(t[-1] - t[first]) - time, 0.0)
+                clip_speed = float(v1 - v[last])
+                clip_time = max(float(t[last] - t[first]) - time, 0.0)
+                falls = [(x, y) for x, y, drop in pieces(first, len(d)) if drop >= MIN_GAIN]
+                if falls:
+                    lost = fell(first, len(d))
+                    superclip = (float(d[falls[0][0]]), float(d[falls[-1][1] - 1]))
 
     return Straight(
         corner=corner,
@@ -636,5 +746,7 @@ def analyse(
         deploying=deploys,
         clip_cost_speed=clip_speed,
         clip_cost_time=clip_time,
+        superclip=superclip,
+        lost=lost if superclip is not None else 0.0,
         downshifts=downshifts(k, run),
     )

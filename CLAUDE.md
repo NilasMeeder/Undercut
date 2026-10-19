@@ -77,9 +77,10 @@ Valkuilen bij het headless testen:
   klokbalk heeft dan de title `Following the live feed`. Live-sessietijd loopt vanaf het geplande
   begin (Monza R: 13:00 UTC), niet vanaf het archief-t0: dezelfde lap heeft live een ander t.
 - Energie: Monza 2026 Q (ronde 13) is de vaste testsessie (`useDefaultSelection` kiest GAS L17 en
-  RUS L16). Controlegetallen: 97 schone laps, straights →T1, →T4, →T8, →T11; →T1 sessie 99% clip,
-  mediaan 393 m, 0,116 s; GAS L17 kost ≈0,15 s per lap (meest →T11, 394 m), RUS L16 ≈0,03 s. In
-  SESSION is COL de zuinigste (0,149 s/lap) en STR de duurste (1,295). Energy zit als tab achter
+  RUS L16). Controlegetallen: 97 schone laps, straights →T1, →T4, →T8, →T11; →T1 sessie 100% clip,
+  mediaan 420 m, 0,116 s, 97% verliest snelheid (−10 km/h); GAS L17 kost ≈0,21 s per lap (meest
+  →T11: 465 m, clipt vanaf 4635 m, −5 km/h), RUS L16 ≈0,085 s (→T1: clipt vanaf 387 m, verliest
+  343 → 336 vanaf 484 m). In SESSION is COL de zuinigste (0,175 s/lap) en STR de duurste (1,284). Energy zit als tab achter
   Corners in de preset Engineer; het (koude) eerste verzoek leest alle schone laps (~1 s Q, ~2 s R).
 - Markeringen: `keyboard.down('Shift')` en dan slepen of klikken in een `.u-over` (de grootste is de
   speed-chart); de editor heeft het placeholder `What happens here` en Enter slaat op. Een view openen
@@ -457,11 +458,33 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   bin). De top eindigt op de hoogste gemeten snelheid. **Nooit lenen van andere straights**: op Baku
   zet niemand de hele 2,2 km vol in, en de versnelling van een kort stuk op dezelfde snelheid gaf
   een klif in de omhullende. Een 95e percentiel over losse samples zat 0,3–0,7 m/s² te hoog (ruis).
-- **Clipping**: a < 0,5 m/s² terwijl de omhullende ≥ 1 m/s² meer zegt, op beoordeelde punten, in
-  stukken ≥ 40 m. De kost: een auto die vanaf het eerste clippunt de omhullende volgt (dezelfde
+- **Clipping, per lap gemeten** (2026-10-19, met Nilas): het clippunt is waar de auto **zelf**
+  ophoudt met winnen (a < 0,5 m/s² over ≥ 40 m, stukken < 1 s uit elkaar samen, `_bridged`), als
+  dat de batterij is: de omhullende zegt daar ergens ≥ 1 m/s² meer, of de auto verliest er
+  ≥ 3 km/h. Eerder telde alleen "waar de omhullende nog ≥ 1 m/s² meer zei": boven de topsnelheid
+  van de sessie wint niemand, dus de snelste laps clipten dan niet (RUS L16 →T1 verliest 343 →
+  336 vol gas) en het clippunt schoof door tot de auto zo ver was teruggezakt dat anderen daar nog
+  wonnen (GAS L17 →T1: 600 i.p.v. 393 m; bij 13 van 97 laps > 100 m te laat). Elk stuk telt: een
+  auto kan clippen en daarna weer inzetten (Baku Q, ALB L8: vlak op 275 van −900 tot −300 m, dan
+  4 m/s² tot de lijn). De kost: een auto die vanaf het clippunt de omhullende volgt (dezelfde
   helling op; in bochten doet hij wat de lap deed), tot het eind van vol gas, nooit sneller dan de
-  top van de omhullende. Telt alleen als dat ≥ 3 km/h scheelt (anders zit de auto aan zijn
-  luchtweerstand). Precisie: het venster van 1 s laat het clippunt tot ~40 m te laat beginnen.
+  top van de omhullende (erboven: zijn eigen snelheid vasthouden). Telt alleen als dat ≥ 3 km/h
+  scheelt (anders zit de auto aan zijn luchtweerstand). Precisie: het venster van 1 s laat het
+  clippunt tot ~40 m te laat beginnen.
+- **Superclippen** (`Straight.superclip`, `lost`): na het clippunt bij vol gas snelheid verliezen
+  (de MGU-K oogst terwijl de driver plat staat; in één versnelling zakt de rpm mee, Nilas' idee).
+  Per stuk tussen snelle bochten: van waar de snelheid > 1 km/h onder zijn top zakt tot het eind,
+  telt vanaf 3 km/h; wat een snelle bocht kost telt niet (Spa: Blanchimont). Geleidelijk (Spa Q
+  Kemmel, VER L8: 328 → 282 km/h over 600 m, rpm 11.688 → 10.001) of hard in een race (Monza R
+  →T8, VER L20: 312 → 302 in 0,65 s, −4 m/s²). **Het eind van de run**: verliest hij daar
+  sneller dan 2 m/s² (`LIFT_EDGE`), dan beslist de rpm (`_held_to`): zakt die (zelfde
+  versnelling) ≥ half zo veel mee, of schakelt hij terug, dan is het echt; zo niet, dan is het
+  de lift die eerder in de snelheid te zien is dan in de throttle (RUS Q →T4: −6 km/h in 0,3 s,
+  rpm gelijk), en dat stuk telt niet mee voor kost en verlies. De rpm zelf in de versnelling
+  rekenen maakt a niet rustiger dan de fit over 1 s (getoetst), dus a blijft uit de snelheid.
+  Monza Q: →T1 97% van de laps (mediaan −10 km/h); Monza R →T8/→T11 ~75%; Baku T20→T1 17%
+  (vlak, niet verliezen). Of de vleugels aan het eind van een zone (dicht = meer luchtweerstand)
+  meetellen weten we niet: de zone-eindes zijn meestal geschat (Spa A3: "remmen").
 - **Inzet** (`energy.deploying`, `EnergyStraightLap.deploying`): waar een auto duidelijk meer wint
   dan de motor alleen kan. Motor alleen = de omhullende van de **hele sessie** (alle straights:
   volle inzet op die snelheid, waar dan ook gezien) min wat de MGU-K toevoegt, `K_POWER` /
@@ -491,8 +514,11 @@ de motor alleen niets meer). Alles in `energy.py` (puur, getest met gesimuleerde
   terug houdt hem op vol vermogen. Teams verschillen (Mercedes wel, Red Bull niet). De gear-sample
   loopt ~0,2 s achter op de rpm (de rpm springt eerst), dus de plek is ~15 m te laat. Rpm zelf
   zegt verder weinig: per versnelling vast (8e ≈ 35 rpm per km/h).
-- **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen en DOWN; SESSION:
-  drivers × straights, kosten, meters of % laps met terugschakelen). Telemetry: kanaal Deploy (lijn in
+- **Frontend**: widget Energy (LAPS: per straight de geselecteerde laps met zinnen, LOST (km/h
+  verloren bij vol gas) en DOWN; SESSION: drivers × straights, kosten, meters, % laps met
+  terugschakelen of km/h verloren bij vol gas). Kleuren: licht amber (`COLORS.clipFaint`) = clippen,
+  vol amber = superclippen, in de strookjes van de speed-chart (readout CLIP / SUPER), op de kaart
+  na een klik in Energy en in de rijtjes per lap. Telemetry: kanaal Deploy (lijn in
   de lapkleur; boven nul paars `ers` alleen waar de lap inzet volgens dezelfde regel als de kaart
   (`EnergyLap.deploying`, een masker op het raster van `deploy`, uit `energy.deploying_stretches`) en
   licht amber waar hij clipt (dezelfde stukken als de strookjes in de speed-chart, ook als de lijn net

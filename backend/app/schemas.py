@@ -301,12 +301,19 @@ class EnergyStraightLap(BaseModel):
     end_speed: float
     """km/h at `end`."""
     clip_at: float | None
-    """Where the car first stops gaining speed at full throttle while the best laps on this
-    straight still gained (estimate); null if it does not clip."""
+    """Where the car itself stops gaining speed at full throttle, when that is the battery: the
+    best laps on this straight still gained there, or it goes on to lose speed (estimate); null
+    if it does not clip."""
     clipping: list[ClipStretch]
     """Every stretch like that (it can gain again in between)."""
     deploying: list[ClipStretch]
     """Where it gains more than the engine alone could (estimate): the MGU-K is deploying."""
+    superclip: ClipStretch | None
+    """Where it loses speed at full throttle after the clip point (superclipping: harvesting while
+    flat; in one gear the rpm falls with it); null if it does not."""
+    lost: float
+    """km/h lost at full throttle when it superclips: its highest speed after the clip point less
+    the speed at `end`. 0 if it does not."""
     clipped: float
     """Metres of clipping, all stretches together."""
     cost_speed: float
@@ -330,6 +337,10 @@ class EnergyStraightStats(BaseModel):
     """Median top speed (km/h)."""
     downshifts: float
     """Share of the laps with a downshift at full throttle (0–1)."""
+    superclipping: float
+    """Share of the laps that lose speed at full throttle (0–1)."""
+    lost: float
+    """Median km/h lost at full throttle (0 for a lap that does not)."""
 
 
 class EnergyStraight(BaseModel):

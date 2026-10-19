@@ -12,7 +12,9 @@ export const COLORS = {
   pit: '#ff5252',
   /** Energy (2026, estimated): deploying, and clipping or harvesting at full throttle. */
   ers: '#b46cff',
+  /** Losing speed at full throttle (superclipping, harvesting); `clipFaint`: not gaining. */
   clip: '#ffa62b',
+  clipFaint: 'rgba(255, 166, 43, 0.45)',
   /** Markers: neutral, they are notes and carry no timing meaning. */
   markerFill: 'rgba(232, 232, 236, 0.08)',
   /** Straight-mode zones (2026) behind the charts: fainter than a marker, information only. */

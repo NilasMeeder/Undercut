@@ -23,14 +23,15 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
       'Minimum speed in a corner and how early throttle goes back to 100%: that decides the exit.',
       'Brake is on/off only (no pressure), and samples are ~4 Hz, so short lifts can be missed.',
       'From 2026: amber strips along the bottom of the speed chart, one row per lap (the first ' +
-        'lap lowest), mark clipping: full throttle without gaining speed where the best laps on that straight ' +
-        'still did (the battery is not deploying). An estimate, see the Energy panel.',
+        'lap lowest), mark clipping: full throttle without gaining speed (the battery is done). ' +
+        'Faint where it holds its speed, full amber where it loses speed at full throttle ' +
+        '(superclipping, SUPER in the readout). An estimate, see the Energy panel.',
       'Deploy (2026, estimated): acceleration at full throttle as a share of the best laps on ' +
         'that straight at that speed: 100% is as hard as the best, 0 is not gaining. Purple ' +
         'where it gains more than the engine alone could (the battery deploying, as on the ' +
         'Track map); a line without fill gains, but not clearly with the battery. Light amber ' +
-        'where it clips (the same stretches as the strips in the speed chart: hardly gaining ' +
-        'where the best laps still did, so it can stay just above zero). Dark amber below zero: ' +
+        'where it clips (the same stretches as the strips in the speed chart: hardly gaining, ' +
+        'so it can stay just above zero). Dark amber below zero: ' +
         'losing speed at full throttle, the battery harvesting ("super clipping"). Empty off ' +
         'the throttle, in fast corners and near top speed.',
       'Straight mode zones (2026): a faint band behind the lines where the wings may go flat ' +

@@ -294,8 +294,18 @@ speed, throttle, brake, gear, RPM en positie. Dus inschatten en eerlijk zeggen d
       lange clipstrook in de speed-chart terwijl Deploy niet onder nul kwam: clipping is bijna geen
       winst, onder nul is snelheid verliezen), vol amber onder nul. Getest op Monza 2026 Q (GAS L17
       T9→T11) en Monza 2025 Q (DRS 1 en 2)
-- [ ] Inzet en clippunt nalopen met Nilas op een sessie (gevoel: paars en clippunt kloppen nog
-      niet overal)
+- [x] Inzet en clippunt nalopen met Nilas (2026-10-19, Monza 2026 Q): paars klopte (eindigt
+      ~9 m voor het clippunt), het clippunt niet: het hing aan wat de beste laps deden, dus boven
+      de sessie-topsnelheid clipte niemand (RUS L16 →T1 verliest 343 → 336 vol gas: "geen
+      clipping") en schoof het tot > 100 m te laat (13 van 97 laps op →T1). Nu per lap: clippunt
+      waar de auto zelf ophoudt met winnen, en **superclippen** (Nilas: "zijn rpm begint te
+      zakken terwijl hij vol gas is, geleidelijk"): bij vol gas snelheid verliezen, met de rpm
+      als toets aan het eind van de run (snelheid zakt maar rpm niet = de lift). Kolom LOST,
+      SESSION-cel, licht/vol amber in strookjes en kaart, SUPER in de readout. Getoetst op Monza
+      Q en R, Spa Q, Baku Q (zie CLAUDE.md "Energie")
+- [ ] Zone-eind en superclippen: zakt de snelheid aan het eind van een straight-mode-zone harder
+      omdat de vleugels dichtgaan (Spa Kemmel: −8 m/s² de laatste 150 m)? Pas te zien met
+      getekende zone-eindes
 - [ ] Clipstukken in Live lap (de lap die bezig is); Nilas: niet standaard
 - [ ] Officiële straight-mode-zones per circuit (FIA-documenten, met de hand) naast de geschatte straights
 - [x] **Terugschakelen bij vol gas** (2026-10-18, Nilas' vraag of rpm meer zegt): rpm per

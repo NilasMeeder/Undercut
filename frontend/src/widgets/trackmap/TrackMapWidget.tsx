@@ -37,9 +37,14 @@ import type { TrackMapConfig } from './widget';
 type Point = [number, number];
 type Along = { points: Point[]; distance: number[]; normals: Point[]; length: number };
 type Stretch = { start: number; end: number };
-type LapClips = { name: string; stretches: Stretch[] };
+type LapClips = { name: string; stretches: Stretch[]; superclips: Stretch[] };
 /** The first compared lap's estimated deployment, for a zoomed stretch (2026). */
-type LapEnergy = { name: string; deploying: Stretch[]; clipping: Stretch[] };
+type LapEnergy = {
+  name: string;
+  deploying: Stretch[];
+  clipping: Stretch[];
+  superclips: Stretch[];
+};
 
 const NO_GHOSTS: GhostKind[] = [];
 
@@ -145,6 +150,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         ? energy?.laps.map((lap) => ({
             name: `${lap.driver} L${lap.lap}`,
             stretches: lap.straights.flatMap((s) => s?.clipping ?? []),
+            superclips: lap.straights.flatMap((s) => (s?.superclip ? [s.superclip] : [])),
           }))
         : undefined,
     [clips, energy]
@@ -201,6 +207,7 @@ function energyOf(
     name: `${driver} L${lap}`,
     deploying: straights.flatMap((s) => s.deploying),
     clipping: straights.flatMap((s) => s.clipping),
+    superclips: straights.flatMap((s) => (s.superclip ? [s.superclip] : [])),
   };
 }
 
@@ -215,7 +222,7 @@ function within(stretches: Stretch[], d: number, length: number): boolean {
 }
 
 /** The zoomed range of the reference lap as pieces: white, or (with the lap's energy) purple
- * where it deployed and amber where it clipped. */
+ * where it deployed, faint amber where it clipped and amber where it lost speed (superclipping). */
 function zoomPieces(
   distance: number[],
   points: Point[],
@@ -227,11 +234,13 @@ function zoomPieces(
   if (!energy) return [{ d: toPath(points.slice(from, to + 1)), color: COLORS.text }];
   const length = distance[distance.length - 1];
   const colorAt = (i: number) =>
-    within(energy.clipping, distance[i], length)
+    within(energy.superclips, distance[i], length)
       ? COLORS.clip
-      : within(energy.deploying, distance[i], length)
-        ? COLORS.ers
-        : COLORS.text;
+      : within(energy.clipping, distance[i], length)
+        ? COLORS.clipFaint
+        : within(energy.deploying, distance[i], length)
+          ? COLORS.ers
+          : COLORS.text;
   const pieces: { d: string; color: string }[] = [];
   let start = from;
   for (let i = from + 1; i <= to + 1; i++) {
@@ -676,18 +685,30 @@ function ZoneLayer({
           ) : null}
         </g>
       ))}
-      {lapClips?.map(({ name, stretches }, lane) =>
-        stretches.map((stretch) => (
-          <path
-            key={`${lane}-${stretch.start}`}
-            d={offsetPath(along, stretch, offset + unit * LANE_STEP * (lane + 1))}
-            stroke={COLORS.clip}
-            strokeWidth={unit * LANE_WIDTH}
-          >
-            <title>{`${name} clips here (${Math.round(stretch.end - stretch.start)} m)`}</title>
-          </path>
-        ))
-      )}
+      {lapClips?.map(({ name, stretches, superclips }, lane) => (
+        <g key={lane}>
+          {stretches.map((stretch) => (
+            <path
+              key={stretch.start}
+              d={offsetPath(along, stretch, offset + unit * LANE_STEP * (lane + 1))}
+              stroke={COLORS.clipFaint}
+              strokeWidth={unit * LANE_WIDTH}
+            >
+              <title>{`${name} clips here (${Math.round(stretch.end - stretch.start)} m)`}</title>
+            </path>
+          ))}
+          {superclips.map((stretch) => (
+            <path
+              key={`super-${stretch.start}`}
+              d={offsetPath(along, stretch, offset + unit * LANE_STEP * (lane + 1))}
+              stroke={COLORS.clip}
+              strokeWidth={unit * LANE_WIDTH}
+            >
+              <title>{`${name} loses speed at full throttle here (superclipping)`}</title>
+            </path>
+          ))}
+        </g>
+      ))}
       {zones.kind === 'drs'
         ? zones.zones.map((zone) => {
             const i = indexAt(
@@ -815,8 +836,12 @@ function EnergyLegend({ name }: { name: string }) {
         Deploying (est.)
       </span>
       <span className="flex items-center gap-1">
-        <span className="h-[3px] w-3 bg-clip" />
+        <span className="h-[3px] w-3 bg-clip/45" />
         Clipping
+      </span>
+      <span className="flex items-center gap-1">
+        <span className="h-[3px] w-3 bg-clip" />
+        Losing speed
       </span>
     </div>
   );

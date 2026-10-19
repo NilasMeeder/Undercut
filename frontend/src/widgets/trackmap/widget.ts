@@ -26,7 +26,8 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
       'Mini-sectors shorter than ~50 m mostly show noise: telemetry is only sampled at ~4 Hz.',
       'A zoomed range in the charts is highlighted in white on the map. From 2026, after a click ' +
         'on a straight in Energy, the first lap’s stretch is purple where it probably deployed ' +
-        '(it gains more than the engine alone could) and amber where it clipped: an estimate.',
+        '(it gains more than the engine alone could), faint amber where it clipped and amber ' +
+        'where it lost speed at full throttle (superclipping): an estimate.',
       'Distance markers (Shift + drag in a chart, or m) are drawn as a grey band with their note.',
       'With “Cars: all” the map shows every car at the session clock instead (replay). The first ' +
         'time, the telemetry of every lap is downloaded once (about 10 s for a race).',
@@ -36,7 +37,8 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
       'Straights and clipping (off by default, 2026): the straights at full throttle as a ' +
         'purple stripe (an estimate: the official straight-mode zones are not in the data), ' +
         'amber over it from where most laps of the session start to clip. With compared laps, a ' +
-        'thin amber row per lap shows where that lap clipped (the first lap nearest the track).',
+        'thin amber row per lap shows where that lap clipped, full amber where it lost speed ' +
+        '(the first lap nearest the track).',
       'Straight mode zones (off by default, 2026): a grey stripe outside the track (inside when the ' +
         'straights and clipping are on) where the ' +
         'wings may go flat (straight mode replaced DRS: every driver, every lap, no gap needed). ' +

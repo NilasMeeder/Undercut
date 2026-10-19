@@ -3855,6 +3855,20 @@
             "type": "array",
             "title": "Deploying"
           },
+          "superclip": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClipStretch"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lost": {
+            "type": "number",
+            "title": "Lost"
+          },
           "clipped": {
             "type": "number",
             "title": "Clipped"
@@ -3886,6 +3900,8 @@
           "clip_at",
           "clipping",
           "deploying",
+          "superclip",
+          "lost",
           "clipped",
           "cost_speed",
           "cost_time",
@@ -3919,6 +3935,14 @@
           "downshifts": {
             "type": "number",
             "title": "Downshifts"
+          },
+          "superclipping": {
+            "type": "number",
+            "title": "Superclipping"
+          },
+          "lost": {
+            "type": "number",
+            "title": "Lost"
           }
         },
         "type": "object",
@@ -3928,7 +3952,9 @@
           "clipped",
           "cost_time",
           "peak_speed",
-          "downshifts"
+          "downshifts",
+          "superclipping",
+          "lost"
         ],
         "title": "EnergyStraightStats",
         "description": "A straight over a set of clean laps: shares and medians."

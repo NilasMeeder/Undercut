@@ -124,12 +124,29 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
       ),
     [energyLaps, showClipping]
   );
-  const bands = useMemo<ChartBand[]>(
+  /** Per lap where it loses speed at full throttle (within its clipping). */
+  const superclips = useMemo(
     () =>
-      clips.flatMap((stretches, lane) =>
+      energyLaps.map((lap) =>
+        showClipping && lap
+          ? lap.straights.flatMap((s: EnergyStraightLap | null) =>
+              s?.superclip ? [s.superclip] : []
+            )
+          : []
+      ),
+    [energyLaps, showClipping]
+  );
+  // Not gaining faint, losing speed on top in full amber, like Deploy below and above zero.
+  const bands = useMemo<ChartBand[]>(
+    () => [
+      ...clips.flatMap((stretches, lane) =>
+        stretches.map((s) => ({ ...s, color: COLORS.clipFaint, lane }))
+      ),
+      ...superclips.flatMap((stretches, lane) =>
         stretches.map((s) => ({ ...s, color: COLORS.clip, lane }))
       ),
-    [clips]
+    ],
+    [clips, superclips]
   );
   const downshifts = useMemo<ChartTick[]>(
     () =>
@@ -221,6 +238,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
         channels={channels}
         marks={marks}
         clips={showClipping ? clips : null}
+        superclips={superclips}
         deploy={deploy}
       />
       <div className="flex min-h-0 flex-1 flex-col">
@@ -281,6 +299,7 @@ function Readout({
   channels,
   marks,
   clips,
+  superclips,
   deploy,
 }: {
   group: GroupId;
@@ -291,6 +310,8 @@ function Readout({
   marks: DistanceMark[];
   /** Per lap where it clips; null when not shown. */
   clips: { start: number; end: number }[][] | null;
+  /** Per lap where it loses speed at full throttle. */
+  superclips: { start: number; end: number }[][];
   /** Per lap its deploy on the same grid (null while it loads). */
   deploy: ((number | null)[] | null)[];
 }) {
@@ -339,10 +360,17 @@ function Readout({
                 );
               })}
               {clips ? (
-                <td className="px-1.5 text-left text-[10px] font-semibold text-dim">
-                  {cursor != null && clips[n]?.some((s) => s.start <= cursor && cursor <= s.end)
-                    ? 'CLIP'
-                    : ''}
+                <td
+                  className="px-1.5 text-left text-[10px] font-semibold text-dim"
+                  title="CLIP: full throttle without gaining speed. SUPER: losing speed at full throttle (superclipping: harvesting while flat)"
+                >
+                  {cursor == null
+                    ? ''
+                    : superclips[n]?.some((s) => s.start <= cursor && cursor <= s.end)
+                      ? 'SUPER'
+                      : clips[n]?.some((s) => s.start <= cursor && cursor <= s.end)
+                        ? 'CLIP'
+                        : ''}
                 </td>
               ) : null}
             </tr>

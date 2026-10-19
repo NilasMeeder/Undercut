@@ -89,9 +89,14 @@ function seconds(value: number): string {
 
 function sessionLine(stats: EnergyStraightStats): string {
   if (stats.clipping === 0) return 'session: no clipping';
+  const losing =
+    stats.superclipping > 0
+      ? `, ${Math.round(stats.superclipping * 100)}% lose speed` +
+        (stats.lost > 0 ? ` (−${stats.lost.toFixed(0)} km/h)` : '')
+      : '';
   return (
     `session: ${Math.round(stats.clipping * 100)}% clip, median ${stats.clipped} m, ` +
-    `${stats.cost_time.toFixed(3)} s · top ${stats.peak_speed.toFixed(0)}`
+    `${stats.cost_time.toFixed(3)} s${losing} · top ${stats.peak_speed.toFixed(0)}`
   );
 }
 
@@ -127,7 +132,8 @@ function LapsTable({
   }, [data, names]);
   const coasting = data.laps.some((l) => l.straights.some((s) => (s?.coast ?? 0) > 0));
   const shifting = data.laps.some((l) => l.straights.some((s) => (s?.downshifts.length ?? 0) > 0));
-  const extra = (coasting ? 1 : 0) + (shifting ? 1 : 0);
+  const losing = data.laps.some((l) => l.straights.some((s) => s?.superclip != null));
+  const extra = (coasting ? 1 : 0) + (shifting ? 1 : 0) + (losing ? 1 : 0);
 
   if (data.straights.length === 0)
     return <PanelMessage>No straights found in this session.</PanelMessage>;
@@ -151,7 +157,7 @@ function LapsTable({
             </th>
             <th
               className={cn(th, 'text-right')}
-              title="Metres at full throttle without gaining, where the best laps still gained"
+              title="Metres at full throttle without gaining, from where the car itself stops gaining (when the best laps still gained there, or it goes on to lose speed)"
             >
               Clip m
             </th>
@@ -164,6 +170,14 @@ function LapsTable({
             >
               km/h
             </th>
+            {losing ? (
+              <th
+                className={cn(th, 'text-right')}
+                title="Superclipping: km/h lost at full throttle after the clip point (harvesting while flat; in one gear the rpm falls with it)"
+              >
+                Lost
+              </th>
+            ) : null}
             {coasting ? (
               <th
                 className={cn(th, 'text-right')}
@@ -194,6 +208,7 @@ function LapsTable({
               styles={styles}
               coasting={coasting}
               shifting={shifting}
+              losing={losing}
               zoom={zoom}
             />
           ))}
@@ -229,6 +244,7 @@ function StraightRows({
   styles,
   coasting,
   shifting,
+  losing,
   zoom,
 }: {
   group: GroupId;
@@ -239,6 +255,7 @@ function StraightRows({
   styles: LapStyle[];
   coasting: boolean;
   shifting: boolean;
+  losing: boolean;
   zoom: Range | null;
 }) {
   const rows = data.laps.map((lap) => lap.straights[index]);
@@ -250,7 +267,7 @@ function StraightRows({
           Math.max(...present.map((r) => r.end + r.coast)) + 150,
         ]
       : null;
-  const extra = (coasting ? 1 : 0) + (shifting ? 1 : 0);
+  const extra = (coasting ? 1 : 0) + (shifting ? 1 : 0) + (losing ? 1 : 0);
   const zoomed = range != null && zoom != null && zoom[0] === range[0] && zoom[1] === range[1];
   return (
     <>
@@ -305,6 +322,18 @@ function StraightRows({
                 <td className={cn(td, row.cost_time < ENERGY_LEVEL && 'text-faint')}>
                   {clipping ? `+${row.cost_speed.toFixed(0)}` : ''}
                 </td>
+                {losing ? (
+                  <td
+                    className={td}
+                    title={
+                      row.superclip
+                        ? `Loses speed at full throttle from ${Math.round(row.superclip.start)} m, ${Math.max(Math.round(row.end - row.superclip.start), 0)} m before the end of full throttle`
+                        : undefined
+                    }
+                  >
+                    {row.superclip ? `−${row.lost.toFixed(0)}` : ''}
+                  </td>
+                ) : null}
                 {coasting ? <td className={td}>{row.coast > 0 ? row.coast : ''}</td> : null}
                 {shifting ? (
                   <td
@@ -332,6 +361,7 @@ const METRIC_TITLES: Record<EnergyConfig['metric'], string> = {
   cost: 'median cost (s)',
   clipped: 'median metres clipping',
   downshifts: 'share of laps with a downshift at full throttle',
+  lost: 'median km/h lost at full throttle (superclipping)',
 };
 
 function SessionTable({
@@ -360,11 +390,18 @@ function SessionTable({
     const title =
       `${stats.laps} laps, ${Math.round(stats.clipping * 100)}% clip, median ` +
       `${stats.clipped} m, ${stats.cost_time.toFixed(3)} s, top ${stats.peak_speed.toFixed(0)}, ` +
-      `downshift at full throttle in ${Math.round(stats.downshifts * 100)}%`;
+      `downshift at full throttle in ${Math.round(stats.downshifts * 100)}%, ` +
+      `loses speed at full throttle in ${Math.round(stats.superclipping * 100)}%`;
     if (metric === 'downshifts')
       return {
         text: stats.downshifts > 0 ? `${Math.round(stats.downshifts * 100)}%` : '–',
         faint: stats.downshifts === 0,
+        title,
+      };
+    if (metric === 'lost')
+      return {
+        text: stats.lost > 0 ? `−${stats.lost.toFixed(0)}` : '–',
+        faint: stats.lost === 0,
         title,
       };
     if (metric === 'clipped')

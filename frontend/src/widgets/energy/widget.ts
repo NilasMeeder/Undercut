@@ -1,7 +1,10 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type EnergyConfig = { view: 'laps' | 'session'; metric: 'cost' | 'clipped' | 'downshifts' };
+export type EnergyConfig = {
+  view: 'laps' | 'session';
+  metric: 'cost' | 'clipped' | 'downshifts' | 'lost';
+};
 
 export const energyWidget = defineWidget<EnergyConfig>({
   id: 'energy',
@@ -11,14 +14,21 @@ export const energyWidget = defineWidget<EnergyConfig>({
     summary:
       'An estimate: there is no battery channel in the data. On every straight the acceleration ' +
       'at full throttle (from the speed trace, corrected for slope) is compared with the best ' +
-      'laps of this session on that straight at the same speed. Where a lap stops gaining speed ' +
-      'while those still gained, the battery is no longer deploying: clipping. The cost is the ' +
-      'speed and time the lap would have had by accelerating like the best laps from there to ' +
-      'the lift or brake, never faster than the top speed anyone reached on that straight.',
+      'laps of this session on that straight at the same speed. Per lap: where it deploys, where ' +
+      'it stops gaining speed at full throttle (clipping: the battery is done, when the best laps ' +
+      'still gained there or it goes on to lose speed), and where it loses speed at full throttle ' +
+      '(superclipping: the MGU-K harvests while the driver is flat; in one gear the rpm falls ' +
+      'with it). The cost is the speed and time the lap would have had by accelerating like the ' +
+      'best laps from the clip point to the lift or brake, never faster than the top speed anyone ' +
+      'reached on that straight (or holding its own, if that was higher).',
     watch: [
       'LAPS: per straight (named by the corners around it) the selected laps: top speed, speed ' +
-        'at the end of full throttle, metres of clipping, its cost, and lift-and-coast before ' +
-        'the brake. The faint line under each straight is the whole session (median).',
+        'at the end of full throttle, metres of clipping, its cost, km/h lost at full throttle ' +
+        '(Lost), and lift-and-coast before the brake. The faint line under each straight is the ' +
+        'whole session (median).',
+      'A car can clip and deploy again later on the same straight (Baku: flat at 275 km/h, then ' +
+        'deploying to the line): every stretch counts. A fast loss at the very end counts as ' +
+        'superclipping when the rpm falls with the speed; otherwise it is the lift showing early.',
       'SESSION: per driver the median over their clean laps. Teams with the same engine often ' +
         'clip alike; a driver who clips less on one straight spends the battery there instead.',
       'The best laps include tows and (in a race) overtake mode, so in a race everyone looks ' +
@@ -54,6 +64,7 @@ export const energyWidget = defineWidget<EnergyConfig>({
         { value: 'cost', label: 'Time cost (s)' },
         { value: 'clipped', label: 'Metres clipping' },
         { value: 'downshifts', label: 'Downshifts (% of laps)' },
+        { value: 'lost', label: 'Speed lost at full throttle (km/h)' },
       ],
     },
   ],

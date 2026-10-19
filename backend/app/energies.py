@@ -210,6 +210,8 @@ def _stats(rows: list[energy.Straight]) -> EnergyStraightStats:
         cost_time=round(float(np.median([r.clip_cost_time for r in rows])), 3),
         peak_speed=round(float(np.median([r.peak_speed for r in rows])), 1),
         downshifts=round(float(np.mean([len(r.downshifts) > 0 for r in rows])), 3),
+        superclipping=round(float(np.mean([r.superclip is not None for r in rows])), 3),
+        lost=round(float(np.median([r.lost for r in rows])), 1),
     )
 
 
@@ -242,6 +244,10 @@ def _straight_lap(row: energy.Straight, scale: float) -> EnergyStraightLap:
         clip_at=None if row.clip_at is None else m(row.clip_at),
         clipping=[ClipStretch(start=m(a), end=m(b)) for a, b in row.clipping],
         deploying=[ClipStretch(start=m(a), end=m(b)) for a, b in row.deploying],
+        superclip=None
+        if row.superclip is None
+        else ClipStretch(start=m(row.superclip[0]), end=m(row.superclip[1])),
+        lost=round(row.lost, 1),
         clipped=round(row.clipped * scale),
         cost_speed=round(row.clip_cost_speed, 1),
         cost_time=round(row.clip_cost_time, 3),

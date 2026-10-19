@@ -1066,6 +1066,9 @@ export interface components {
             clipping: components["schemas"]["ClipStretch"][];
             /** Deploying */
             deploying: components["schemas"]["ClipStretch"][];
+            superclip: components["schemas"]["ClipStretch"] | null;
+            /** Lost */
+            lost: number;
             /** Clipped */
             clipped: number;
             /** Cost Speed */
@@ -1092,6 +1095,10 @@ export interface components {
             peak_speed: number;
             /** Downshifts */
             downshifts: number;
+            /** Superclipping */
+            superclipping: number;
+            /** Lost */
+            lost: number;
         };
         /** EventInfo */
         EventInfo: {
