@@ -10,6 +10,7 @@ export type DriverInfo = Schemas['DriverInfo'];
 export type Lap = Schemas['Lap'];
 export type TrackEvolution = Schemas['TrackEvolution'];
 export type Stewarding = Schemas['Stewarding'];
+export type Pass = Schemas['Pass'];
 export type Incident = Schemas['Incident'];
 export type Penalty = Schemas['Penalty'];
 export type DeletedLap = Schemas['DeletedLap'];

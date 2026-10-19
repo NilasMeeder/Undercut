@@ -13,6 +13,7 @@ import {
   type EnergyComparison,
   type EnergySession,
   type OvertakeChecks,
+  type Pass,
   type StraightMode,
   type TrackSectors,
   type TrackZones,
@@ -294,6 +295,19 @@ export function usePositionsStatus() {
 export function useOvertake(enabled = true) {
   const ready = usePositionsStatus().data?.state === 'ready';
   return useSessionQuery<OvertakeChecks>('/overtake', enabled && ready);
+}
+
+/** Races: every pass for position on track. Worked out from the position track, which it
+ * starts preparing when it is missing (like the replay panels). */
+export function usePasses(enabled = true) {
+  const status = usePositionsStatus();
+  const prepare = usePreparePositions();
+  const state = status.data?.state;
+  useEffect(() => {
+    if (enabled && state === 'missing') void prepare();
+  }, [enabled, state, prepare]);
+  const query = useSessionQuery<Pass[]>('/passes', enabled && state === 'ready');
+  return { ...query, status: status.data };
 }
 
 export function usePreparePositions() {

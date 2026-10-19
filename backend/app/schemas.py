@@ -490,6 +490,28 @@ class OvertakeChecks(BaseModel):
     checks: list[OvertakeCheck]
 
 
+class Pass(BaseModel):
+    """A car passing another for position on track (estimated from the position track)."""
+
+    time: float
+    """Session time (s) the order changed."""
+    lap: int
+    """The passer's lap."""
+    driver: str
+    """The car that got ahead."""
+    passed: str
+    distance: float
+    """Metres from the line on the position track's lap."""
+    fraction: float
+    """The same as a share of the lap (0…1), for the map."""
+    corner: str | None
+    """The corner it went into: 'T4'."""
+    position: int
+    """The passer's position after it (by progress on track)."""
+    overtake_mode: bool | None
+    """2026: the passer had overtake mode then; null without overtake lines."""
+
+
 class StraightMode(BaseModel):
     """Straight-mode zones of the event (2026) from the FIA's circuit map; empty without one."""
 

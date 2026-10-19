@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -749,6 +749,19 @@ zolang het nog alleen genoteerd is, anders een nieuw incident (PER Monza 2026: p
 escape road). Een straf sluit het open incident met die reden, anders het laatste in onderzoek
 (ANT Monza 2025: onderzocht voor ALB van de baan duwen, straf voor driving erratically).
 "After the session"-besluiten staan niet in de feed.
+
+## Inhaalacties (fase 13)
+
+`passes.py` (`swaps` + `passes`, puur, getest), `/passes` (R/S, na het positiespoor), widget
+Passes (`lib/passes.ts`: telling per driver, per bocht), Track map "Passes (races, all cars)"
+(standaard uit, aan in het race board). Een pass: twee auto's binnen een halve lap wisselen van
+volgorde met een drempel (`MARGIN` 25 m achter → 25 m voor, `HOLD` 2 s), het moment = de
+nuldoorgang na het laatste duidelijke punt van de oude volgorde. Eruit: ±pitstop van een van
+beiden, lap 1 en laps met `STANDING START` (race control), laps > 120% van de mediaan (SC, rode
+vlag, formatie: Monza 2026 R heeft een onderbreking die niet in de track status staat), een auto
+onder 35% van het tempo van de ander (±6 s, mediaan van de stappen: ALB's spoor op Monza 2025
+blijft seconden op 0,9999 hangen), na de finish. 2026: `overtake_mode` = de laatste
+detectiepassage gaf OT en race control had het aan.
 
 ## Markeringen en views (fase 5)
 

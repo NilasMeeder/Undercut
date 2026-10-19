@@ -11,6 +11,7 @@ export type TrackMapConfig = {
   straights: boolean;
   straightMode: boolean;
   overtake: boolean;
+  passes: boolean;
   sectors: boolean;
 };
 
@@ -53,6 +54,9 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
         'passage of the detection line (also a lapped car), while race control has it enabled; ' +
         'it lasts until the next passage. Worked out from the positions (4 Hz), not F1’s own ' +
         'timing loop, so a car right on 1 s can be wrong.',
+      'Passes (races, with all cars; off by default): every pass for position up to the clock ' +
+        'as a dot outside the track in the passer’s colour, the last minute’s big. See the ' +
+        'Passes panel for what counts.',
       'Sectors (off by default): where sector 1 and 2 end, from the quickest laps’ sector times.',
       'Pit ghosts (all cars): for each driver selected in this link group, a hollow ring where he ' +
         'would be now had he stopped (PIT: green-flag pit loss; SC, dashed: under a safety car), ' +
@@ -69,6 +73,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     straights: false,
     straightMode: false,
     overtake: true,
+    passes: false,
     sectors: false,
   },
   settings: [
@@ -98,6 +103,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     { key: 'straights', label: 'Straights and clipping (2026)', kind: 'toggle' },
     { key: 'straightMode', label: 'Straight mode zones (2026)', kind: 'toggle' },
     { key: 'overtake', label: 'Overtake mode (2026)', kind: 'toggle' },
+    { key: 'passes', label: 'Passes (races, all cars)', kind: 'toggle' },
     { key: 'sectors', label: 'Sectors', kind: 'toggle' },
     { key: 'ghosts', label: 'Pit stop ghosts (all cars)', kind: 'toggle' },
   ],

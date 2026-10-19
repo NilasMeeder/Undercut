@@ -12,6 +12,7 @@ import { liveLapWidget } from './livelap/widget';
 import { markersWidget } from './markers/widget';
 import { miniSectorsWidget } from './minisectors/widget';
 import { paceWidget } from './pace/widget';
+import { passesWidget } from './passes/widget';
 import { pitWindowWidget } from './pitwindow/widget';
 import { positionsWidget } from './positions/widget';
 import { raceControlWidget } from './racecontrol/widget';
@@ -66,6 +67,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   tyresWidget,
   gapsWidget,
   battlesWidget,
+  passesWidget,
   positionsWidget,
   paceWidget,
   pitWindowWidget,

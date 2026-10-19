@@ -4,6 +4,7 @@ import type {
   Comparison,
   DriverInfo,
   EnergyComparison,
+  Pass,
   StraightMode,
   TrackSectors,
   TrackZones,
@@ -12,6 +13,7 @@ import {
   useCircuit,
   useEnergy,
   useOvertake,
+  usePasses,
   useReplayPositions,
   useSectors,
   useSessionDetail,
@@ -27,6 +29,7 @@ import { describeCheck, hasOvertake, overtakeIndex, type OvertakeIndex } from '@
 import { activeZones, describeZone, useLowGripAtClock } from '@/lib/straightMode';
 import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
+import { useClockTime } from '@/store/clock';
 import { cursorBus, useZoom, useZoomKind } from '@/store/cursor';
 import { useGroupLaps, type GroupId } from '@/store/groups';
 import { useSelection } from '@/store/selection';
@@ -149,6 +152,8 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
     () => (lines ? { data: lines, index: overtakeIndex(checks) } : undefined),
     [lines, checks]
   );
+  const race = useSelection((s) => s.session === 'R' || s.session === 'S');
+  const passes = usePasses(config.passes && config.cars === 'all' && race).data;
   // Where each compared lap clipped (2026), on the first lap's scale like the comparison. A
   // disabled query still returns what another panel cached (Energy in 2025), hence `clips`.
   const clips = config.cars === 'laps' && zones?.kind === 'straight';
@@ -187,6 +192,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         zones={zones}
         straightMode={straightMode}
         overtake={overtake}
+        passes={config.passes ? passes : undefined}
         sectors={config.sectors ? sectors : undefined}
       />
     );
@@ -276,6 +282,7 @@ function ReplayMap({
   zones,
   straightMode,
   overtake,
+  passes,
   sectors,
 }: {
   group: GroupId;
@@ -286,6 +293,7 @@ function ReplayMap({
   zones?: TrackZones;
   straightMode?: StraightMode;
   overtake?: Overtake;
+  passes?: Pass[];
   sectors?: TrackSectors;
 }) {
   const { status, track, error } = useReplayPositions();
@@ -315,6 +323,7 @@ function ReplayMap({
       zones={zones}
       straightMode={straightMode}
       overtake={overtake}
+      passes={passes}
       sectors={sectors}
     />
   );
@@ -333,6 +342,7 @@ function TrackMap({
   zones,
   straightMode,
   overtake,
+  passes,
   lapClips,
   lapEnergy,
   sectors,
@@ -351,6 +361,8 @@ function TrackMap({
   /** Straight-mode zones (2026), inside the track. */
   straightMode?: StraightMode;
   overtake?: Overtake;
+  /** Races, with all cars: where cars got past each other, up to the clock. */
+  passes?: Pass[];
   /** Per compared lap, where it clipped. */
   lapClips?: LapClips[];
   lapEnergy?: LapEnergy;
@@ -569,6 +581,9 @@ function TrackMap({
           </g>
         ))}
         {cars ? <SectorFlags along={geometry.along} unit={u} /> : null}
+        {passes && cars ? (
+          <PassesLayer along={geometry.along} passes={passes} drivers={cars.drivers} unit={u} />
+        ) : null}
         {sectors && sectors.boundaries.length > 0 ? (
           <SectorLayer along={geometry.along} boundaries={sectors.boundaries} unit={u} />
         ) : null}
@@ -918,6 +933,52 @@ function OvertakeLayer({ along, data, unit }: { along: Along; data: StraightMode
               {line.label}
             </text>
           </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/** Seconds a pass stays big on the map after it happened. */
+const PASS_RECENT = 60;
+
+/** Every pass up to the clock as a dot just outside the track, in the passer's colour: the
+ * last minute's big, older ones small and faint (where the passing happens). */
+function PassesLayer({
+  along,
+  passes,
+  drivers,
+  unit,
+}: {
+  along: Along;
+  passes: Pass[];
+  drivers: DriverInfo[];
+  unit: number;
+}) {
+  const t = useClockTime(1000);
+  const color = (code: string) => drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
+  return (
+    <g>
+      {passes.map((p) => {
+        if (p.time > t) return null;
+        const i = Math.min(
+          indexAt(along.distance, p.fraction * along.length),
+          along.points.length - 1
+        );
+        const [x, y] = along.points[i];
+        const [nx, ny] = along.normals[i];
+        const recent = t - p.time < PASS_RECENT;
+        return (
+          <circle
+            key={`${p.time}-${p.driver}-${p.passed}`}
+            cx={x + nx * unit * 3.6}
+            cy={y + ny * unit * 3.6}
+            r={unit * (recent ? 1.2 : 0.6)}
+            fill={color(p.driver)}
+            opacity={recent ? 1 : 0.4}
+          >
+            <title>{`L${p.lap} ${p.driver} past ${p.passed} into ${p.corner ?? '?'}${p.overtake_mode ? ' (overtake mode)' : ''}`}</title>
+          </circle>
         );
       })}
     </g>

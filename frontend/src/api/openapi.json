@@ -2076,6 +2076,78 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/passes": {
+      "get": {
+        "summary": "On Track Passes",
+        "description": "Races: every pass for position on track (from the position track: 404 until it is\nprepared), with where and, in 2026, whether the passer had overtake mode.",
+        "operationId": "on_track_passes_api_sessions__year___round___session__passes_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Pass"
+                  },
+                  "title": "Response On Track Passes Api Sessions  Year   Round   Session  Passes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/stewards": {
       "get": {
         "summary": "Stewarding",
@@ -5473,6 +5545,74 @@
         ],
         "title": "OvertakePoints",
         "description": "Overtake mode (2026, races): within 1 s of the car ahead at the detection line, a car gets\nextra MGU-K energy to use from the activation line. Metres from the line, like the zones\n(a corner's position plus the metres: \u00b150 m)."
+      },
+      "Pass": {
+        "properties": {
+          "time": {
+            "type": "number",
+            "title": "Time"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "passed": {
+            "type": "string",
+            "title": "Passed"
+          },
+          "distance": {
+            "type": "number",
+            "title": "Distance"
+          },
+          "fraction": {
+            "type": "number",
+            "title": "Fraction"
+          },
+          "corner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corner"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "overtake_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overtake Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "lap",
+          "driver",
+          "passed",
+          "distance",
+          "fraction",
+          "corner",
+          "position",
+          "overtake_mode"
+        ],
+        "title": "Pass",
+        "description": "A car passing another for position on track (estimated from the position track)."
       },
       "Penalty": {
         "properties": {

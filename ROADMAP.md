@@ -503,8 +503,11 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       besluit, straffen tot ze uitgezeten zijn. Getest op alle berichten van 2025–2026 (580
       incidenten, elke straf aan een incident, elke PENALTY SERVED gevonden) en in replay (Monza
       2025 R lap 33: OCO +5 s open, ANT B/W na 3, SAI reprimande)
-- [ ] **Inhaalacties**: elke inhaalactie op de baan (wie, waar, lap, met of zonder OT), op de kaart;
-      per driver hoe vaak OT en wat hij ermee deed
+- [x] **Inhaalacties** (2026-10-19, `passes.py`, `/passes`, widget Passes, kaartlaag "Passes"):
+      uit het positiespoor, van ≥ 25 m achter naar ≥ 25 m voor, elk 2 s; zonder pitstops, start en
+      staande herstarts, SC/rood/formatie (lap > 120% mediaan), stilgevallen auto's, lapping.
+      Monza 2025 R 33 (T1 18, T4 9), Monza 2026 R 369 (283 met OT, jojo bij Roggia). Getest in
+      replay (race board, lap 27: 20 passes, ALB +7). Kaartlaag nog niet visueel bekeken
 - [ ] **Meldingen op het bord**: toasts voor pitstops, snelste lap, OT, onderzoek, SC/VSC, gat < 1 s
 - [ ] **Live lap voor meerdere drivers** (uit fase 7)
 - [ ] **Corners live**: de bochten van de lap die bezig is, per bocht bijgewerkt (uit Ideeën)

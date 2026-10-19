@@ -292,7 +292,7 @@ function raceBoard(api: DockviewApi) {
     'trackmap',
     'blue',
     { referencePanel: tower, direction: 'right' },
-    { cars: 'all' }
+    { cars: 'all', passes: true }
   );
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
   addWidget(api, 'stewards', 'blue', { referencePanel: feed, direction: 'within' });
@@ -311,6 +311,8 @@ function raceBoard(api: DockviewApi) {
   addWidget(api, 'stints', 'blue', { referencePanel: pit, direction: 'within' });
   pit.api.setActive();
   const battles = addWidget(api, 'battles', 'blue', { referencePanel: tower, direction: 'below' });
+  addWidget(api, 'passes', 'blue', { referencePanel: battles, direction: 'within' });
+  battles.api.setActive();
   const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
   addWidget(api, 'livelap', 'blue', { referencePanel: gaps, direction: 'within' });
@@ -414,7 +416,7 @@ export const PRESETS = [
     id: 'race-board',
     title: 'Race board',
     description:
-      'Tower and battles, every car on the map over the gaps, race clock, live delta, race control and stewards, pit window, track line, weather',
+      'Tower with battles and passes, every car on the map over the gaps, race clock, live delta, race control and stewards, pit window, track line, weather',
     workspaces: ['pitwall'],
     apply: raceBoard,
   },

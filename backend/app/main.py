@@ -16,6 +16,7 @@ from app import (
     energies,
     evolution,
     overtake,
+    passes,
     progress,
     replays,
     reports,
@@ -50,6 +51,7 @@ from app.schemas import (
     MarkerIn,
     MiniSectors,
     OvertakeChecks,
+    Pass,
     PitWindow,
     ProgressReference,
     RaceControlMessage,
@@ -526,6 +528,13 @@ def overtake_checks(year: int, round: int, session: SessionCode) -> OvertakeChec
     """Races (2026): every passage of the overtake detection line, with the gap to the car ahead
     and whether it gave overtake mode. Needs the position track (404 until it is prepared)."""
     return _guard(lambda: overtake.get_checks(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/passes")
+def on_track_passes(year: int, round: int, session: SessionCode) -> list[Pass]:
+    """Races: every pass for position on track (from the position track: 404 until it is
+    prepared), with where and, in 2026, whether the passer had overtake mode."""
+    return _guard(lambda: passes.get_passes(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/stewards")

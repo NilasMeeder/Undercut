@@ -517,6 +517,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/passes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * On Track Passes
+         * @description Races: every pass for position on track (from the position track: 404 until it is
+         *     prepared), with where and, in 2026, whether the passer had overtake mode.
+         */
+        get: operations["on_track_passes_api_sessions__year___round___session__passes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/stewards": {
         parameters: {
             query?: never;
@@ -1568,6 +1589,30 @@ export interface components {
             detection_text: string;
             /** Activation Text */
             activation_text: string;
+        };
+        /**
+         * Pass
+         * @description A car passing another for position on track (estimated from the position track).
+         */
+        Pass: {
+            /** Time */
+            time: number;
+            /** Lap */
+            lap: number;
+            /** Driver */
+            driver: string;
+            /** Passed */
+            passed: string;
+            /** Distance */
+            distance: number;
+            /** Fraction */
+            fraction: number;
+            /** Corner */
+            corner: string | null;
+            /** Position */
+            position: number;
+            /** Overtake Mode */
+            overtake_mode: boolean | null;
         };
         /** Penalty */
         Penalty: {
@@ -3576,6 +3621,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OvertakeChecks"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    on_track_passes_api_sessions__year___round___session__passes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pass"][];
                 };
             };
             /** @description Validation Error */
