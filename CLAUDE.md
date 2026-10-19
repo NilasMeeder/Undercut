@@ -579,6 +579,11 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   de kaart met alle auto's boven Live lap, rechts Clock op de sessieklok (lokale tijd als tab), Race
   control en Release, onderin Track line en Weather. Maten als deel van het scherm (tower 40%,
   rechts 24%, onderin 19%), dus op de MacBook en een breed scherm dezelfde indeling.
+- **Race board** (Pitwall, `race-board`, fase 12): links de tower (fit) boven Battles, in het midden
+  de kaart met alle auto's boven Gaps (Positions en Live lap als tab), rechts Clock op de sessieklok
+  (racetijd en lap, lokale tijd als tab), Live delta, Race control en Pit window (Stints als tab),
+  onderin Track line en Weather. Maten als deel van het scherm (tower 38%, rechts 25%, onderin
+  17%). Getest op 1512×900 en 2560×1400 (Monza 2026 R, lap 11).
 - **Release** (widget `release`, `lib/release.ts`, alleen frontend): voor de eerste driver van de
   groep: als hij nu (of over w s) de pit uit gaat, begint zijn push op t + w + zijn typische
   out-lap (pit-uit tot de lijn). Elke auto op de baan (status uit de tower, lap-voortgang uit het

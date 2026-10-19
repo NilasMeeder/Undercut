@@ -481,8 +481,9 @@ qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) 
 - [x] Overtake mode in de analyse (2026-10-19): OT D/OT A als paarse lijnen in Telemetry en Delta
       (races en sprints), kolom OT in Battles. Getest op Monza 2026 R (lap 9: dezelfde OT-auto's in
       Battles als in de tower)
-- [ ] Race board: een Pitwall-preset voor de race met Live delta en Battles (Battles zit nu als tab
-      in Pitwall; Live delta in geen enkele preset)
+- [x] Race board (2026-10-19): Pitwall-preset `race-board`: tower + Battles, kaart + Gaps
+      (Positions, Live lap), klok, Live delta, Race control, Pit window (Stints), Track line +
+      Weather. Getest op 1512×900 en 2560×1400 (Monza 2026 R)
 - [ ] Na Austin: klopt de 1 s uit het positiespoor met wat F1 doet (een opname heeft geen OT-kanaal,
       maar de race control en de inhaalacties wel)?
 

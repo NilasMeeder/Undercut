@@ -83,7 +83,12 @@ type DashboardsState = {
 const newId = () => `dash-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 /** Presets that play with the clock belong on the pitwall (for tabs without a workspace). */
-const PITWALL_PRESETS: ReadonlySet<PresetId> = new Set(['pitwall', 'quali-board', 'replay']);
+const PITWALL_PRESETS: ReadonlySet<PresetId> = new Set([
+  'pitwall',
+  'quali-board',
+  'race-board',
+  'replay',
+]);
 
 export function tabWorkspace(tab: DashboardTab): Workspace {
   return tab.workspace ?? (PITWALL_PRESETS.has(tab.preset) ? 'pitwall' : 'analysis');
