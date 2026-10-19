@@ -3,6 +3,7 @@ import type { View } from '@/api/client';
 import { useSaveView, useViews } from '@/api/views';
 import { useDashboards } from '@/store/dashboards';
 import { useSessionKey } from '@/store/selection';
+import { decodeShare, openShared } from './share';
 import { currentView, openView, viewIdFromHash } from './views';
 
 const linkActive = (view: View) =>
@@ -43,4 +44,25 @@ export function useViewFromUrl() {
     if (view) openView(view);
     history.replaceState(null, '', location.pathname + location.search);
   }, [wanted, views.data]);
+}
+
+/** Opens a shared dashboard in the URL (#share=…) at startup or when the hash changes, then
+ * clears the hash; a link that does not read is left alone. */
+export function useShareFromUrl() {
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (!location.hash.startsWith('#share=')) return;
+      const shared = await decodeShare(location.hash);
+      if (cancelled || !shared) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      openShared(shared);
+    };
+    void check();
+    window.addEventListener('hashchange', check);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('hashchange', check);
+    };
+  }, []);
 }

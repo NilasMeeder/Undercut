@@ -7,7 +7,8 @@ import { DashboardTabs, LayoutMenu } from '@/features/dashboards/DashboardTabs';
 import { LiveBadge } from '@/features/live/LiveBadge';
 import { RecorderMenu } from '@/features/live/RecorderMenu';
 import { MarkerEditor } from '@/features/markers/MarkerEditor';
-import { useViewFromUrl } from '@/features/views/hooks';
+import { useShareFromUrl, useViewFromUrl } from '@/features/views/hooks';
+import { ShareButton } from '@/features/views/ShareButton';
 import { ViewsMenu } from '@/features/views/ViewsMenu';
 import { AlertToasts, AlertsMenu } from '@/features/alerts/Alerts';
 import { FollowLatest } from '@/features/session/FollowLatest';
@@ -26,6 +27,7 @@ export default function App() {
   useSessionClock();
   useLiveSession();
   useViewFromUrl();
+  useShareFromUrl();
   useWorkspaceClock();
   const pitwall = useDashboards((s) => s.workspace === 'pitwall');
   const editing = useDashboards((s) => s.editing);
@@ -41,6 +43,7 @@ export default function App() {
         <RecorderMenu />
         {session ? <CommandPalette /> : null}
         {session ? <DashboardTabs /> : null}
+        {session ? <ShareButton /> : null}
         {session && !pitwall ? <ViewsMenu /> : null}
         {session && (!pitwall || editing) ? <LayoutMenu /> : null}
         {session && pitwall ? <AlertsMenu /> : null}

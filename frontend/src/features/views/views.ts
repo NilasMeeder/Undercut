@@ -1,4 +1,4 @@
-import type { View, ViewIn, ViewState } from '@/api/client';
+import type { View, ViewState } from '@/api/client';
 import { useDashboardApi } from '@/dashboard/api';
 import { PRESETS, validLayout, type PresetId } from '@/dashboard/layout';
 import { clock } from '@/store/clock';
@@ -7,11 +7,16 @@ import { useDashboards } from '@/store/dashboards';
 import { GROUP_IDS, useGroups, type GroupId, type LapRef } from '@/store/groups';
 import { useSelection, type SessionKey } from '@/store/selection';
 
+/** What a view opens: a saved one (with its id), or a shared link (without). */
+export type ViewLike = Pick<View, 'name' | 'year' | 'round' | 'session' | 'state'> & {
+  id?: number;
+};
+
 /**
  * A saved view is a bookmark: session, laps per link group, zoom, session clock and the layout of
  * the dashboard it was saved from. Opening one puts all of that back, the layout in its own tab.
  */
-export function currentView(name: string, session: SessionKey): ViewIn {
+export function currentView(name: string, session: SessionKey): ViewLike {
   const { tabs, active } = useDashboards.getState();
   const tab = tabs.find((t) => t.id === active);
   const zoom: ViewState['zoom'] = {};
@@ -45,7 +50,7 @@ export function sessionLabel(view: Pick<View, 'year' | 'round' | 'session'>): st
   return `${view.year} R${view.round} ${view.session}`;
 }
 
-export function openView(view: View) {
+export function openView(view: ViewLike) {
   const selection = useSelection.getState();
   const sameSession =
     selection.year === view.year &&

@@ -70,7 +70,8 @@ type DashboardsState = {
   reload: number;
   /** Show a saved view's layout: in its own tab, made or reused. */
   showView: (view: {
-    id: number;
+    /** A saved view's id (its tab is reused); none for a shared link (always a new tab). */
+    id?: number;
     name: string;
     layout: SerializedDockview | null;
     preset: PresetId;
@@ -254,7 +255,7 @@ export const useDashboards = create<DashboardsState>()(
       reload: 0,
       showView: ({ id: viewId, name, layout, preset }) =>
         set((s) => {
-          const existing = s.tabs.find((t) => t.viewId === viewId);
+          const existing = viewId == null ? undefined : s.tabs.find((t) => t.viewId === viewId);
           if (!existing) {
             const tab = { id: newId(), name, layout, preset, viewId, workspace: s.workspace };
             return {

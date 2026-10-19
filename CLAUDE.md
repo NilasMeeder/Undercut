@@ -887,6 +887,14 @@ tab onthoudt `viewId`, dus nog eens openen hergebruikt hem; opslaan koppelt de h
 andere sessie: de klok springt pas als de nieuwe tijdlijn er is (`clock.seekAfterLoad`). Links
 `#view=<id>` openen de view bij het laden of bij een hash-wissel en halen de hash weer weg.
 
+**Delen als link** (fase 13, `features/views/share.ts`, `ShareButton` in de topbalk, palette
+`share-link`): een view zonder database: `currentView` + `workspace` als JSON, `deflate-raw`
+(`CompressionStream`) en base64url in `#share=` (~1,5 KB met een heel race board). Openen
+(`useShareFromUrl`, bij laden en `hashchange`): eerst `setWorkspace` (dat zet de klok van die
+werkplek, synchroon), dan `openView` zonder id (altijd een nieuwe tab, `showView` met `id`
+optioneel). De link komt van buiten: `valid` neemt alleen bekende velden over (laps `^[A-Z]{3}$`,
+zoom twee getallen, layout via `validLayout`); wat niet leest wordt genegeerd.
+
 API: `GET/POST /api/sessions/{y}/{r}/{s}/markers`, `PUT/DELETE /api/markers/{id}`,
 `GET /api/markers/tags`, `GET/POST /api/views`, `PUT/DELETE /api/views/{id}`. Responses hebben alle
 velden (`json_schema_serialization_defaults_required`), inputs mogen velden met een default weglaten.

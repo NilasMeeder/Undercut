@@ -2,6 +2,7 @@ import type { DockviewApi } from 'dockview-react';
 import type { Lap, View } from '@/api/client';
 import { addWidget, applyPreset, PRESETS } from '@/dashboard/layout';
 import { markDistance, markMoment } from '@/features/markers/actions';
+import { copyShareLink } from '@/features/views/share';
 import { openView, sessionLabel } from '@/features/views/views';
 import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
@@ -10,6 +11,7 @@ import { clock } from '@/store/clock';
 import { useDashboards, type DashboardTab } from '@/store/dashboards';
 import { cursorBus } from '@/store/cursor';
 import { useGroups, type GroupId, type LapRef } from '@/store/groups';
+import { useSelection } from '@/store/selection';
 import { WIDGETS } from '@/widgets/registry';
 
 export type Command = {
@@ -234,6 +236,16 @@ export function buildCommands({
       section: 'Views',
       title: 'Save this view (session, laps, zoom, clock, layout)',
       run: saveView,
+    },
+    {
+      id: 'share-link',
+      section: 'Views',
+      title: 'Copy a link to this dashboard (session, laps, zoom, clock, layout)',
+      run: () => {
+        const { year, round, session } = useSelection.getState();
+        if (year != null && round != null && session != null)
+          void copyShareLink({ year, round, session });
+      },
     },
     ...views.map((view) => ({
       id: `view-${view.id}`,

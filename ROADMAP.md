@@ -576,7 +576,11 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       32 clips; getest: autoplay VER L20, klik op rij en tikje
 - [ ] Na Austin: klopt het aangenomen formaat van het TeamRadio-topic (Captures, Utc,
       RacingNumber, Path) en speelt een live clip van F1 static?
-- [ ] **Dashboard delen als URL**
+- [x] **Dashboard delen als URL** (2026-10-19, `features/views/share.ts`, linkknop in de topbalk
+      in beide werkplekken, palette "Copy a link to this dashboard"): alles van een opgeslagen view
+      (sessie, laps per groep, zoom, klok, layout) plus de werkplek als deflate-JSON in `#share=`,
+      niets opgeslagen. Getest: race board Monza 2025 R op LAP 22 → vers venster op Q in Analyse
+      opent Pitwall, R, LAP 22/53, NOR L53/VER L52, eigen tab (link 1,5 KB); kapotte link = niets
 - [ ] **Seizoensoverzicht**: quali-gaps tussen teamgenoten over het jaar
 
 ## Later / backlog
