@@ -10,6 +10,7 @@ export type TrackMapConfig = {
   drs: boolean;
   straights: boolean;
   straightMode: boolean;
+  overtake: boolean;
   sectors: boolean;
 };
 
@@ -46,6 +47,12 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
         'end, so a zone ends where most laps brake, or where the next zone starts. When race ' +
         'control declares low-grip conditions (at the clock), the later low-grip starts. Not in ' +
         'the data: whether a car actually used it is not visible.',
+      'Overtake mode (2026): OT D and OT A across the track where the FIA’s map puts the ' +
+        'detection and activation line (±50 m). In a race, with all cars, a purple ring round ' +
+        'every car that has overtake mode at the clock: within 1 s of the car ahead at its last ' +
+        'passage of the detection line (also a lapped car), while race control has it enabled; ' +
+        'it lasts until the next passage. Worked out from the positions (4 Hz), not F1’s own ' +
+        'timing loop, so a car right on 1 s can be wrong.',
       'Sectors (off by default): where sector 1 and 2 end, from the quickest laps’ sector times.',
       'Pit ghosts (all cars): for each driver selected in this link group, a hollow ring where he ' +
         'would be now had he stopped (PIT: green-flag pit loss; SC, dashed: under a safety car), ' +
@@ -61,6 +68,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     drs: false,
     straights: false,
     straightMode: false,
+    overtake: true,
     sectors: false,
   },
   settings: [
@@ -89,6 +97,7 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
     { key: 'drs', label: 'DRS zones (until 2025)', kind: 'toggle' },
     { key: 'straights', label: 'Straights and clipping (2026)', kind: 'toggle' },
     { key: 'straightMode', label: 'Straight mode zones (2026)', kind: 'toggle' },
+    { key: 'overtake', label: 'Overtake mode (2026)', kind: 'toggle' },
     { key: 'sectors', label: 'Sectors', kind: 'toggle' },
     { key: 'ghosts', label: 'Pit stop ghosts (all cars)', kind: 'toggle' },
   ],

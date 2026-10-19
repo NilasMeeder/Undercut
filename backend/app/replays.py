@@ -255,10 +255,10 @@ def _build(key: Key, job: _Job) -> None:
                     driver=lap.driver,
                     lap=lap.lap,
                     start=lap.start_time,
-                    time=np.asarray(tel["time"], dtype=float),
-                    distance=np.asarray(tel["distance"], dtype=float),
-                    x=np.asarray(tel["x"], dtype=float),
-                    y=np.asarray(tel["y"], dtype=float),
+                    time=sessions.floats(tel["time"]),
+                    distance=sessions.floats(tel["distance"]),
+                    x=sessions.floats(tel["x"]),
+                    y=sessions.floats(tel["y"]),
                     # Lap 1 starts on the grid or at the pit exit, out-laps in the pit lane.
                     from_line=not (lap.lap == 1 or lap.pit_out),
                 )
@@ -269,6 +269,33 @@ def _build(key: Key, job: _Job) -> None:
     except Exception as error:
         log.exception("Building the position track for %s failed", key)
         job.state, job.phase, job.error = "error", None, str(error) or type(error).__name__
+
+
+def position_track(year: int, round_number: int, code: str) -> replay.Track:
+    """The position track: live from memory (as far as it got), else the stored one."""
+    if (live := _live(year, round_number, code)) is not None:
+        if live.outline is None:
+            raise LookupError("No positions yet")
+        return live.track.to_track(live.codes, live.outline)
+    return _stored_track(year, round_number, code)
+
+
+@session_cache(maxsize=4)
+def _stored_track(year: int, round_number: int, code: str) -> replay.Track:
+    path = _track_path(year, round_number, code)
+    if not path.exists():
+        raise LookupError("The position track is not prepared yet")
+    with np.load(path) as data:
+        start, step, length = data["meta"].tolist()
+        return replay.Track(
+            start=start,
+            step=step,
+            lap_length=length,
+            drivers=[str(d) for d in data["drivers"]],
+            x=data["x"],
+            y=data["y"],
+            progress=data["progress"].astype(float),
+        )
 
 
 def save_track(path: Path, track: replay.Track) -> None:

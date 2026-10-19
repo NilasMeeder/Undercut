@@ -472,8 +472,15 @@ qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) 
       + en Layout in beide werkplekken (verwijderen met het kruisje), "Empty dashboard" om zelf te
       vullen (EDIT gaat aan), presets mee in export/import. Getest in Pitwall (opslaan, nieuw
       dashboard eruit met dezelfde 11 panelen, leeg blijft leeg na herladen, verwijderen)
-- [ ] Overtake mode (optie B): detectie- en activatielijn uit de FIA-kaart, ENABLED/DISABLED uit
-      race control, wie binnen 1 s zit bij de detectielijn
+- [x] Overtake mode (optie B, 2026-10-19): detectie- en activatielijn uit de FIA-kaart (alle
+      kaarten t/m Singapore opnieuw ingelezen; Oostenrijk en Hongarije met de hand), ENABLED/
+      DISABLED uit race control, wie binnen 1 s zit bij de detectielijn (uit het positiespoor).
+      OT D/OT A en paarse ringen op de kaart, kolom OT in de tower, OT in Live delta. Getest op
+      Monza 2026 R (lap 15: RUS kreeg OT 0,63 s achter VER en ging erlangs) en Monaco R. Ook
+      gevonden: Monaco R had `'None'` in x/y, waardoor `/compare` en het positiespoor faalden
+- [ ] Overtake mode: OT D/OT A ook als lijnen in Telemetry en Delta; OT in Battles
+- [ ] Na Austin: klopt de 1 s uit het positiespoor met wat F1 doet (een opname heeft geen OT-kanaal,
+      maar de race control en de inhaalacties wel)?
 
 ## Later / backlog
 

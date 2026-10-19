@@ -496,6 +496,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/overtake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Overtake Checks
+         * @description Races (2026): every passage of the overtake detection line, with the gap to the car ahead
+         *     and whether it gave overtake mode. Needs the position track (404 until it is prepared).
+         */
+        get: operations["overtake_checks_api_sessions__year___round___session__overtake_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/sectors": {
         parameters: {
             query?: never;
@@ -1367,6 +1388,52 @@ export interface components {
             /** Fastest */
             fastest: number[];
         };
+        /**
+         * OvertakeCheck
+         * @description One car crossing the overtake detection line (estimated from the position track).
+         */
+        OvertakeCheck: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Time */
+            time: number;
+            /** Ahead */
+            ahead: string | null;
+            /** Gap */
+            gap: number | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Within */
+            within: boolean;
+        };
+        /**
+         * OvertakeChecks
+         * @description Every passage of the overtake detection line in a race (2026); empty without one.
+         */
+        OvertakeChecks: {
+            /** Detection */
+            detection: number | null;
+            /** Checks */
+            checks: components["schemas"]["OvertakeCheck"][];
+        };
+        /**
+         * OvertakePoints
+         * @description Overtake mode (2026, races): within 1 s of the car ahead at the detection line, a car gets
+         *     extra MGU-K energy to use from the activation line. Metres from the line, like the zones
+         *     (a corner's position plus the metres: ±50 m).
+         */
+        OvertakePoints: {
+            /** Detection */
+            detection: number;
+            /** Activation */
+            activation: number;
+            /** Detection Text */
+            detection_text: string;
+            /** Activation Text */
+            activation_text: string;
+        };
         /** PitStop */
         PitStop: {
             /** Lap */
@@ -1889,6 +1956,9 @@ export interface components {
             zones: components["schemas"]["StraightModeZone"][];
             /** Low Grip */
             low_grip: components["schemas"]["TimeRange"][];
+            overtake: components["schemas"]["OvertakePoints"] | null;
+            /** Overtake Enabled */
+            overtake_enabled: components["schemas"]["TimeRange"][];
         };
         /**
          * StraightModeZone
@@ -3279,6 +3349,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StraightMode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    overtake_checks_api_sessions__year___round___session__overtake_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertakeChecks"];
                 };
             };
             /** @description Validation Error */

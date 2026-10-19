@@ -2,7 +2,16 @@ import { lazy } from 'react';
 import { defineWidget } from '../types';
 
 export type TowerColumn =
-  'interval' | 'cut' | 'predicted' | 'best' | 'last' | 'sectors' | 'segments' | 'tyre' | 'stops';
+  | 'interval'
+  | 'overtake'
+  | 'cut'
+  | 'predicted'
+  | 'best'
+  | 'last'
+  | 'sectors'
+  | 'segments'
+  | 'tyre'
+  | 'stops';
 export type TowerConfig = { columns: TowerColumn[]; size: 'compact' | 'fit' };
 
 export const towerWidget = defineWidget<TowerConfig>({
@@ -28,6 +37,10 @@ export const towerWidget = defineWidget<TowerConfig>({
         'point, with the position it would give. Purple would be the quickest, green a ' +
         'personal best. Only push laps: not on an out-lap, not in the first 300 m, not when ' +
         'already 1 s down (a cool-down lap).',
+      'OT (2026 races): overtake mode, within 1 s of the car ahead at the last passage of the ' +
+        'FIA’s detection line while race control has it enabled; it lasts until the next ' +
+        'passage. Worked out from the positions (4 Hz), so a car right on 1 s can be wrong. ' +
+        'Hover for the gap.',
       'Deleted lap times never count, also not before the stewards deleted them.',
       'A car that lost places in the pit lane has no gap until it passes the next timing line.',
       'Status: PIT in the pit lane (red) or garage (grey), OUT / IN on an out- or in-lap, DNF retired.',
@@ -39,6 +52,7 @@ export const towerWidget = defineWidget<TowerConfig>({
   defaults: {
     columns: [
       'interval',
+      'overtake',
       'cut',
       'predicted',
       'best',
@@ -57,6 +71,7 @@ export const towerWidget = defineWidget<TowerConfig>({
       kind: 'multi',
       options: [
         { value: 'interval', label: 'Interval to the car ahead' },
+        { value: 'overtake', label: 'Overtake mode (2026 races)' },
         { value: 'cut', label: 'Gap to the cut (qualifying)' },
         { value: 'predicted', label: 'Predicted lap time (qualifying, practice)' },
         { value: 'best', label: 'Best lap' },

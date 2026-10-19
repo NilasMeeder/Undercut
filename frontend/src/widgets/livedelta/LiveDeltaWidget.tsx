@@ -1,9 +1,11 @@
 import { useMemo, useRef } from 'react';
 import type { TowerRow } from '@/api/client';
-import { useSessionDetail, useTimingState } from '@/api/queries';
+import { useOvertake, useSessionDetail, useStraightMode, useTimingState } from '@/api/queries';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import { formatGap } from '@/lib/format';
+import { describeCheck, hasOvertake, overtakeIndex } from '@/lib/overtake';
+import { useClockTime } from '@/store/clock';
 import { useGroupLaps } from '@/store/groups';
 import { useClockDraw } from '../hooks';
 import { progressAt, useLiveLap } from '../livelap/useLiveLap';
@@ -60,6 +62,15 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
   const rows = timing.data?.rows;
   const around = useMemo(() => (rows && driver ? neighbours(rows, driver) : null), [rows, driver]);
 
+  // Overtake mode (2026 races): OT beside the car ahead while the driver has it.
+  const race = timing.data?.kind === 'race';
+  const lines = useStraightMode(race).data;
+  const checks = useOvertake(race && lines?.overtake != null).data;
+  const otIndex = useMemo(() => overtakeIndex(checks), [checks]);
+  const t = useClockTime(500);
+  const overtake =
+    driver && checks ? hasOvertake(otIndex, lines?.overtake_enabled ?? [], driver, t) : null;
+
   const deltaRef = useRef<SVGTextElement>(null);
   const draw = useMemo(() => {
     if (!data) return null;
@@ -94,6 +105,11 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
       <title>{title}</title>
       <text x={4} y={y} fontSize={17} fill={gap?.real ? COLORS.textDim : COLORS.textFaint}>
         {gap?.label ?? ''}
+        {y < H / 2 && overtake ? (
+          <tspan dx={8} fontSize={13} fontWeight={600} fill={COLORS.ers}>
+            OT
+          </tspan>
+        ) : null}
       </text>
       <text
         x={RIGHT}
@@ -117,7 +133,11 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
         role="img"
         aria-label={`Live delta of ${driver}`}
       >
-        {gapRow(around?.ahead, 30, 'Gap to the car ahead in the tower')}
+        {gapRow(
+          around?.ahead,
+          30,
+          `Gap to the car ahead in the tower${overtake ? `\n${describeCheck(overtake)}` : ''}`
+        )}
         <rect x={4} y={66} width={3} height={22} fill={color} />
         <text x={12} y={85} fontSize={22} fontWeight={600} fill={COLORS.text}>
           {driver}

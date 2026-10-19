@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from app import (
     analysis,
     energies,
+    overtake,
     progress,
     replays,
     reports,
@@ -46,6 +47,7 @@ from app.schemas import (
     Marker,
     MarkerIn,
     MiniSectors,
+    OvertakeChecks,
     PitWindow,
     ProgressReference,
     RaceControlMessage,
@@ -513,6 +515,13 @@ def straight_mode_zones(year: int, round: int, session: SessionCode) -> Straight
     """Straight-mode zones (2026) from the FIA's circuit map, ended where the session brakes, and
     when race control declared low-grip conditions."""
     return _guard(lambda: straight_mode.get_straight_mode(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/overtake")
+def overtake_checks(year: int, round: int, session: SessionCode) -> OvertakeChecks:
+    """Races (2026): every passage of the overtake detection line, with the gap to the car ahead
+    and whether it gave overtake mode. Needs the position track (404 until it is prepared)."""
+    return _guard(lambda: overtake.get_checks(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/sectors")

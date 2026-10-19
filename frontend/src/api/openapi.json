@@ -2008,6 +2008,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/overtake": {
+      "get": {
+        "summary": "Overtake Checks",
+        "description": "Races (2026): every passage of the overtake detection line, with the gap to the car ahead\nand whether it gave overtake mode. Needs the position track (404 until it is prepared).",
+        "operationId": "overtake_checks_api_sessions__year___round___session__overtake_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertakeChecks"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/sectors": {
       "get": {
         "summary": "Track Sectors",
@@ -4866,6 +4934,122 @@
         ],
         "title": "MiniSectors"
       },
+      "OvertakeCheck": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "time": {
+            "type": "number",
+            "title": "Time"
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "within": {
+            "type": "boolean",
+            "title": "Within"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "time",
+          "ahead",
+          "gap",
+          "enabled",
+          "within"
+        ],
+        "title": "OvertakeCheck",
+        "description": "One car crossing the overtake detection line (estimated from the position track)."
+      },
+      "OvertakeChecks": {
+        "properties": {
+          "detection": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detection"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/OvertakeCheck"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detection",
+          "checks"
+        ],
+        "title": "OvertakeChecks",
+        "description": "Every passage of the overtake detection line in a race (2026); empty without one."
+      },
+      "OvertakePoints": {
+        "properties": {
+          "detection": {
+            "type": "number",
+            "title": "Detection"
+          },
+          "activation": {
+            "type": "number",
+            "title": "Activation"
+          },
+          "detection_text": {
+            "type": "string",
+            "title": "Detection Text"
+          },
+          "activation_text": {
+            "type": "string",
+            "title": "Activation Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detection",
+          "activation",
+          "detection_text",
+          "activation_text"
+        ],
+        "title": "OvertakePoints",
+        "description": "Overtake mode (2026, races): within 1 s of the car ahead at the detection line, a car gets\nextra MGU-K energy to use from the activation line. Metres from the line, like the zones\n(a corner's position plus the metres: \u00b150 m)."
+      },
       "PitStop": {
         "properties": {
           "lap": {
@@ -6469,6 +6653,23 @@
             },
             "type": "array",
             "title": "Low Grip"
+          },
+          "overtake": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OvertakePoints"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overtake_enabled": {
+            "items": {
+              "$ref": "#/components/schemas/TimeRange"
+            },
+            "type": "array",
+            "title": "Overtake Enabled"
           }
         },
         "type": "object",
@@ -6476,7 +6677,9 @@
           "source",
           "length",
           "zones",
-          "low_grip"
+          "low_grip",
+          "overtake",
+          "overtake_enabled"
         ],
         "title": "StraightMode",
         "description": "Straight-mode zones of the event (2026) from the FIA's circuit map; empty without one."

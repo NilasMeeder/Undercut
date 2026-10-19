@@ -16,7 +16,7 @@ from typing import Any, Literal
 
 from app import sessions, zones
 from app.generations import session_cache
-from app.schemas import StraightMode, StraightModeZone, TimeRange, TrackZone
+from app.schemas import OvertakePoints, StraightMode, StraightModeZone, TimeRange, TrackZone
 from app.sources import fia
 from app.sources import tracinginsights as ti
 
@@ -27,6 +27,11 @@ NO_STRAIGHT_BRAKE = 150.0
 """No straight in the data: the zone ends this far before the next corner."""
 LOW_GRIP = "LOW GRIP CONDITIONS"
 NORMAL_GRIP = "NORMAL GRIP CONDITIONS"
+OVERTAKE_ON = "OVERTAKE ENABLED"
+OVERTAKE_OFF = "OVERTAKE DISABLED"
+EDGE = 50.0
+"""An overtake point at a corner's entry or exit is this far before or after it (the corner's
+position is about its apex): Monza's detection is at the entry of T11, its activation at T11."""
 
 
 @lru_cache(maxsize=1)
@@ -41,6 +46,18 @@ def place(corners: dict[str, float], length: float, point: dict[str, Any] | None
     if point is None or point["corner"] not in corners:
         return None
     return (corners[point["corner"]] + point["metres"]) % length
+
+
+def place_edge(
+    corners: dict[str, float], length: float, point: dict[str, Any] | None
+) -> float | None:
+    """Like `place`, with 'Entry' and 'Exit' EDGE before and after the corner."""
+    at = place(corners, length, point)
+    if at is None or point is None:
+        return at
+    text = point["text"].lower()
+    edge = -EDGE if "entry" in text else EDGE if "exit" in text else 0.0
+    return (at + edge) % length
 
 
 EndSource = Literal["braking", "next_zone", "drawing", "next_corner"]
@@ -99,6 +116,18 @@ def low_grip_periods(messages: list[tuple[float, str]]) -> list[TimeRange]:
     return out
 
 
+def overtake_periods(messages: list[tuple[float, str]]) -> list[TimeRange]:
+    """(session time, message) of race control -> when overtake mode was enabled, in order."""
+    out: list[TimeRange] = []
+    for t, message in sorted(messages):
+        text = message.upper()
+        if OVERTAKE_ON in text and (not out or out[-1].end is not None):
+            out.append(TimeRange(start=t, end=None))
+        elif OVERTAKE_OFF in text and out and out[-1].end is None:
+            out[-1].end = t
+    return out
+
+
 def _straights(year: int, round_number: int, code: str) -> list[TrackZone]:
     try:
         found = zones.get_zones(year, round_number, code)
@@ -107,19 +136,33 @@ def _straights(year: int, round_number: int, code: str) -> list[TrackZone]:
     return found.zones if found.kind == "straight" else []
 
 
+def _messages(year: int, round_number: int, code: str) -> list[tuple[float, str]]:
+    try:
+        messages = sessions.get_race_control(year, round_number, code)
+    except (ti.SourceNotAvailable, LookupError, ValueError):
+        return []
+    return [(m.session_time, m.message) for m in messages if m.session_time is not None]
+
+
 @session_cache(maxsize=8)
 def get_straight_mode(year: int, round_number: int, code: str) -> StraightMode:
     event, _ = sessions.folders(year, round_number, code)
     found = _maps().get(str(year), {}).get(event)
-    if not found or not found["zones"]:
+    ot = found.get("overtake") if found else None
+    if not found or not (found["zones"] or ot):
         return StraightMode(
-            source=found["source"] if found else None, length=0.0, zones=[], low_grip=[]
+            source=found["source"] if found else None,
+            length=0.0,
+            zones=[],
+            low_grip=[],
+            overtake=None,
+            overtake_enabled=[],
         )
     circuit = sessions.get_circuit(year, round_number, code)
     length = sessions.typical_lap_length(year, round_number, code) or circuit.lap_length
     scale = length / circuit.lap_length if circuit.lap_length > 0 else 1.0
     corners = {c.label: c.distance * scale for c in circuit.corners}
-    straights = _straights(year, round_number, code)
+    straights = _straights(year, round_number, code) if found["zones"] else []
     placed = [
         (z, at) for z in found["zones"] if (at := place(corners, length, z["normal"])) is not None
     ]
@@ -151,13 +194,23 @@ def get_straight_mode(year: int, round_number: int, code: str) -> StraightMode:
                 low_grip_activation=zone["low_grip"]["text"] if zone["low_grip"] else None,
             )
         )
-    try:
-        messages = sessions.get_race_control(year, round_number, code)
-    except (ti.SourceNotAvailable, LookupError, ValueError):
-        messages = []
-    periods = low_grip_periods(
-        [(m.session_time, m.message) for m in messages if m.session_time is not None]
-    )
+    points = None
+    if isinstance(ot, dict):
+        detection = place_edge(corners, length, ot["detection"])
+        activation = place_edge(corners, length, ot["activation"])
+        if detection is not None and activation is not None:
+            points = OvertakePoints(
+                detection=round(detection, 1),
+                activation=round(activation, 1),
+                detection_text=ot["detection"]["text"],
+                activation_text=ot["activation"]["text"],
+            )
+    messages = _messages(year, round_number, code)
     return StraightMode(
-        source=found["source"], length=round(length, 1), zones=out, low_grip=periods
+        source=found["source"],
+        length=round(length, 1),
+        zones=out,
+        low_grip=low_grip_periods(messages),
+        overtake=points,
+        overtake_enabled=overtake_periods(messages) if points else [],
     )

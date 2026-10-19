@@ -20,6 +20,7 @@ export const liveDeltaWidget = defineWidget<LiveDeltaConfig>({
       'In a race the gaps are the intervals at the last timing line; in qualifying and practice ' +
         'the difference in best lap time, as in the tower.',
       'Grey: there is no car ahead (P1) or behind (last), or no gap to show.',
+      'OT (2026 races): the driver has overtake mode, as in the tower’s OT column.',
       'On an out-lap there is no delta.',
     ],
     controls: 'Follows the clock: press play or LIVE. Pick another lap to follow another driver.',

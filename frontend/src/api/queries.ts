@@ -12,6 +12,7 @@ import {
   type Degradation,
   type EnergyComparison,
   type EnergySession,
+  type OvertakeChecks,
   type StraightMode,
   type TrackSectors,
   type TrackZones,
@@ -278,6 +279,13 @@ export function usePositionsStatus() {
     enabled: key != null,
     refetchInterval: (query) => (query.state.data?.state === 'loading' ? 400 : false),
   });
+}
+
+/** Overtake mode (2026 races): every passage of the detection line with the gap to the car
+ * ahead. Worked out from the position track, so only asked once that is ready. */
+export function useOvertake(enabled = true) {
+  const ready = usePositionsStatus().data?.state === 'ready';
+  return useSessionQuery<OvertakeChecks>('/overtake', enabled && ready);
 }
 
 export function usePreparePositions() {

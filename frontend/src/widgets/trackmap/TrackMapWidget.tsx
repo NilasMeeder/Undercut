@@ -11,6 +11,7 @@ import type {
 import {
   useCircuit,
   useEnergy,
+  useOvertake,
   useReplayPositions,
   useSectors,
   useSessionDetail,
@@ -22,6 +23,7 @@ import { useDistanceMarks } from '@/api/markers';
 import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import type { DistanceMark } from '@/lib/markers';
+import { describeCheck, hasOvertake, overtakeIndex, type OvertakeIndex } from '@/lib/overtake';
 import { activeZones, describeZone, useLowGripAtClock } from '@/lib/straightMode';
 import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import type { LapStyle } from '@/lib/timing';
@@ -39,6 +41,11 @@ type Along = { points: Point[]; distance: number[]; normals: Point[]; length: nu
 type Stretch = { start: number; end: number };
 type LapClips = { name: string; stretches: Stretch[]; superclips: Stretch[] };
 /** The first compared lap's estimated deployment, for a zoomed stretch (2026). */
+/** Overtake mode (2026): the FIA's lines, and in a race who has it at the clock. */
+type Overtake = {
+  data: StraightMode;
+  index: OvertakeIndex;
+};
 type LapEnergy = {
   name: string;
   deploying: Stretch[];
@@ -134,8 +141,14 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       ? fetchedZones
       : undefined;
   const sectors = useSectors(config.sectors).data;
-  const fetchedStraightMode = useStraightMode(config.straightMode).data;
+  const fetchedStraightMode = useStraightMode(config.straightMode || config.overtake).data;
   const straightMode = config.straightMode ? fetchedStraightMode : undefined;
+  const lines = config.overtake && fetchedStraightMode?.overtake ? fetchedStraightMode : undefined;
+  const checks = useOvertake(lines != null && config.cars === 'all').data;
+  const overtake = useMemo<Overtake | undefined>(
+    () => (lines ? { data: lines, index: overtakeIndex(checks) } : undefined),
+    [lines, checks]
+  );
   // Where each compared lap clipped (2026), on the first lap's scale like the comparison. A
   // disabled query still returns what another panel cached (Energy in 2025), hence `clips`.
   const clips = config.cars === 'laps' && zones?.kind === 'straight';
@@ -173,6 +186,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
         showGhosts={config.ghosts}
         zones={zones}
         straightMode={straightMode}
+        overtake={overtake}
         sectors={config.sectors ? sectors : undefined}
       />
     );
@@ -186,6 +200,7 @@ export function TrackMapWidget({ group, config }: WidgetProps<TrackMapConfig>) {
       showMarks={config.markers}
       zones={zones}
       straightMode={straightMode}
+      overtake={overtake}
       lapClips={lapClips}
       lapEnergy={lapEnergy}
       sectors={config.sectors ? sectors : undefined}
@@ -260,6 +275,7 @@ function ReplayMap({
   showGhosts,
   zones,
   straightMode,
+  overtake,
   sectors,
 }: {
   group: GroupId;
@@ -269,6 +285,7 @@ function ReplayMap({
   showGhosts: boolean;
   zones?: TrackZones;
   straightMode?: StraightMode;
+  overtake?: Overtake;
   sectors?: TrackSectors;
 }) {
   const { status, track, error } = useReplayPositions();
@@ -297,6 +314,7 @@ function ReplayMap({
       ghosts={ghosts}
       zones={zones}
       straightMode={straightMode}
+      overtake={overtake}
       sectors={sectors}
     />
   );
@@ -314,6 +332,7 @@ function TrackMap({
   ghosts = NO_GHOSTS,
   zones,
   straightMode,
+  overtake,
   lapClips,
   lapEnergy,
   sectors,
@@ -331,6 +350,7 @@ function TrackMap({
   zones?: TrackZones;
   /** Straight-mode zones (2026), inside the track. */
   straightMode?: StraightMode;
+  overtake?: Overtake;
   /** Per compared lap, where it clipped. */
   lapClips?: LapClips[];
   lapEnergy?: LapEnergy;
@@ -435,6 +455,18 @@ function TrackMap({
         const at = now[i];
         node.setAttribute('visibility', at ? 'visible' : 'hidden');
         if (!at) return;
+        if (overtake) {
+          // <g><title/><circle ring/>…: the ring and its explanation.
+          const check = hasOvertake(
+            overtake.index,
+            overtake.data.overtake_enabled,
+            cars.track.cars[i].driver,
+            t
+          );
+          const ring = node.children[1];
+          ring.setAttribute('visibility', check ? 'inherit' : 'hidden');
+          node.firstElementChild!.textContent = check ? describeCheck(check) : '';
+        }
         const [x, y] = project(at.x, at.y, circuit.rotation);
         node.setAttribute('transform', `translate(${x.toFixed(0)},${y.toFixed(0)})`);
       });
@@ -452,7 +484,7 @@ function TrackMap({
     },
     // Ghost nodes change with the selection: redraw them at once, also with the clock paused.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cars, circuit.rotation, highlight, ghosts]
+    [cars, circuit.rotation, highlight, ghosts, overtake]
   );
   useClockDraw(cars ? drawCars : null);
 
@@ -467,8 +499,9 @@ function TrackMap({
           {note ?? 'Mini-sectors: fastest lap colours the track'}
         </div>
       ) : null}
-      {(zones && zones.zones.length > 0) || straightMode ? (
+      {(zones && zones.zones.length > 0) || straightMode || overtake ? (
         <div className="absolute bottom-1 left-1.5 z-10 flex flex-col gap-0.5 text-[10px] text-faint">
+          {overtake && cars ? <OvertakeLegend /> : null}
           {straightMode ? <StraightModeLegend data={straightMode} lowGrip={lowGrip} /> : null}
           {zones && zones.zones.length > 0 ? <ZoneLegend zones={zones} /> : null}
         </div>
@@ -498,6 +531,9 @@ function TrackMap({
             inside={zones != null && zones.zones.length > 0}
             unit={u}
           />
+        ) : null}
+        {overtake?.data.overtake ? (
+          <OvertakeLayer along={geometry.along} data={overtake.data} unit={u} />
         ) : null}
         {markShapes.map((m) => (
           <g key={m.id} opacity={m.dim ? 0.45 : 1}>
@@ -606,6 +642,14 @@ function TrackMap({
             const strong = highlight.has(car.driver);
             return (
               <g key={car.driver} visibility="hidden">
+                <title />
+                <circle
+                  r={u * 2.4}
+                  fill="none"
+                  stroke={COLORS.ers}
+                  strokeWidth={u * 0.5}
+                  visibility="hidden"
+                />
                 <circle
                   r={u * (strong ? 1.6 : 1.3)}
                   fill={color(car.driver)}
@@ -823,6 +867,68 @@ function StraightModeLegend({ data, lowGrip }: { data: StraightMode; lowGrip: bo
         : lowGrip
           ? 'Straight mode (FIA), low grip: front wing only'
           : 'Straight mode zones (FIA)'}
+    </span>
+  );
+}
+
+const OVERTAKE_TICK = 2.6;
+const OVERTAKE_LABEL = 5.5;
+
+/** The FIA's overtake detection (OT D) and activation (OT A) lines across the track, the label
+ * outside it. */
+function OvertakeLayer({ along, data, unit }: { along: Along; data: StraightMode; unit: number }) {
+  const points = data.overtake;
+  if (!points) return null;
+  const scale = data.length > 0 ? along.length / data.length : 1;
+  const lines = [
+    { label: 'OT D', at: points.detection, title: `Overtake detection: ${points.detection_text}` },
+    {
+      label: 'OT A',
+      at: points.activation,
+      title: `Overtake activation: ${points.activation_text}`,
+    },
+  ];
+  return (
+    <g>
+      {lines.map((line) => {
+        const i = Math.min(indexAt(along.distance, line.at * scale), along.points.length - 1);
+        const [x, y] = along.points[i];
+        const [nx, ny] = along.normals[i];
+        const tick = unit * OVERTAKE_TICK;
+        return (
+          <g key={line.label}>
+            <title>{`${line.title} (FIA circuit map, ±50 m)`}</title>
+            <line
+              x1={x - nx * tick}
+              y1={y - ny * tick}
+              x2={x + nx * tick}
+              y2={y + ny * tick}
+              stroke={COLORS.ers}
+              strokeWidth={unit * 0.5}
+            />
+            <text
+              x={x + nx * unit * OVERTAKE_LABEL}
+              y={y + ny * unit * OVERTAKE_LABEL}
+              fill={COLORS.ers}
+              fontSize={unit * 2.2}
+              fontWeight={600}
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {line.label}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function OvertakeLegend() {
+  return (
+    <span className="flex items-center gap-1">
+      <span className="h-2 w-2 rounded-full border border-ers" />
+      Overtake mode: within 1 s at OT D
     </span>
   );
 }

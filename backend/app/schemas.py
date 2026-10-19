@@ -452,6 +452,44 @@ class TimeRange(BaseModel):
     """Session time (s); null while it lasts."""
 
 
+class OvertakePoints(BaseModel):
+    """Overtake mode (2026, races): within 1 s of the car ahead at the detection line, a car gets
+    extra MGU-K energy to use from the activation line. Metres from the line, like the zones
+    (a corner's position plus the metres: ±50 m)."""
+
+    detection: float
+    activation: float
+    detection_text: str
+    """As the FIA writes it: 'Entry T11'."""
+    activation_text: str
+
+
+class OvertakeCheck(BaseModel):
+    """One car crossing the overtake detection line (estimated from the position track)."""
+
+    driver: str
+    lap: int
+    """The lap the car is on."""
+    time: float
+    """Session time (s)."""
+    ahead: str | None
+    """The car that crossed the line last before it (also a lapped car)."""
+    gap: float | None
+    """Seconds behind that car."""
+    enabled: bool
+    """Race control had overtake mode enabled."""
+    within: bool
+    """Within 1 s: with `enabled`, overtake mode until the next detection line."""
+
+
+class OvertakeChecks(BaseModel):
+    """Every passage of the overtake detection line in a race (2026); empty without one."""
+
+    detection: float | None
+    """Metres from the line, as in StraightMode.overtake."""
+    checks: list[OvertakeCheck]
+
+
 class StraightMode(BaseModel):
     """Straight-mode zones of the event (2026) from the FIA's circuit map; empty without one."""
 
@@ -462,6 +500,9 @@ class StraightMode(BaseModel):
     zones: list[StraightModeZone]
     low_grip: list[TimeRange]
     """When race control declared low-grip conditions: the low-grip zones apply then."""
+    overtake: OvertakePoints | None
+    overtake_enabled: list[TimeRange]
+    """When race control had overtake mode enabled (OVERTAKE ENABLED until DISABLED)."""
 
 
 class TrackSectors(BaseModel):

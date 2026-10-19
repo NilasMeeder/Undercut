@@ -1,9 +1,17 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Lap, LapPrediction, TimingState, TowerRow } from '@/api/client';
-import { useLaps, usePredictions, useSessionDetail, useTimingState } from '@/api/queries';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { Lap, LapPrediction, OvertakeCheck, TimingState, TowerRow } from '@/api/client';
+import {
+  useLaps,
+  useOvertake,
+  usePredictions,
+  useSessionDetail,
+  useStraightMode,
+  useTimingState,
+} from '@/api/queries';
 import { DriverCell, PanelMessage, TyreBadge } from '@/components/data/bits';
 import { TRACK_STATUS_COLORS } from '@/lib/colors';
 import { formatGap, formatLapTime, formatSector } from '@/lib/format';
+import { describeCheck, hasOvertake, overtakeIndex } from '@/lib/overtake';
 import { TRACK_STATUS_LABEL } from '@/lib/replay';
 import { rowStyle, td, th } from '@/lib/table';
 import { TIMING_TEXT } from '@/lib/timing';
@@ -39,6 +47,14 @@ function SegmentBars({ segments }: { segments: Segment[] }) {
         <span key={i} className={cn('min-w-0 flex-1', SEGMENT_BG[s])} />
       ))}
     </span>
+  );
+}
+
+function OvertakeCell({ check }: { check: OvertakeCheck | null }) {
+  return (
+    <td className="px-1.5 py-[1px] text-left" title={check ? describeCheck(check) : undefined}>
+      {check ? <span className="text-[10px] font-semibold text-ers">OT</span> : null}
+    </td>
   );
 }
 
@@ -196,6 +212,10 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   const t = useClockTime(1000);
   const timed = timing.data != null && timing.data.kind !== 'race';
   const predictions = usePredictions(t, timed && config.columns.includes('predicted')).data;
+  const wantOvertake = timing.data?.kind === 'race' && config.columns.includes('overtake');
+  const lines = useStraightMode(wantOvertake).data;
+  const checks = useOvertake(wantOvertake && lines?.overtake != null).data;
+  const otIndex = useMemo(() => overtakeIndex(checks), [checks]);
 
   if (timing.error) return <PanelMessage>{timing.error.message}</PanelMessage>;
   const state = timing.data;
@@ -204,6 +224,7 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   const show = new Set(config.columns);
   const race = state.kind === 'race';
   const showCut = show.has('cut') && state.cutoff != null;
+  const showOvertake = race && show.has('overtake') && checks != null && checks.checks.length > 0;
   const showPredicted = show.has('predicted') && !race;
   const byDriver = new Map((showPredicted ? (predictions ?? []) : []).map((p) => [p.driver, p]));
   // Only a live recording has them (F1's own timing), the archive does not.
@@ -232,6 +253,9 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
               {head('Drv', undefined, 'text-left')}
               {head('Gap', race ? 'To the leader, at the last timing line' : 'Best lap to P1')}
               {show.has('interval') ? head('Int', 'To the car ahead') : null}
+              {showOvertake
+                ? head('OT', 'Overtake mode: within 1 s at the detection line', 'text-left')
+                : null}
               {showCut
                 ? head('Cut', 'Margin to the first driver out, or what is needed to get in')
                 : null}
@@ -279,6 +303,15 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
                     <td className={cn(td, out ? 'text-faint' : 'text-text')}>
                       {i === 0 || out ? '' : gapText(row.interval, row.interval_laps)}
                     </td>
+                  ) : null}
+                  {showOvertake ? (
+                    <OvertakeCell
+                      check={
+                        out
+                          ? null
+                          : hasOvertake(otIndex, lines?.overtake_enabled ?? [], row.driver, t)
+                      }
+                    />
                   ) : null}
                   {showCut ? (
                     <td

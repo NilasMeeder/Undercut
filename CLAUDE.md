@@ -652,6 +652,26 @@ Overtake mode is iets anders (MGU-K, binnen 1 s bij de detectielijn, `OVERTAKE E
   en Delta "Straight mode zones (2026)" (standaard aan, alleen 2026): vlak achter de lijnen
   (`UPlotChart` `zones`, `COLORS.aeroFill`), naam rechts bovenin; weinig grip volgens de start
   van de eerste lap; een zone over de lijn ook aan het eind van de lap.
+- **Overtake mode** (fase 12, optie B): binnen 1 s van de auto ervoor bij de detectielijn = extra
+  MGU-K-energie vanaf de activatielijn, alleen in races. `fia.py` leest per kaart de detectie en
+  activatie (`overtake: {detection, activation}` in de JSON; de waarden staan in de pypdf-tekst in
+  de volgorde van de koppen ACTIVATION/DETECTION, op de tekening andersom: Monza OT D = Entry T11,
+  OT A = T11; overal ligt D vóór A). Ook zonder zones (Monaco). Oostenrijk en Hongarije met de
+  hand (de tekst mist een punt). Een nieuwe run houdt met de hand ingevulde `end`, `note` en
+  overtake (`keep_by_hand`). Op de lap: `straight_mode.place_edge` (Entry −50 m, Exit +50 m,
+  anders vallen Monza's D en A samen); `StraightMode.overtake` en `overtake_enabled` (race control
+  `OVERTAKE ENABLED` tot `DISABLED`; Monza R: aan op lap 1, uit achter de SC lap 3–6).
+  **Wie** (`overtake.py`, `/overtake`, alleen R/S): uit het positiespoor (`replays.position_track`,
+  archief-npz of live uit het geheugen) waar de lap-voortgang van elke auto het aandeel van de
+  detectielijn passeert, geïnterpoleerd; het gat is naar de auto die daar het laatst vóór hem
+  langskwam (ook een gelapte auto). Een schatting (4 Hz, geen timinglus). Monza 2026 R: 1053
+  passages, 298 binnen 1 s terwijl het aan stond; dezelfde race als opname via de simulator 1031 en
+  286 (de opname projecteert op de outline, ~12 m: de gaten schelen tot ~0,13 s, dus vlak bij 1 s
+  kan het omslaan; lap 1 ontbreekt, de simulator stuurt geen posities vóór de start). Frontend (`lib/overtake.ts`, `hasOvertake`: de
+  laatste passage gaf het, en race control staat nog aan; geldt tot de volgende passage): Track
+  map "Overtake mode (2026)" (standaard aan) met OT D/OT A over de baan en met alle auto's een
+  paarse ring (`ers`, inzet) om wie het heeft; tower-kolom OT (races); OT naast de auto ervoor in
+  Live delta.
 
 ## Bandensets (fase 10)
 
@@ -815,6 +835,9 @@ Lees dit voordat je data-code schrijft. Fouten hier geven grafieken die er goed 
   Corners toont dan een melding in plaats van de tabel, Delta "+107 m" achter de lap. Report laat
   ze weg (tegen de mediaan van zijn eigen laps). Een out-lap door de pitstraat kan ook afwijken
   (Monza 2025 R, NOR L47: +41 m).
+- **'None' in de telemetrie**: TracingInsights schrijft een ontbrekende waarde als de string
+  `'None'` (Monaco 2026 R: geen x/y/z in de late laps). `sessions.floats` maakt er NaN van
+  (`trace_from_tel`, het positiespoor); zonder dat faalden `/compare` en het spoor van Monaco R.
 - **Teamkleuren** komen uit `drivers.json` (`tc`) → `DriverInfo.color`. Twee drivers van hetzelfde team:
   de tweede gestippeld.
 

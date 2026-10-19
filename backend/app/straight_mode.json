@@ -62,13 +62,18 @@
           "low_grip": null
         }
       ],
-      "overtake": [
-        "Entry T14",
-        "15m after T13",
-        "120m before T1",
-        "140m before T9",
-        "120m before T6"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "13",
+          "metres": 15.0,
+          "text": "15m after T13"
+        },
+        "activation": {
+          "corner": "14",
+          "metres": 0.0,
+          "text": "Entry T14"
+        }
+      }
     },
     "Chinese Grand Prix": {
       "round": 2,
@@ -127,10 +132,18 @@
           }
         }
       ],
-      "overtake": [
-        "100m after T16",
-        "Entry T16"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "16",
+          "metres": 0.0,
+          "text": "Entry T16"
+        },
+        "activation": {
+          "corner": "16",
+          "metres": 100.0,
+          "text": "100m after T16"
+        }
+      }
     },
     "Japanese Grand Prix": {
       "round": 3,
@@ -163,10 +176,18 @@
           }
         }
       ],
-      "overtake": [
-        "Apex T18",
-        "Exit T17"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "17",
+          "metres": 0.0,
+          "text": "Exit T17"
+        },
+        "activation": {
+          "corner": "18",
+          "metres": 0.0,
+          "text": "Apex T18"
+        }
+      }
     },
     "Miami Grand Prix": {
       "round": 4,
@@ -208,10 +229,18 @@
           }
         }
       ],
-      "overtake": [
-        "10m after T18",
-        "20m after T17"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "17",
+          "metres": 20.0,
+          "text": "20m after T17"
+        },
+        "activation": {
+          "corner": "18",
+          "metres": 10.0,
+          "text": "10m after T18"
+        }
+      }
     },
     "Canadian Grand Prix": {
       "round": 5,
@@ -266,16 +295,35 @@
           }
         }
       ],
-      "overtake": [
-        "70m after T14",
-        "Entry T13"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "13",
+          "metres": 0.0,
+          "text": "Entry T13"
+        },
+        "activation": {
+          "corner": "14",
+          "metres": 70.0,
+          "text": "70m after T14"
+        }
+      }
     },
     "Monaco Grand Prix": {
       "round": 6,
       "source": "https://www.fia.com/system/files/decision-document/2026_monaco_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
       "zones": [],
-      "overtake": []
+      "overtake": {
+        "detection": {
+          "corner": "16",
+          "metres": 80.0,
+          "text": "80m after T16"
+        },
+        "activation": {
+          "corner": "18",
+          "metres": 40.0,
+          "text": "40m after T18"
+        }
+      }
     },
     "Barcelona Grand Prix": {
       "round": 7,
@@ -334,15 +382,23 @@
           }
         }
       ],
-      "overtake": [
-        "Entry T14",
-        "Apex T13"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "13",
+          "metres": 0.0,
+          "text": "Apex T13"
+        },
+        "activation": {
+          "corner": "14",
+          "metres": 0.0,
+          "text": "Entry T14"
+        }
+      }
     },
     "Austrian Grand Prix": {
       "round": 8,
       "source": "https://www.fia.com/system/files/decision-document/2026_austrian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
-      "note": "Entered by hand from the drawing: the PDF's text misses the table.",
+      "note": "Entered by hand from the drawing: the PDF's text misses the table. Overtake activation read off the drawing (the text has only the detection).",
       "zones": [
         {
           "label": "A1",
@@ -397,7 +453,18 @@
           }
         }
       ],
-      "overtake": []
+      "overtake": {
+        "detection": {
+          "corner": "10",
+          "metres": -50.0,
+          "text": "50m before T10"
+        },
+        "activation": {
+          "corner": "10",
+          "metres": 100.0,
+          "text": "~100m after T10 (drawing)"
+        }
+      }
     },
     "British Grand Prix": {
       "round": 9,
@@ -452,10 +519,18 @@
           }
         }
       ],
-      "overtake": [
-        "95m after T17",
-        "Exit of T17"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "17",
+          "metres": 0.0,
+          "text": "Exit of T17"
+        },
+        "activation": {
+          "corner": "17",
+          "metres": 95.0,
+          "text": "95m after T17"
+        }
+      }
     },
     "Belgian Grand Prix": {
       "round": 10,
@@ -537,15 +612,23 @@
           }
         }
       ],
-      "overtake": [
-        "130m after T19",
-        "Entry T19"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "19",
+          "metres": 0.0,
+          "text": "Entry T19"
+        },
+        "activation": {
+          "corner": "19",
+          "metres": 130.0,
+          "text": "130m after T19"
+        }
+      }
     },
     "Hungarian Grand Prix": {
       "round": 11,
       "source": "https://www.fia.com/system/files/decision-document/2026_hungarian_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
-      "note": "Entered by hand from the drawing: the PDF's text misses zone A2 (T1A).",
+      "note": "Entered by hand from the drawing: the PDF's text misses zone A2 (T1A). Overtake activation read off the drawing (the text has only the detection).",
       "zones": [
         {
           "label": "A1",
@@ -600,7 +683,18 @@
           }
         }
       ],
-      "overtake": []
+      "overtake": {
+        "detection": {
+          "corner": "14",
+          "metres": 0.0,
+          "text": "Entry T14"
+        },
+        "activation": {
+          "corner": "14",
+          "metres": 0.0,
+          "text": "Apex T14 (drawing)"
+        }
+      }
     },
     "Dutch Grand Prix": {
       "round": 12,
@@ -633,10 +727,18 @@
           }
         }
       ],
-      "overtake": [
-        "45m after T14-entry",
-        "10m before T13"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "13",
+          "metres": -10.0,
+          "text": "10m before T13"
+        },
+        "activation": {
+          "corner": "14",
+          "metres": 45.0,
+          "text": "45m after T14-entry"
+        }
+      }
     },
     "Italian Grand Prix": {
       "round": 13,
@@ -695,10 +797,18 @@
           }
         }
       ],
-      "overtake": [
-        "T11",
-        "Entry T11"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "11",
+          "metres": 0.0,
+          "text": "Entry T11"
+        },
+        "activation": {
+          "corner": "11",
+          "metres": 0.0,
+          "text": "T11"
+        }
+      }
     },
     "Spanish Grand Prix": {
       "round": 14,
@@ -731,10 +841,18 @@
           }
         }
       ],
-      "overtake": [
-        "20m after T22",
-        "Entry T22"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "22",
+          "metres": 0.0,
+          "text": "Entry T22"
+        },
+        "activation": {
+          "corner": "22",
+          "metres": 20.0,
+          "text": "20m after T22"
+        }
+      }
     },
     "Azerbaijan Grand Prix": {
       "round": 15,
@@ -767,10 +885,18 @@
           }
         }
       ],
-      "overtake": [
-        "20m before T17",
-        "90m after T16"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "16",
+          "metres": 90.0,
+          "text": "90m after T16"
+        },
+        "activation": {
+          "corner": "17",
+          "metres": -20.0,
+          "text": "20m before T17"
+        }
+      }
     },
     "Bahrain Grand Prix": {
       "round": 16,
@@ -829,10 +955,18 @@
           }
         }
       ],
-      "overtake": [
-        "T15 Exit",
-        "45m before T15 Exit"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "15",
+          "metres": -45.0,
+          "text": "45m before T15 Exit"
+        },
+        "activation": {
+          "corner": "15",
+          "metres": 0.0,
+          "text": "T15 Exit"
+        }
+      }
     },
     "Singapore Grand Prix": {
       "round": 17,
@@ -900,10 +1034,18 @@
           }
         }
       ],
-      "overtake": [
-        "30m after T17",
-        "Entry T17"
-      ]
+      "overtake": {
+        "detection": {
+          "corner": "17",
+          "metres": 0.0,
+          "text": "Entry T17"
+        },
+        "activation": {
+          "corner": "17",
+          "metres": 30.0,
+          "text": "30m after T17"
+        }
+      }
     }
   }
 }

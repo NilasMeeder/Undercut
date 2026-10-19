@@ -171,16 +171,25 @@ def get_trace(year: int, round_number: int, code: str, driver: str, lap: int) ->
     return trace_from_tel(ti.lap_telemetry(year, event, session, driver, lap), year)
 
 
+def floats(values: list[Any]) -> np.ndarray:
+    """A telemetry column as floats; the archive writes a missing value as 'None' (Monaco 2026 R:
+    no positions in the last laps), which becomes NaN."""
+    try:
+        return np.asarray(values, dtype=float)
+    except (TypeError, ValueError):
+        return np.array([np.nan if v in (None, "None") else v for v in values], dtype=float)
+
+
 def trace_from_tel(tel: dict[str, Any], year: int) -> analysis.LapTrace:
     """A lap's trace from the archive's `tel` columns (also what the live recorder writes)."""
     channels = {
-        name: np.asarray(tel[key], dtype=float)
+        name: floats(tel[key])
         for name, key in TRACE_CHANNELS.items()
         if key in tel and (name != "drs" or has_drs(year))
     }
     return analysis.LapTrace(
-        distance=np.asarray(tel["distance"], dtype=float),
-        time=np.asarray(tel["time"], dtype=float),
+        distance=floats(tel["distance"]),
+        time=floats(tel["time"]),
         channels=channels,
     )
 
