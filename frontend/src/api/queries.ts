@@ -353,20 +353,20 @@ function toTrack(data: ReplayPositions): PositionTrack {
  * The position track for replay widgets. Mounting one starts the preparation (a one-time download
  * of the session's telemetry, shown with progress in the clock bar).
  */
-export function useReplayPositions() {
+export function useReplayPositions(enabled = true) {
   const key = useSessionKey();
   const status = usePositionsStatus();
   const prepare = usePreparePositions();
   const state = status.data?.state;
 
   useEffect(() => {
-    if (state === 'missing') void prepare();
-  }, [state, prepare]);
+    if (enabled && state === 'missing') void prepare();
+  }, [enabled, state, prepare]);
 
   const positions = useQuery({
     queryKey: positionsKey(key),
     queryFn: () => apiGet<ReplayPositions>(`${sessionPath(key!)}/positions`).then(toTrack),
-    enabled: key != null && state === 'ready',
+    enabled: enabled && key != null && state === 'ready',
     staleTime: Infinity,
     // Live, the track grows in place (appendPositions); typed arrays are not compared.
     structuralSharing: false,

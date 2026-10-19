@@ -1,10 +1,11 @@
 import { useMemo, useRef } from 'react';
 import type { TowerRow } from '@/api/client';
-import { useSessionDetail, useTimingState } from '@/api/queries';
+import { useReplayPositions, useSessionDetail, useTimingState } from '@/api/queries';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import { formatGap } from '@/lib/format';
 import { describeCheck } from '@/lib/overtake';
+import { timeGap } from '@/lib/replay';
 import { useClockTime } from '@/store/clock';
 import { useGroupLaps } from '@/store/groups';
 import { useClockDraw } from '../hooks';
@@ -20,7 +21,13 @@ const RIGHT = W - 4;
 /** Shown where there is no number. */
 const NONE = '—';
 
-type Gap = { label: string; text: string; real: boolean };
+type Gap = {
+  label: string;
+  text: string;
+  real: boolean;
+  /** The other car, for the gap on track (races); null without one or when lapped. */
+  driver: string | null;
+};
 
 /** "+1 LAP" for a lapped car, else the seconds without a sign. */
 function gapText(seconds: number | null, laps: number): string | null {
@@ -40,12 +47,72 @@ function neighbours(rows: TowerRow[], driver: string) {
     next && next.status !== 'retired' ? gapText(next.interval, next.interval_laps) : null;
   const ahead: Gap =
     i === 0
-      ? { label: 'P1', text: NONE, real: false }
-      : { label: `▲ ${rows[i - 1].driver}`, text: aheadText ?? NONE, real: aheadText != null };
+      ? { label: 'P1', text: NONE, real: false, driver: null }
+      : {
+          label: `▲ ${rows[i - 1].driver}`,
+          text: aheadText ?? NONE,
+          real: aheadText != null,
+          driver: row.interval_laps > 0 ? null : rows[i - 1].driver,
+        };
   const behind: Gap = next
-    ? { label: `▼ ${next.driver}`, text: behindText ?? NONE, real: behindText != null }
-    : { label: 'LAST', text: NONE, real: false };
+    ? {
+        label: `▼ ${next.driver}`,
+        text: behindText ?? NONE,
+        real: behindText != null,
+        driver: next.interval_laps > 0 || next.status === 'retired' ? null : next.driver,
+      }
+    : { label: 'LAST', text: NONE, real: false, driver: null };
   return { position: row.position, ahead, behind };
+}
+
+function GapRow({
+  gap,
+  y,
+  title,
+  side,
+  drawn,
+  overtake,
+}: {
+  gap: Gap | undefined;
+  y: number;
+  title: string;
+  side: 'ahead' | 'behind';
+  /** The number is written every frame (races, from the position track). */
+  drawn: boolean;
+  overtake: boolean;
+}) {
+  return (
+    <g>
+      <title>{title}</title>
+      <text x={4} y={y} fontSize={17} fill={gap?.real ? COLORS.textDim : COLORS.textFaint}>
+        {gap?.label ?? ''}
+        {overtake ? (
+          <tspan dx={8} fontSize={13} fontWeight={600} fill={COLORS.ers}>
+            OT
+          </tspan>
+        ) : null}
+      </text>
+      <text
+        key={drawn ? 'drawn' : 'tower'}
+        data-gap={drawn ? side : undefined}
+        x={RIGHT}
+        y={y}
+        fontSize={30}
+        textAnchor="end"
+        fill={gap?.real ? COLORS.text : COLORS.textFaint}
+      >
+        {drawn ? null : (gap?.text ?? NONE)}
+      </text>
+    </g>
+  );
+}
+
+function gapTitle(race: boolean, side: 'ahead' | 'behind'): string {
+  return race
+    ? side === 'ahead'
+      ? 'Gap to the car ahead on track: seconds since it was where this car is now (from the positions; the tower’s when lapped or in the pits)'
+      : 'Gap to the car behind on track: seconds since this car was where it is now'
+    : `Gap to the car ${side} in the tower (best laps)`;
 }
 
 /**
@@ -67,6 +134,28 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
   const overtakeAt = useOvertakeMode(timing.data?.kind === 'race');
   const t = useClockTime(500);
   const overtake = driver && overtakeAt ? overtakeAt(driver, t) : null;
+
+  // Races: both gaps on track every frame (the tower's only change at the timing lines).
+  const race = timing.data?.kind === 'race';
+  const { track } = useReplayPositions(race);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const onTrack = race && track != null && track.cars.some((c) => c.driver === driver);
+  const drawGaps = useMemo(() => {
+    if (!onTrack || !track || !driver || !around) return null;
+    const index = (code: string | null) =>
+      code == null ? -1 : track.cars.findIndex((c) => c.driver === code);
+    const me = index(driver);
+    const [ahead, behind] = [index(around.ahead.driver), index(around.behind.driver)];
+    const write = (side: 'ahead' | 'behind', gap: number | null) => {
+      const el = svgRef.current?.querySelector(`[data-gap=${side}]`);
+      if (el) el.textContent = gap == null ? around[side].text : formatGap(gap).slice(1);
+    };
+    return (now: number) => {
+      write('ahead', ahead < 0 ? null : timeGap(track, ahead, me, now));
+      write('behind', behind < 0 ? null : timeGap(track, me, behind, now));
+    };
+  }, [onTrack, track, driver, around]);
+  useClockDraw(drawGaps);
 
   const deltaRef = useRef<SVGTextElement>(null);
   const draw = useMemo(() => {
@@ -97,32 +186,10 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
     .filter(Boolean)
     .join('  ');
   const reference = data?.reference ? `vs L${data.reference.lap}` : '';
-  const gapRow = (gap: Gap | undefined, y: number, title: string) => (
-    <g>
-      <title>{title}</title>
-      <text x={4} y={y} fontSize={17} fill={gap?.real ? COLORS.textDim : COLORS.textFaint}>
-        {gap?.label ?? ''}
-        {y < H / 2 && overtake ? (
-          <tspan dx={8} fontSize={13} fontWeight={600} fill={COLORS.ers}>
-            OT
-          </tspan>
-        ) : null}
-      </text>
-      <text
-        x={RIGHT}
-        y={y}
-        fontSize={30}
-        textAnchor="end"
-        fill={gap?.real ? COLORS.text : COLORS.textFaint}
-      >
-        {gap?.text ?? NONE}
-      </text>
-    </g>
-  );
-
   return (
     <div className="flex h-full items-center justify-center p-1">
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         className="h-full w-full"
         preserveAspectRatio="xMidYMid meet"
@@ -130,11 +197,14 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
         role="img"
         aria-label={`Live delta of ${driver}`}
       >
-        {gapRow(
-          around?.ahead,
-          30,
-          `Gap to the car ahead in the tower${overtake ? `\n${describeCheck(overtake)}` : ''}`
-        )}
+        <GapRow
+          gap={around?.ahead}
+          y={30}
+          title={`${gapTitle(race, 'ahead')}${overtake ? `\n${describeCheck(overtake)}` : ''}`}
+          side="ahead"
+          drawn={onTrack && around != null}
+          overtake={overtake != null}
+        />
         <rect x={4} y={66} width={3} height={22} fill={color} />
         <text x={12} y={85} fontSize={22} fontWeight={600} fill={COLORS.text}>
           {driver}
@@ -161,7 +231,14 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
             {data ? null : NONE}
           </text>
         </g>
-        {gapRow(around?.behind, 152, 'Gap to the car behind in the tower')}
+        <GapRow
+          gap={around?.behind}
+          y={152}
+          title={gapTitle(race, 'behind')}
+          side="behind"
+          drawn={onTrack && around != null}
+          overtake={false}
+        />
       </svg>
     </div>
   );

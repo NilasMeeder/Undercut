@@ -484,6 +484,9 @@ qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) 
 - [x] Race board (2026-10-19): Pitwall-preset `race-board`: tower + Battles, kaart + Gaps
       (Positions, Live lap), klok, Live delta, Race control, Pit window (Stints), Track line +
       Weather. Getest op 1512×900 en 2560×1400 (Monza 2026 R)
+- [x] Live delta: de gaten ervoor en erachter in races elk frame uit het positiespoor (2026-10-19,
+      Nilas: "de delta van iemand achter of voor is statisch"; de tower verandert alleen bij een
+      timinglijn). Monza 2025 R lap 17: VER 4.456 → 4.539, PIA 6.100 → 6.021 in 8 s
 - [ ] Na Austin: klopt de 1 s uit het positiespoor met wat F1 doet (een opname heeft geen OT-kanaal,
       maar de race control en de inhaalacties wel)?
 

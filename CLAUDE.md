@@ -436,8 +436,10 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   zijn voor het tekenen licht gladgestreken (driehoek over ±10 m); de getallen zijn ruw.
 - **Live delta** (widget `livedelta`, fase 12, Nilas): dezelfde delta als Live lap als één groot
   getal (groen voor, geel achter, zoals Live lap), erboven het gat naar de auto ervoor en eronder
-  dat naar de auto erachter, uit de tower (race: intervallen op de laatste timinglijn; Q/FP:
-  verschil in beste lap). Grijs = geen auto ervoor (P1) of erachter. Eén SVG met een viewBox, dus
+  dat naar de auto erachter. Race: elk frame uit het positiespoor (`lib/replay.ts` `timeGap`: hoe
+  lang geleden de auto ervoor was waar deze nu is, tot 150 s terug), want de tower verandert alleen
+  op de timinglijnen en dan stond het getal stil (Nilas); de volgorde blijft uit de tower, en
+  gelapt, in de pit of zonder spoor geldt het interval van de tower. Q/FP: verschil in beste lap. Grijs = geen auto ervoor (P1) of erachter. Eén SVG met een viewBox, dus
   alles groeit mee met het paneel (zoals Clock). De lap-logica (2 s vooruit, afgeronde lap 3 s
   vasthouden) zit in `widgets/livelap/useLiveLap.ts`, gedeeld met Live lap.
 

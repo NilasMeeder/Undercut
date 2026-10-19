@@ -90,3 +90,34 @@ export function pitGhost(
   const ahead = now.filter((car, j) => j !== i && car && car.progress > ghost.progress).length;
   return { ...ghost, position: ahead + 1 };
 }
+
+/** Look this far back for a time gap; beyond it the tower's gap stands. */
+const GAP_SEARCH = 150;
+
+/**
+ * The time gap on track at t: seconds since car `front` was where car `back` is now, from the
+ * position track (so it moves every frame, not only at the timing lines). Null when either car is
+ * off the track, `front` is not ahead in lap progress, or it was there more than GAP_SEARCH ago.
+ */
+export function timeGap(
+  track: PositionTrack,
+  front: number,
+  back: number,
+  t: number
+): number | null {
+  const target = carAt(track, back, t)?.progress;
+  const head = carAt(track, front, t)?.progress;
+  if (target == null || head == null || head < target) return null;
+  const p = track.cars[front].progress;
+  let i = Math.min(Math.floor((t - track.start) / track.step), track.count - 1);
+  const stop = Math.max(1, i - Math.ceil(GAP_SEARCH / track.step));
+  for (; i >= stop; i--) {
+    const [a, b] = [p[i - 1], p[i]];
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    if (a <= target && target <= b) {
+      const at = track.start + (i - 1 + (b > a ? (target - a) / (b - a) : 1)) * track.step;
+      return Math.max(0, t - at);
+    }
+  }
+  return null;
+}
