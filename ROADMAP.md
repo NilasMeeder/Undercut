@@ -528,7 +528,13 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       (vorige of beste, zoals Live lap), elke bocht ingevuld zodra de auto erdoor is, de laatste
       uitgelegd; na de lijn blijft de hele lap staan tot de eerste bocht van de volgende. Monza
       2025 Q, VER L17 tegen L14: bochten samen −0.133, laptijd −0.131
-- [ ] **Voorspelde einduitslag**: met het tempo en de trends van nu, en waar gaten nul worden
+- [x] **Voorspelde einduitslag** (2026-10-19, `strategy.forecast`, `/forecast`, widget Forecast,
+      tab in het race board en Strategy): elke auto vanaf zijn laatste lijn op zijn stintfit
+      (degradatie ≥ 0, brandstof), de stop die hij nog moet maken (één droge compound) met het
+      pitverlies, aangenomen halverwege; in de pit nu: de rest van het verlies op de out-lap.
+      Volgorde, gaten, en waar het gat nul wordt (PASSES). Monza 2025 R tegen de uitslag: gemiddeld
+      2,8 plaatsen ernaast op lap 25, 1,7 op lap 35 (top 6 goed), 0,8 op lap 48. Eerst gekozen:
+      de snelste stoplap, maar met een rechte lijn per set is dat altijd een uiterste
 - [ ] **Safety car-calculator**: bij SC/VSC per auto wat stoppen nu oplevert, als tabel
 - [ ] **Remwegen en bochtfases**: rempunt, apex en uitgang per bocht, vergeleken tussen laps
 - [ ] **Gear- en throttle-map** op de baan

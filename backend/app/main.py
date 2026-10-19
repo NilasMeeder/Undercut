@@ -44,6 +44,7 @@ from app.schemas import (
     Degradation,
     EnergyComparison,
     EnergySession,
+    Forecast,
     Lap,
     LapPrediction,
     LapProgress,
@@ -257,6 +258,18 @@ def pit_window(
     return _guard(
         lambda: strategies.get_pit_window(year, round, session, driver, fuel, until, compound)
     )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/forecast")
+def race_forecast(
+    year: int,
+    round: int,
+    session: SessionCode,
+    until: Until = None,
+    fuel: Fuel = strategy.FUEL_EFFECT,
+) -> Forecast:
+    """The predicted result from the pace at the cutoff, with the stops still owed."""
+    return _guard(lambda: strategies.get_forecast(year, round, session, fuel, until))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/telemetry")

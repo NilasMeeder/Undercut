@@ -1051,6 +1051,106 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/forecast": {
+      "get": {
+        "summary": "Race Forecast",
+        "description": "The predicted result from the pace at the cutoff, with the stops still owed.",
+        "operationId": "race_forecast_api_sessions__year___round___session__forecast_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Session time (s): only laps completed by then count; omit for all",
+              "title": "Until"
+            },
+            "description": "Session time (s): only laps completed by then count; omit for all"
+          },
+          {
+            "name": "fuel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 0.1,
+              "minimum": 0,
+              "description": "Fuel effect in s per kg (100 kg at the start of a race)",
+              "default": 0.03,
+              "title": "Fuel"
+            },
+            "description": "Fuel effect in s per kg (100 kg at the start of a race)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forecast"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/telemetry": {
       "get": {
         "summary": "Lap Telemetry",
@@ -4641,6 +4741,137 @@
         ],
         "title": "EvolutionLap",
         "description": "A push lap in the track-evolution fit."
+      },
+      "Forecast": {
+        "properties": {
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "total_laps": {
+            "type": "integer",
+            "title": "Total Laps"
+          },
+          "pit_loss": {
+            "type": "number",
+            "title": "Pit Loss"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lap",
+          "total_laps",
+          "pit_loss",
+          "rows",
+          "notes"
+        ],
+        "title": "Forecast",
+        "description": "The predicted result of a race from the pace at the cutoff."
+      },
+      "ForecastPass": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap"
+        ],
+        "title": "ForecastPass"
+      },
+      "ForecastRow": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "now": {
+            "type": "integer",
+            "title": "Now"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "laps_down": {
+            "type": "integer",
+            "title": "Laps Down"
+          },
+          "stop_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Lap"
+          },
+          "stop_compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Compound"
+          },
+          "passes": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastPass"
+            },
+            "type": "array",
+            "title": "Passes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "position",
+          "now",
+          "gap",
+          "laps_down",
+          "stop_lap",
+          "stop_compound",
+          "passes"
+        ],
+        "title": "ForecastRow",
+        "description": "One car's predicted finish: its pace now (stint fit, degradation, fuel) to the flag, with\nthe stop it still owes."
       },
       "HTTPValidationError": {
         "properties": {

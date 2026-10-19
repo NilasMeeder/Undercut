@@ -3,6 +3,7 @@
 - history: every driver lap by lap (line crossings, gaps, positions, stints, pit stops).
 - degradation: per stint a straight line through the fuel-corrected lap times against tyre age.
 - pit_window: where a driver rejoins after a stop now, and undercut/overcut on the cars around.
+- forecast: the predicted result from the pace at the cutoff, with the stops still owed.
 
 Everything takes an `until` (session time): only laps completed by then count, so the session
 clock can step through a race without seeing the future.
@@ -21,6 +22,9 @@ from app.schemas import (
     Degradation,
     DriverRace,
     Duel,
+    Forecast,
+    ForecastPass,
+    ForecastRow,
     Lap,
     PitStop,
     PitWindow,
@@ -400,17 +404,31 @@ def tyre_model(
         return None
     field = p.compounds.get(stint.compound or "")
     if fit is None:
-        if field is None:
-            return None
-        # Too few clean laps on this set: the field's line, at this driver's latest pace.
+        earlier = _earlier_fit(pairs)
         recent = [lap for lap in seen if is_clean(lap) and lap.tyre_life is not None][-3:]
-        offsets = [
-            (corrected(lap, p.fuel, p.total_laps) or 0.0) - field.base - field.slope * lap.tyre_life
-            for lap in recent
-        ]
-        offset = float(np.median(offsets)) if offsets else 0.0
-        fit = Fit(field.slope, field.base + offset, 0.0, [])
-        notes.append(f"{driver}: too few clean laps on this set, the field's degradation is used")
+        if field is not None and recent:
+            # Too few clean laps on this set: the field's line, at this driver's latest pace.
+            offsets = [
+                (corrected(lap, p.fuel, p.total_laps) or 0.0)
+                - field.base
+                - field.slope * lap.tyre_life
+                for lap in recent
+            ]
+            fit = Fit(field.slope, field.base + float(np.median(offsets)), 0.0, [])
+            notes.append(
+                f"{driver}: too few clean laps on this set, the field's degradation is used"
+            )
+        elif earlier is not None:
+            # Just out of the pits: as quick as his last set was when new. Not the field's median
+            # on this compound: early on that is whoever started on it (often the back).
+            slope = field.slope if field is not None else earlier.slope
+            fit = Fit(slope, earlier.base, 0.0, [])
+            notes.append(f"{driver}: no clean lap on this set yet, as quick as his last set new")
+        elif field is not None:
+            fit = Fit(field.slope, field.base, 0.0, [])
+            notes.append(f"{driver}: no clean lap of his own yet, the field's pace is used")
+        else:
+            return None
     target = p.compounds.get(new_compound or "")
     if target is None:
         new = Fit(fit.slope, fit.base, 0.0, [])
@@ -423,6 +441,11 @@ def tyre_model(
         offset = fit.base - field.base if field else 0.0
         new = Fit(target.slope, target.base + offset, 0.0, [])
     return TyreModel(old=fit, new=new, age=age)
+
+
+def _earlier_fit(pairs: list[tuple[Stint, Fit | None]]) -> Fit | None:
+    """The fit of the driver's last stint before this one that has one."""
+    return next((fit for _, fit in reversed(pairs[:-1]) if fit is not None), None)
 
 
 def pit_window(
@@ -549,3 +572,160 @@ def _rejoin(driver: str, gap: float, gaps: dict[str, float | None]) -> Rejoin:
         behind=back[1] if back else None,
         gap_behind=round(back[0] - gap, 3) if back else None,
     )
+
+
+# --- Forecast ------------------------------------------------------------------------------------
+
+DRY = {"SOFT", "MEDIUM", "HARD"}
+
+
+def owes_stop(stints_so_far: list[Stint]) -> bool:
+    """A dry race needs two compounds: one dry compound so far means a stop is still to come."""
+    compounds = {s.compound for s in stints_so_far if s.compound}
+    return len(compounds) == 1 and compounds <= DRY
+
+
+def predicted_lines(
+    model: TyreModel,
+    start_line: float,
+    last_lap: int,
+    total: int,
+    fuel: float,
+    stop: int | None,
+    loss: float,
+    extra: float = 0.0,
+) -> list[float]:
+    """Predicted line times for laps last_lap + 1 … total (fuel-corrected times plus the fuel
+    still on board), with a stop at the end of lap `stop` costing `loss` (a stop at last_lap
+    has been made: the new set from the next lap on). `extra` goes on the first lap: the rest of
+    a stop whose in-lap was the last one. Degradation never makes a set quicker here."""
+    lines = []
+    t = start_line
+    for k, lap in enumerate(range(last_lap + 1, total + 1), start=1):
+        if stop is None or lap <= stop:
+            corrected_time = model.old.base + max(model.old.slope, 0.0) * (model.age + k)
+        else:
+            corrected_time = model.new.base + max(model.new.slope, 0.0) * (lap - stop)
+        t += corrected_time + fuel * (total - lap) + (extra if k == 1 else 0.0)
+        if stop is not None and lap == stop:
+            t += loss
+        lines.append(t)
+    return lines
+
+
+def assumed_stop(last_lap: int, total: int) -> int | None:
+    """The in-lap assumed for a stop still owed: halfway to the flag. The tyre model is a straight
+    line per set, and with that the quickest stop is always at one end of the race (now, or two
+    laps from the flag), which no team does; halfway keeps the cost (the pit loss and the laps on
+    a new set) without pretending to know the lap."""
+    if total - last_lap < 3:
+        return None
+    return last_lap + (total - last_lap + 1) // 2
+
+
+def forecast(laps: list[Lap], p: Paces, until: float | None, loss: float) -> Forecast:
+    """Every running car from its last line to the flag on its own tyre model (TyreModel, plus the
+    fuel still on board), with the stop it still owes at its quickest lap. The order at the flag
+    and the gaps follow from the predicted line times; nobody is held up and nothing else
+    happens (no safety car, no second stop)."""
+    total = p.total_laps
+    if not total:
+        raise LookupError("The forecast is for races and sprints")
+    per_driver = by_driver(laps)
+    running = [d for d in classification(per_driver, until) if _running(per_driver[d], until)]
+    seen = {d: [lap for lap in per_driver[d] if done(lap, until)] for d in running}
+    leaders = leader_line({d: seen[d] for d in running})
+    notes: list[str] = []
+    lines: dict[str, list[float]] = {}
+    """Per car its line times, lap 1 … total: the ones so far, then predicted."""
+    stops: dict[str, tuple[int, str | None]] = {}
+    for d in running:
+        so_far = [lap.end_time for lap in seen[d] if lap.end_time is not None]
+        last = next((lap for lap in reversed(seen[d]) if lap.end_time is not None), None)
+        if last is None or last.end_time is None:
+            continue
+        if last.lap >= total:
+            lines[d] = so_far
+            continue
+        pairs = p.fits.get(d) or []
+        current = pairs[-1][0].compound if pairs else None
+        compound = NEXT_COMPOUND.get(current or "", current)
+        model = tyre_model(p, d, seen[d], compound, notes)
+        if model is None:
+            continue
+        stop, extra = None, 0.0
+        if last.pit_in:
+            # In the pit lane now: the out-lap costs what the in-lap did not, then the new set.
+            stop = last.lap
+            pace = model.old.at(model.age) + p.fuel * (total - last.lap)
+            extra = max(loss - max((last.lap_time or pace) - pace, 0.0), 0.0)
+        elif owes_stop(stints(seen[d])):
+            stop = assumed_stop(last.lap, total)
+            if stop is not None:
+                stops[d] = (stop, compound)
+        lines[d] = so_far + predicted_lines(
+            model, last.end_time, last.lap, total, p.fuel, stop, loss, extra
+        )
+
+    finishers = [lines[d][total - 1] for d in lines if len(lines[d]) >= total]
+    flag = min(finishers) if finishers else math.inf
+
+    def at_flag(d: str) -> tuple[int, float]:
+        """Laps at the flag (a lapped car finishes the lap it is on when the winner is in), and
+        the line time of the last one."""
+        own = lines[d]
+        count = min(sum(1 for t in own if t < flag - 1e-6) + 1, len(own))
+        return count, own[count - 1]
+
+    predicted = sorted(lines, key=lambda d: (-at_flag(d)[0], at_flag(d)[1]))
+    unknown = [d for d in running if d not in lines]
+    if unknown:
+        notes.append(f"No pace yet for {', '.join(unknown)}: kept at their place now")
+    order = predicted[:]
+    for d in unknown:
+        order.insert(min(running.index(d), len(order)), d)
+
+    rows = []
+    for position, d in enumerate(order, start=1):
+        now = running.index(d) + 1
+        stop_lap, stop_compound = stops.get(d, (None, None))
+        row = ForecastRow(
+            driver=d,
+            position=position,
+            now=now,
+            gap=None,
+            laps_down=0,
+            stop_lap=stop_lap,
+            stop_compound=stop_compound,
+            passes=[],
+        )
+        if d in lines:
+            count, at = at_flag(d)
+            row.laps_down = total - count
+            if row.laps_down == 0 and math.isfinite(flag):
+                row.gap = round(at - flag, 3)
+            # Cars ahead now that end up behind: the lap from which this car stays ahead.
+            row.passes = [
+                ForecastPass(driver=other, lap=_ahead_from(lines[d], lines[other]))
+                for other in running[: now - 1]
+                if other in lines and order.index(other) > position - 1
+            ]
+        rows.append(row)
+    return Forecast(
+        lap=sum(1 for t in leaders if until is None or t <= until + LAP_DONE_SLACK),
+        total_laps=total,
+        pit_loss=round(loss, 2),
+        rows=rows,
+        notes=list(dict.fromkeys(notes)),
+    )
+
+
+def _ahead_from(mine: list[float], theirs: list[float]) -> int:
+    """The first lap from which `mine` crosses the line before `theirs` on every lap both run."""
+    both = min(len(mine), len(theirs))
+    lap = both
+    for k in range(both - 1, -1, -1):
+        if mine[k] >= theirs[k]:
+            break
+        lap = k + 1
+    return lap

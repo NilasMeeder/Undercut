@@ -27,6 +27,7 @@ import {
   type LapProgress,
   type CornersProgress,
   type PitWindow,
+  type Forecast,
   type RaceHistory,
   type RaceControlMessage,
   type ReplayPositions,
@@ -205,6 +206,10 @@ type Until = number | null | undefined;
 /** Qualifying: how much quicker the track got, from the push laps done by the cutoff. */
 export const useTrackEvolution = (until: Until, enabled = true) =>
   useStrategyQuery<TrackEvolution>('/track-evolution', { until }, enabled && until !== undefined);
+
+/** Races: the predicted result from the pace at the cutoff. */
+export const useForecast = (until: Until, fuel: number, enabled = true) =>
+  useStrategyQuery<Forecast>('/forecast', { until, fuel }, enabled && until !== undefined);
 
 /** Tyre degradation per stint up to the cutoff; `fuel` in s per kg. */
 export const useDegradation = (until: Until, fuel: number) =>

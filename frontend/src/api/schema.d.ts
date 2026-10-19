@@ -262,6 +262,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Race Forecast
+         * @description The predicted result from the pace at the cutoff, with the stops still owed.
+         */
+        get: operations["race_forecast_api_sessions__year___round___session__forecast_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/telemetry": {
         parameters: {
             query?: never;
@@ -1306,6 +1326,52 @@ export interface components {
             time: number;
             /** Gain */
             gain: number;
+        };
+        /**
+         * Forecast
+         * @description The predicted result of a race from the pace at the cutoff.
+         */
+        Forecast: {
+            /** Lap */
+            lap: number;
+            /** Total Laps */
+            total_laps: number;
+            /** Pit Loss */
+            pit_loss: number;
+            /** Rows */
+            rows: components["schemas"]["ForecastRow"][];
+            /** Notes */
+            notes: string[];
+        };
+        /** ForecastPass */
+        ForecastPass: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+        };
+        /**
+         * ForecastRow
+         * @description One car's predicted finish: its pace now (stint fit, degradation, fuel) to the flag, with
+         *     the stop it still owes.
+         */
+        ForecastRow: {
+            /** Driver */
+            driver: string;
+            /** Position */
+            position: number;
+            /** Now */
+            now: number;
+            /** Gap */
+            gap: number | null;
+            /** Laps Down */
+            laps_down: number;
+            /** Stop Lap */
+            stop_lap: number | null;
+            /** Stop Compound */
+            stop_compound: string | null;
+            /** Passes */
+            passes: components["schemas"]["ForecastPass"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3225,6 +3291,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PitWindow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    race_forecast_api_sessions__year___round___session__forecast_get: {
+        parameters: {
+            query?: {
+                /** @description Session time (s): only laps completed by then count; omit for all */
+                until?: number | null;
+                /** @description Fuel effect in s per kg (100 kg at the start of a race) */
+                fuel?: number;
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Forecast"];
                 };
             };
             /** @description Validation Error */

@@ -166,3 +166,21 @@ def test_pit_window_rejoin_and_duels() -> None:
     assert len(ver.first) == strategy.DUEL_LAPS
     sc = strategy.pit_window(laps, p, "NOR", until, losses, "sc")
     assert sc.pit_loss == 15.0
+
+
+def test_forecast_projects_the_pace_with_the_stop_still_owed() -> None:
+    laps = stint_laps("VER", range(1, 21), 80.3, 0.05)
+    laps += stint_laps("NOR", range(1, 21), 80.0, 0.05, start=5.0)  # 0.3 s a lap quicker
+    laps += stint_laps("PIA", range(1, 21), 83.0, 0.05)
+    until = next(lap.end_time for lap in laps if lap.driver == "VER" and lap.lap == 10)
+    until += 3.0  # NOR has done lap 10 too (2 s behind)
+    p = strategy.paces(laps, 20, 0.0, until)
+    result = strategy.forecast(laps, p, until, 25.0)
+    assert result.lap == 10 and result.total_laps == 20
+    nor, ver, pia = result.rows
+    assert (nor.driver, nor.now, ver.driver, ver.now, pia.driver) == ("NOR", 2, "VER", 1, "PIA")
+    # One compound so far: everyone still stops, assumed halfway to the flag.
+    assert {r.stop_lap for r in result.rows} == {15}
+    assert ver.gap == pytest.approx(1.0, abs=0.01)  # NOR gains 3 s over the last 10 laps
+    assert [(x.driver, x.lap) for x in nor.passes] == [("VER", 17)]
+    assert ver.passes == [] and pia.laps_down == 0

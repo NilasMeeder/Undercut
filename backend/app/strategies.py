@@ -2,7 +2,7 @@
 
 from app import replays, sessions, strategy
 from app.generations import session_cache
-from app.schemas import Degradation, PitWindow, RaceHistory, TrackStatus
+from app.schemas import Degradation, Forecast, PitWindow, RaceHistory, TrackStatus
 from app.sources import tracinginsights as ti
 
 
@@ -70,4 +70,18 @@ def get_pit_window(
         pit_losses(year, round_number, code),
         strategy.status_at(timeline.track_status, at),
         compound,
+    )
+
+
+def get_forecast(
+    year: int, round_number: int, code: str, fuel: float, until: float | None
+) -> Forecast:
+    timeline = replays.get_timeline(year, round_number, code)
+    if timeline.kind != "race":
+        raise LookupError("The forecast is for races and sprints")
+    return strategy.forecast(
+        sessions.get_laps(year, round_number, code),
+        get_paces(year, round_number, code, fuel, until),
+        until,
+        pit_losses(year, round_number, code)["green"],
     )

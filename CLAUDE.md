@@ -868,6 +868,16 @@ Modelkeuzes (in de (i)-uitleg van de widgets ook):
   het gemiddelde schone tempo, en laps tot binnen 1 s (ATTACK) en tot erop (CATCH); rood als dat
   vóór de finish is. Negatief interval (een stop bezig) = geen interval. Rekent per passage
   (`crossingsKey`). In de presets Strategy en Pitwall (race).
+- **Forecast** (`strategy.forecast`, `/forecast?until=&fuel=`, widget `forecast`): per rijdende
+  auto zijn lijntijden tot nu plus voorspeld tot de vlag (`predicted_lines`: `TyreModel` zoals het
+  pit window, slope geklemd op ≥ 0, + brandstof aan boord). Een verschuldigde stop (`owes_stop`:
+  één droge compound) = pitverlies aan het eind van `assumed_stop` (halverwege; de snelste lap
+  is met een rechte lijn per set altijd een uiterste) en daarna de andere compound. Een in-lap
+  als laatste: de out-lap krijgt verlies − wat de in-lap al kostte. Zonder schone lap op de nieuwe
+  set: zijn vorige set toen die nieuw was (`tyre_model`, ook voor het pit window: de mediaan van
+  het veld op hard is vroeg in de race de achterhoede). Volgorde op laps bij de vlag en lijntijd;
+  PASSES = auto's die nu voor staan en eindigen erachter, met de lap vanaf waar hij blijvend
+  voor ligt (de UI zegt "(stop)" als dat de aangenomen stop van de ander is).
 - **Lap-charts** (`LapChart`): x = lapnummer op de lijn, vaste x-range (0 of 1 tot het totaal) zodat de
   chart niet verspringt; uPlot `cursor.sync` per link-groep; SC/VSC/rood als banden via
   `lapAxis` (sessietijd → leiderslap). Data hangt aan `crossingsKey` (aantal passages), niet aan t.

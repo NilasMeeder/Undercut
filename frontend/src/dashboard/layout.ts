@@ -281,7 +281,7 @@ function qualiBoard(api: DockviewApi) {
 /**
  * Preset: the race board. The tower (fit) over Battles on the left; every car on the map over the
  * gaps (positions and the live lap as tabs) in the middle; on the right the race clock (local
- * time as a tab), Live delta, race control and the pit window (stints as a tab); the track line
+ * time as a tab), Live delta, race control and the pit window (stints and the forecast as tabs); the track line
  * and the weather along the bottom. Sizes are shares of the screen, like the qualifying board.
  */
 function raceBoard(api: DockviewApi) {
@@ -311,6 +311,7 @@ function raceBoard(api: DockviewApi) {
   const delta = addWidget(api, 'livedelta', 'blue', { referencePanel: clock, direction: 'below' });
   const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: feed, direction: 'below' });
   addWidget(api, 'stints', 'blue', { referencePanel: pit, direction: 'within' });
+  addWidget(api, 'forecast', 'blue', { referencePanel: pit, direction: 'within' });
   pit.api.setActive();
   const battles = addWidget(api, 'battles', 'blue', { referencePanel: tower, direction: 'below' });
   addWidget(api, 'passes', 'blue', { referencePanel: battles, direction: 'within' });
@@ -348,6 +349,7 @@ function strategy(api: DockviewApi) {
   const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'tower', 'blue', { referencePanel: pit, direction: 'within' });
   addWidget(api, 'tyres', 'blue', { referencePanel: pit, direction: 'within' });
+  addWidget(api, 'forecast', 'blue', { referencePanel: pit, direction: 'within' });
   pit.api.setActive();
   const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: stints, direction: 'below' });
   addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });

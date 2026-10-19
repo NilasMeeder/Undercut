@@ -1099,6 +1099,44 @@ class Duel(BaseModel):
     second: list[float]
 
 
+class ForecastPass(BaseModel):
+    driver: str
+    """The car it gets ahead of and stays ahead of to the flag."""
+    lap: int
+
+
+class ForecastRow(BaseModel):
+    """One car's predicted finish: its pace now (stint fit, degradation, fuel) to the flag, with
+    the stop it still owes."""
+
+    driver: str
+    position: int
+    """Predicted finishing position."""
+    now: int
+    """Position at the cutoff."""
+    gap: float | None
+    """Predicted seconds behind the winner at the flag; null for a lapped car (see laps_down)."""
+    laps_down: int
+    stop_lap: int | None
+    """The in-lap assumed for the stop it still owes (dry race, one compound so far): halfway to
+    the flag. Null when none is owed."""
+    stop_compound: str | None
+    passes: list[ForecastPass]
+    """Cars ahead now that it is predicted to pass, with the lap the gap goes through zero."""
+
+
+class Forecast(BaseModel):
+    """The predicted result of a race from the pace at the cutoff."""
+
+    lap: int
+    """The leader's lap at the cutoff."""
+    total_laps: int
+    pit_loss: float
+    rows: list[ForecastRow]
+    """In predicted order; cars without a pace (too few laps) at their place now."""
+    notes: list[str]
+
+
 class PitWindow(BaseModel):
     """A pit stop for one driver at the cutoff: where he rejoins, and undercut/overcut on the cars
     ahead and behind. Tyre model from Degradation; pit loss from the circuit."""
