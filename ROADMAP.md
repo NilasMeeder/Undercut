@@ -615,7 +615,10 @@ Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de li
       RUS houdt P1, GAS P2 → P8), Zandvoort 2026 (ANT P2 → P1), Monaco 2026 (geen x/y: grid uit de
       volgorde ervoor). Meteen: slots die > 1,5 plek van hun gridplek afwijken tellen niet
       (Monaco 2026 lap 1 had x/y = 0)
-- [ ] Presets naar schermgrootte voor de analyse-presets
+- [x] **Analyse-presets naar schermgrootte** (2026-10-19, `dashboard/layout.ts`, `isWide`): vanaf
+      2400 px een vierde kolom en minder tabs (Engineer, Qualifying, Debrief, Overview, Quali duel,
+      Strategy als vier kolommen); daaronder de MacBook-indeling ongewijzigd. Getest in headless
+      Chrome op 2560×1400 en 1512×900 (Monza 2025 Q en R, elke tab)
 - [ ] Automatische analyses: opvallende momenten als markeringen
 
 ## Later / backlog
@@ -635,7 +638,4 @@ Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de li
   (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag. Report doet
   het verslag al; de momenten als markeringen nog niet
 
-- **Presets naar schermgrootte** (Nilas, 2026-10-18): op een groot scherm (curved monitor thuis)
-  meer panelen in de presets dan op de MacBook. Pitwall doet dit sinds fase 9 (`window.innerWidth`);
-  de analyse-presets nog niet
 

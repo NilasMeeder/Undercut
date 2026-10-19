@@ -611,6 +611,16 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
 - **Analyse**: bij binnenkomst de klok op het einde; preset **Debrief** = Report + Delta,
   Telemetry, kaart, Corners/Race pace; preset **Qualifying** = Bests/Laps/Run timeline, Delta,
   Telemetry, kaart, Mini-sectors/Corners/Energy.
+  **Naar schermgrootte** (fase 14): vanaf 2400 px (`WIDE`, `isWide`) krijgen de analyse-presets
+  een vierde kolom en gaan tab-stapels uit elkaar (Engineer: Bests onder Laps, Energy boven race
+  control rechts; Qualifying: Run timeline onder Bests, Corners boven Energy rechts; Debrief: Race
+  pace boven Teammates; Overview: Weekend naast de Run timeline, Speed map naast Speed traps;
+  Quali duel: Corners onder de kaart; Strategy: `strategyWide`, vier kolommen). Daaronder precies
+  de MacBook-indeling van eerst. Valkuilen in dockview: een paneel `below` het enige paneel
+  splitst de hele root (dus de linkerkolom pas splitsen als de kolommen er staan), en `setSize`
+  op een groep neemt ruimte van zijn buur: zet de breedtes van links naar rechts en laat de
+  laatste kolom de rest; `setActive` op een paneel dat in de smalle variant een tab is, verandert
+  welke tab daar vooraan staat.
 - **Qualifying board** (Pitwall, `quali-board`, Nilas' eigen indeling van 2026-10-18, screenshot in
   `~/Projecten/f1dash/screenshots`): links de tower (fit, Laps als tab) boven Corners, in het midden
   de kaart met alle auto's boven Live lap, rechts Clock op de sessieklok (lokale tijd als tab), Race

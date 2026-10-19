@@ -31,6 +31,14 @@ export function addWidget(
 
 type Position = Parameters<DockviewApi['addPanel']>[0]['position'];
 
+/** Screen widths (px) where a preset gets fewer or more panels (the pitwall board) or more
+ * (the analysis presets: a laptop gets tabs, a wide screen more side by side). */
+const NARROW = 1700;
+const WIDE = 2400;
+const isWide = () => window.innerWidth >= WIDE;
+/** A share of the screen width, in px. */
+const share = (part: number) => Math.round(window.innerWidth * part);
+
 /** Preset: laps on the left, delta over telemetry in the middle, track map on the right. */
 function qualiDuel(api: DockviewApi) {
   const laps = addWidget(api, 'laps', 'blue');
@@ -40,67 +48,113 @@ function qualiDuel(api: DockviewApi) {
   });
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
-  laps.group.api.setSize({ width: 430 });
-  map.group.api.setSize({ width: 380 });
+  if (isWide()) {
+    // Wide: where the time is, under the map.
+    const corners = addWidget(api, 'corners', 'blue', { referencePanel: map, direction: 'below' });
+    laps.group.api.setSize({ width: share(0.2) });
+    map.group.api.setSize({ width: share(0.24), height: Math.round(window.innerHeight * 0.45) });
+    corners.group.api.setSize({ width: share(0.24) });
+  } else {
+    laps.group.api.setSize({ width: 430 });
+    map.group.api.setSize({ width: 380 });
+  }
   delta.group.api.setSize({ height: 170 });
 }
 
-/** Preset: everything for one comparison on one screen; tables as tabs on the left. */
+/** Preset: everything for one comparison on one screen; tables as tabs on the left. A wide
+ * screen gets the bests under the laps and a fourth column with energy and race control. */
 function engineer(api: DockviewApi) {
+  const wide = isWide();
   const laps = addWidget(api, 'laps', 'blue');
-  const asTab: Position = { referencePanel: laps, direction: 'within' };
-  addWidget(api, 'bests', 'blue', asTab);
-  addWidget(api, 'speedtraps', 'blue', asTab);
-  addWidget(api, 'timeline', 'blue', asTab);
-  laps.api.setActive();
   const telemetry = addWidget(api, 'telemetry', 'blue', {
     referencePanel: laps,
     direction: 'right',
   });
+  // The tables after the first split, so a wide screen's bests stay in the left column.
+  const bests = addWidget(api, 'bests', 'blue', {
+    referencePanel: laps,
+    direction: wide ? 'below' : 'within',
+  });
+  addWidget(api, 'speedtraps', 'blue', { referencePanel: bests, direction: 'within' });
+  addWidget(api, 'timeline', 'blue', { referencePanel: bests, direction: 'within' });
+  laps.api.setActive();
+  if (wide) bests.api.setActive();
   // Right column first, so delta only spans the telemetry column.
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const corners = addWidget(api, 'corners', 'blue', { referencePanel: map, direction: 'below' });
-  addWidget(api, 'energy', 'blue', { referencePanel: corners, direction: 'within' });
+  if (!wide) addWidget(api, 'energy', 'blue', { referencePanel: corners, direction: 'within' });
   addWidget(api, 'phases', 'blue', { referencePanel: corners, direction: 'within' });
   corners.api.setActive();
+  const energy = wide ? addWidget(api, 'energy', 'blue', { direction: 'right' }) : null;
   const feed = addWidget(api, 'racecontrol', 'blue', {
-    referencePanel: corners,
+    referencePanel: energy ?? corners,
     direction: 'below',
   });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
   addWidget(api, 'markers', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
-  laps.group.api.setSize({ width: 400 });
-  map.group.api.setSize({ width: 470, height: 240 });
-  feed.group.api.setSize({ height: 200 });
+  if (energy) {
+    // Every column from the left; the last one gets the rest.
+    laps.group.api.setSize({ width: share(0.18), height: Math.round(window.innerHeight * 0.5) });
+    telemetry.group.api.setSize({ width: share(0.4) });
+    map.group.api.setSize({ width: share(0.22), height: Math.round(window.innerHeight * 0.4) });
+    energy.group.api.setSize({ height: Math.round(window.innerHeight * 0.55) });
+  } else {
+    laps.group.api.setSize({ width: 400 });
+    map.group.api.setSize({ width: 470, height: 240 });
+    feed.group.api.setSize({ height: 200 });
+  }
   delta.group.api.setSize({ height: 160 });
 }
 
 /** Preset: qualifying after the fact: bests and the run timeline, two laps compared, where the
- * time is per mini-sector and corner, and the energy. */
+ * time is per mini-sector and corner, and the energy. A wide screen gets the run timeline under
+ * the bests and a fourth column with the corners over the energy. */
 function qualifying(api: DockviewApi) {
+  const wide = isWide();
   const bests = addWidget(api, 'bests', 'blue');
   const asTab: Position = { referencePanel: bests, direction: 'within' };
   addWidget(api, 'laps', 'blue', asTab);
-  addWidget(api, 'timeline', 'blue', asTab);
+  if (!wide) addWidget(api, 'timeline', 'blue', asTab);
   addWidget(api, 'tyres', 'blue', asTab);
   bests.api.setActive();
   const telemetry = addWidget(api, 'telemetry', 'blue', {
     referencePanel: bests,
     direction: 'right',
   });
+  // After the columns, so it stays in the left one.
+  if (wide) addWidget(api, 'timeline', 'blue', { referencePanel: bests, direction: 'below' });
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const mini = addWidget(api, 'minisectors', 'blue', { referencePanel: map, direction: 'below' });
-  addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });
-  addWidget(api, 'phases', 'blue', { referencePanel: mini, direction: 'within' });
-  addWidget(api, 'energy', 'blue', { referencePanel: mini, direction: 'within' });
-  addWidget(api, 'setups', 'blue', { referencePanel: mini, direction: 'within' });
-  addWidget(api, 'evolution', 'blue', { referencePanel: mini, direction: 'within' });
+  const corners = wide
+    ? addWidget(api, 'corners', 'blue', { direction: 'right' })
+    : addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });
+  addWidget(api, 'phases', 'blue', { referencePanel: corners, direction: 'within' });
+  const energy = wide
+    ? addWidget(api, 'energy', 'blue', { referencePanel: corners, direction: 'below' })
+    : addWidget(api, 'energy', 'blue', { referencePanel: mini, direction: 'within' });
+  addWidget(api, 'setups', 'blue', { referencePanel: energy, direction: 'within' });
+  addWidget(api, 'evolution', 'blue', {
+    referencePanel: wide ? mini : energy,
+    direction: 'within',
+  });
   mini.api.setActive();
+  if (wide) {
+    corners.api.setActive();
+    energy.api.setActive();
+  }
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
-  bests.group.api.setSize({ width: 430 });
-  map.group.api.setSize({ width: 470, height: 260 });
+  if (wide) {
+    // Every column from the left; the last one gets the rest.
+    bests.group.api.setSize({ width: share(0.19), height: Math.round(window.innerHeight * 0.5) });
+    telemetry.group.api.setSize({ width: share(0.37) });
+    map.group.api.setSize({ width: share(0.22), height: Math.round(window.innerHeight * 0.4) });
+    corners.group.api.setSize({ height: Math.round(window.innerHeight * 0.5) });
+  } else {
+    bests.group.api.setSize({ width: 430 });
+    map.group.api.setSize({ width: 470, height: 260 });
+  }
   delta.group.api.setSize({ height: 160 });
 }
 
@@ -113,33 +167,80 @@ function debrief(api: DockviewApi) {
   });
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const corners = addWidget(api, 'corners', 'blue', { referencePanel: map, direction: 'below' });
-  addWidget(api, 'pace', 'blue', { referencePanel: corners, direction: 'within' });
-  addWidget(api, 'teammates', 'blue', { referencePanel: corners, direction: 'within' });
+  // Wide: race pace over the teammates in a column of their own.
+  const pace = isWide()
+    ? addWidget(api, 'pace', 'blue', { direction: 'right' })
+    : addWidget(api, 'pace', 'blue', { referencePanel: corners, direction: 'within' });
+  const mates = addWidget(api, 'teammates', 'blue', {
+    referencePanel: isWide() ? pace : corners,
+    direction: isWide() ? 'below' : 'within',
+  });
   corners.api.setActive();
   const delta = addWidget(api, 'delta', 'blue', { referencePanel: telemetry, direction: 'above' });
-  report.group.api.setSize({ width: Math.min(Math.round(window.innerWidth * 0.32), 620) });
-  map.group.api.setSize({ width: 400, height: 300 });
+  report.group.api.setSize({ width: Math.min(share(0.32), isWide() ? 760 : 620) });
+  if (isWide()) {
+    // Every column from the left; the last one gets the rest.
+    telemetry.group.api.setSize({ width: share(0.3) });
+    map.group.api.setSize({ width: share(0.2), height: Math.round(window.innerHeight * 0.45) });
+    mates.group.api.setSize({ height: Math.round(window.innerHeight * 0.4) });
+  } else {
+    map.group.api.setSize({ width: 400, height: 300 });
+  }
   delta.group.api.setSize({ height: 160 });
 }
 
-/** Preset: the session at a glance, no telemetry. */
+/** Preset: the session at a glance, no telemetry. A wide screen gets the weekend next to the
+ * run timeline and the speed map and teammates next to the speed traps. */
 function overview(api: DockviewApi) {
+  const wide = isWide();
   const timeline = addWidget(api, 'timeline', 'blue');
   const bests = addWidget(api, 'bests', 'blue', { referencePanel: timeline, direction: 'below' });
   const traps = addWidget(api, 'speedtraps', 'blue', { referencePanel: bests, direction: 'right' });
-  addWidget(api, 'setups', 'blue', { referencePanel: traps, direction: 'within' });
-  addWidget(api, 'teammates', 'blue', { referencePanel: traps, direction: 'within' });
-  addWidget(api, 'weekend', 'blue', { referencePanel: timeline, direction: 'within' });
-  addWidget(api, 'longruns', 'blue', { referencePanel: timeline, direction: 'within' });
-  addWidget(api, 'season', 'blue', { referencePanel: timeline, direction: 'within' });
+  const setups = addWidget(
+    api,
+    'setups',
+    'blue',
+    wide
+      ? { referencePanel: traps, direction: 'right' }
+      : { referencePanel: traps, direction: 'within' }
+  );
+  addWidget(api, 'teammates', 'blue', {
+    referencePanel: wide ? setups : traps,
+    direction: 'within',
+  });
+  const weekend = addWidget(
+    api,
+    'weekend',
+    'blue',
+    wide
+      ? { referencePanel: timeline, direction: 'right' }
+      : { referencePanel: timeline, direction: 'within' }
+  );
+  addWidget(api, 'longruns', 'blue', { referencePanel: weekend, direction: 'within' });
+  addWidget(api, 'season', 'blue', { referencePanel: weekend, direction: 'within' });
   timeline.api.setActive();
   traps.api.setActive();
-  const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: traps, direction: 'right' });
+  if (wide) {
+    weekend.api.setActive();
+    setups.api.setActive();
+  }
+  const feed = addWidget(api, 'racecontrol', 'blue', {
+    referencePanel: wide ? setups : traps,
+    direction: 'right',
+  });
   addWidget(api, 'weather', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
-  timeline.group.api.setSize({ height: 460 });
-  bests.group.api.setSize({ width: 640 });
-  traps.group.api.setSize({ width: 380 });
+  if (wide) {
+    timeline.group.api.setSize({ height: Math.round(window.innerHeight * 0.5) });
+    timeline.group.api.setSize({ width: share(0.55) });
+    bests.group.api.setSize({ width: share(0.3) });
+    traps.group.api.setSize({ width: share(0.2) });
+    setups.group.api.setSize({ width: share(0.28) });
+  } else {
+    timeline.group.api.setSize({ height: 460 });
+    bests.group.api.setSize({ width: 640 });
+    traps.group.api.setSize({ width: 380 });
+  }
 }
 
 /** Preset: watch the session back with the clock bar; tower, map with all cars, track line. */
@@ -167,10 +268,6 @@ function replay(api: DockviewApi) {
   line.group.api.setSize({ height: 120 });
   clock.group.api.setSize({ height: 64 });
 }
-
-/** Screen widths (px) where the pitwall board gets fewer or more panels. */
-const NARROW = 1700;
-const WIDE = 2400;
 
 /**
  * Preset: the board for live or watching back. The tower big on the left, the map with every car
@@ -346,6 +443,7 @@ function raceBoard(api: DockviewApi) {
 
 /** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */
 function strategy(api: DockviewApi) {
+  if (isWide()) return strategyWide(api);
   const stints = addWidget(api, 'stints', 'blue');
   // Right column first, so it runs the full height: map over the pit window (and the tower).
   const map = addWidget(
@@ -370,6 +468,44 @@ function strategy(api: DockviewApi) {
   map.group.api.setSize({ width: 470, height: 330 });
   stints.group.api.setSize({ height: 380 });
   pace.group.api.setSize({ width: 500 });
+}
+
+/** The strategy preset on a wide screen: four columns, everything side by side but the tyre
+ * sets and the starts: stints over gaps, race pace over positions, the map over the pit window,
+ * the tower over the forecast and the battles. */
+function strategyWide(api: DockviewApi) {
+  const stints = addWidget(api, 'stints', 'blue');
+  const map = addWidget(
+    api,
+    'trackmap',
+    'blue',
+    { referencePanel: stints, direction: 'right' },
+    { cars: 'all' }
+  );
+  const pace = addWidget(api, 'pace', 'blue', { referencePanel: stints, direction: 'right' });
+  const tower = addWidget(api, 'tower', 'blue', { direction: 'right' });
+  addWidget(api, 'gaps', 'blue', { referencePanel: stints, direction: 'below' });
+  addWidget(api, 'positions', 'blue', { referencePanel: pace, direction: 'below' });
+  const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: map, direction: 'below' });
+  addWidget(api, 'tyres', 'blue', { referencePanel: pit, direction: 'within' });
+  pit.api.setActive();
+  const forecast = addWidget(api, 'forecast', 'blue', {
+    referencePanel: tower,
+    direction: 'below',
+  });
+  const battles = addWidget(api, 'battles', 'blue', {
+    referencePanel: forecast,
+    direction: 'below',
+  });
+  addWidget(api, 'starts', 'blue', { referencePanel: battles, direction: 'within' });
+  battles.api.setActive();
+  const height = window.innerHeight - 60;
+  // Every column from the left; the last one gets the rest.
+  stints.group.api.setSize({ width: share(0.3), height: Math.round(height * 0.45) });
+  pace.group.api.setSize({ width: share(0.24), height: Math.round(height * 0.5) });
+  map.group.api.setSize({ width: share(0.22), height: Math.round(height * 0.4) });
+  tower.group.api.setSize({ height: Math.round(height * 0.38) });
+  forecast.group.api.setSize({ height: Math.round(height * 0.32) });
 }
 
 export const PRESETS = [
