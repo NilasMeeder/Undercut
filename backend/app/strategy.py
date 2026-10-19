@@ -4,6 +4,7 @@
 - degradation: per stint a straight line through the fuel-corrected lap times against tyre age.
 - pit_window: where a driver rejoins after a stop now, and undercut/overcut on the cars around.
 - forecast: the predicted result from the pace at the cutoff, with the stops still owed.
+- pit_calculator: every car's rejoin if it stops now (under a safety car).
 
 Everything takes an `until` (session time): only laps completed by then count, so the session
 clock can step through a race without seeing the future.
@@ -26,6 +27,8 @@ from app.schemas import (
     ForecastPass,
     ForecastRow,
     Lap,
+    PitCalculator,
+    PitNowRow,
     PitStop,
     PitWindow,
     RaceHistory,
@@ -729,3 +732,44 @@ def _ahead_from(mine: list[float], theirs: list[float]) -> int:
             break
         lap = k + 1
     return lap
+
+
+# --- Safety car calculator -----------------------------------------------------------------------
+
+
+def pit_calculator(
+    laps: list[Lap], until: float | None, losses: dict[TrackStatus, float], status: TrackStatus
+) -> PitCalculator:
+    """Per running car: where it rejoins if it alone stops now with the pit loss of `status`,
+    on the gaps at the cutoff (under a safety car they shrink as the field bunches up)."""
+    per_driver = by_driver(laps)
+    running = [d for d in classification(per_driver, until) if _running(per_driver[d], until)]
+    seen = {d: [lap for lap in per_driver[d] if done(lap, until)] for d in running}
+    leaders = leader_line({d: seen[d] for d in running})
+    gaps = {d: _gap(seen[d], leaders) for d in running}
+    loss = losses.get(status, losses["green"])
+    rows = []
+    for position, d in enumerate(running, start=1):
+        last = seen[d][-1] if seen[d] else None
+        gap = gaps[d]
+        in_lane = last is not None and last.pit_in
+        rejoin = None if gap is None or in_lane else _rejoin(d, gap + loss, gaps)
+        rows.append(
+            PitNowRow(
+                driver=d,
+                position=position,
+                compound=last.compound if last else None,
+                life=last.tyre_life if last else None,
+                owes_stop=owes_stop(stints(seen[d])),
+                in_pit=in_lane,
+                rejoin=rejoin,
+                places=rejoin.position - position if rejoin else None,
+            )
+        )
+    return PitCalculator(
+        lap=sum(1 for t in leaders if until is None or t <= until + LAP_DONE_SLACK),
+        status=status,
+        loss=round(loss, 2),
+        green_loss=round(losses["green"], 2),
+        rows=rows,
+    )

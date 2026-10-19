@@ -9,6 +9,7 @@ import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
 import { liveDeltaWidget } from './livedelta/widget';
 import { forecastWidget } from './forecast/widget';
+import { safetyCarWidget } from './safetycar/widget';
 import { liveCornersWidget } from './livecorners/widget';
 import { liveLapWidget } from './livelap/widget';
 import { markersWidget } from './markers/widget';
@@ -75,6 +76,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   paceWidget,
   pitWindowWidget,
   forecastWidget,
+  safetyCarWidget,
 ];
 
 export const WIDGETS_BY_ID = new Map(WIDGETS.map((w) => [w.id, w]));

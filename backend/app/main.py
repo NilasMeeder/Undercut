@@ -4,7 +4,7 @@ import json
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Request, Response
@@ -55,6 +55,7 @@ from app.schemas import (
     MiniSectors,
     OvertakeChecks,
     Pass,
+    PitCalculator,
     PitWindow,
     ProgressReference,
     RaceControlMessage,
@@ -270,6 +271,20 @@ def race_forecast(
 ) -> Forecast:
     """The predicted result from the pace at the cutoff, with the stops still owed."""
     return _guard(lambda: strategies.get_forecast(year, round, session, fuel, until))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/pit-calculator")
+def pit_calculator(
+    year: int,
+    round: int,
+    session: SessionCode,
+    until: Until = None,
+    status: Annotated[
+        Literal["sc", "vsc", "green"], Query(description="Whose pit loss: safety car or VSC")
+    ] = "sc",
+) -> PitCalculator:
+    """Every car's rejoin if it stops now under a safety car (or VSC), nobody else stopping."""
+    return _guard(lambda: strategies.get_pit_calculator(year, round, session, until, status))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/telemetry")

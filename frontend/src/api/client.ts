@@ -44,6 +44,7 @@ export type StintPace = Schemas['StintPace'];
 export type CompoundPace = Schemas['CompoundPace'];
 export type PitWindow = Schemas['PitWindow'];
 export type Forecast = Schemas['Forecast'];
+export type PitCalculator = Schemas['PitCalculator'];
 export type ForecastRow = Schemas['ForecastRow'];
 export type Duel = Schemas['Duel'];
 export type EnergyComparison = Schemas['EnergyComparison'];

@@ -184,3 +184,23 @@ def test_forecast_projects_the_pace_with_the_stop_still_owed() -> None:
     assert ver.gap == pytest.approx(1.0, abs=0.01)  # NOR gains 3 s over the last 10 laps
     assert [(x.driver, x.lap) for x in nor.passes] == [("VER", 17)]
     assert ver.passes == [] and pia.laps_down == 0
+
+
+def test_pit_calculator_rejoins_everyone_with_the_safety_car_loss() -> None:
+    laps = stint_laps("VER", range(1, 21), 80.0, 0.05)
+    laps += stint_laps("NOR", range(1, 21), 80.2, 0.05)
+    laps += stint_laps("PIA", range(1, 21), 83.0, 0.05)  # 30 s back after 10 laps
+    until = laps[49].end_time
+    losses = {"green": 25.0, "sc": 15.0, "vsc": 18.0, "vsc_ending": 18.0, "red": 0.0}
+    calc = strategy.pit_calculator(laps, until, losses, "sc")
+    assert (calc.status, calc.loss, calc.green_loss, calc.lap) == ("sc", 15.0, 25.0, 10)
+    ver, nor, pia = calc.rows
+    assert ver.owes_stop and not ver.in_pit and ver.rejoin is not None
+    # VER 15 s down lands behind NOR (2 s back) but ahead of PIA (30 s back).
+    assert (ver.rejoin.position, ver.places, ver.rejoin.behind) == (2, 1, "PIA")
+    assert nor.rejoin is not None and nor.places == 0
+    assert pia.rejoin is not None and pia.places == 0
+    green = strategy.pit_calculator(laps, until, losses, "green")
+    assert green.rows[0].rejoin is not None and green.rows[0].rejoin.gap_behind == pytest.approx(
+        5.0, abs=0.01
+    )

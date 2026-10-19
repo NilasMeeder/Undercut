@@ -1125,6 +1125,35 @@ class ForecastRow(BaseModel):
     """Cars ahead now that it is predicted to pass, with the lap the gap goes through zero."""
 
 
+class PitNowRow(BaseModel):
+    """One car stopping now (at the cutoff) under the given track status, nobody else stopping."""
+
+    driver: str
+    position: int
+    compound: str | None
+    life: int | None
+    owes_stop: bool
+    """Has run one dry compound only: the stop has to come anyway."""
+    in_pit: bool
+    """Its last lap was an in-lap: stopping now."""
+    rejoin: Rejoin | None
+    """Null when the car has no gap yet (or is in the pit lane)."""
+    places: int | None
+    """Places lost by stopping now (rejoin − position)."""
+
+
+class PitCalculator(BaseModel):
+    """Who should stop under a safety car: every car's rejoin if it stops now."""
+
+    lap: int
+    status: TrackStatus
+    """The status the pit loss is for (sc or vsc)."""
+    loss: float
+    green_loss: float
+    """The pit loss under green: loss − this is what a stop now saves."""
+    rows: list[PitNowRow]
+
+
 class Forecast(BaseModel):
     """The predicted result of a race from the pace at the cutoff."""
 

@@ -1151,6 +1151,109 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/pit-calculator": {
+      "get": {
+        "summary": "Pit Calculator",
+        "description": "Every car's rejoin if it stops now under a safety car (or VSC), nobody else stopping.",
+        "operationId": "pit_calculator_api_sessions__year___round___session__pit_calculator_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Session time (s): only laps completed by then count; omit for all",
+              "title": "Until"
+            },
+            "description": "Session time (s): only laps completed by then count; omit for all"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "sc",
+                "vsc",
+                "green"
+              ],
+              "type": "string",
+              "description": "Whose pit loss: safety car or VSC",
+              "default": "sc",
+              "title": "Status"
+            },
+            "description": "Whose pit loss: safety car or VSC"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PitCalculator"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/telemetry": {
       "get": {
         "summary": "Lap Telemetry",
@@ -6139,6 +6242,128 @@
           "served"
         ],
         "title": "Penalty"
+      },
+      "PitCalculator": {
+        "properties": {
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "sc",
+              "vsc",
+              "vsc_ending",
+              "red",
+              "chequered"
+            ],
+            "title": "Status"
+          },
+          "loss": {
+            "type": "number",
+            "title": "Loss"
+          },
+          "green_loss": {
+            "type": "number",
+            "title": "Green Loss"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/PitNowRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lap",
+          "status",
+          "loss",
+          "green_loss",
+          "rows"
+        ],
+        "title": "PitCalculator",
+        "description": "Who should stop under a safety car: every car's rejoin if it stops now."
+      },
+      "PitNowRow": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "compound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compound"
+          },
+          "life": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Life"
+          },
+          "owes_stop": {
+            "type": "boolean",
+            "title": "Owes Stop"
+          },
+          "in_pit": {
+            "type": "boolean",
+            "title": "In Pit"
+          },
+          "rejoin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Rejoin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "places": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Places"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "position",
+          "compound",
+          "life",
+          "owes_stop",
+          "in_pit",
+          "rejoin",
+          "places"
+        ],
+        "title": "PitNowRow",
+        "description": "One car stopping now (at the cutoff) under the given track status, nobody else stopping."
       },
       "PitStop": {
         "properties": {

@@ -2,7 +2,14 @@
 
 from app import replays, sessions, strategy
 from app.generations import session_cache
-from app.schemas import Degradation, Forecast, PitWindow, RaceHistory, TrackStatus
+from app.schemas import (
+    Degradation,
+    Forecast,
+    PitCalculator,
+    PitWindow,
+    RaceHistory,
+    TrackStatus,
+)
 from app.sources import tracinginsights as ti
 
 
@@ -84,4 +91,18 @@ def get_forecast(
         get_paces(year, round_number, code, fuel, until),
         until,
         pit_losses(year, round_number, code)["green"],
+    )
+
+
+def get_pit_calculator(
+    year: int, round_number: int, code: str, until: float | None, status: TrackStatus
+) -> PitCalculator:
+    timeline = replays.get_timeline(year, round_number, code)
+    if timeline.kind != "race":
+        raise LookupError("The safety car calculator is for races and sprints")
+    return strategy.pit_calculator(
+        sessions.get_laps(year, round_number, code),
+        until,
+        pit_losses(year, round_number, code),
+        status,
     )

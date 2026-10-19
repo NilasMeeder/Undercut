@@ -535,7 +535,12 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       Volgorde, gaten, en waar het gat nul wordt (PASSES). Monza 2025 R tegen de uitslag: gemiddeld
       2,8 plaatsen ernaast op lap 25, 1,7 op lap 35 (top 6 goed), 0,8 op lap 48. Eerst gekozen:
       de snelste stoplap, maar met een rechte lijn per set is dat altijd een uiterste
-- [ ] **Safety car-calculator**: bij SC/VSC per auto wat stoppen nu oplevert, als tabel
+- [x] **Safety car-calculator** (2026-10-19, `strategy.pit_calculator`, `/pit-calculator`, widget
+      Safety car, tab in het race board): per auto de rejoin als hij nu alleen stopt met het
+      pitverlies onder SC of VSC (Auto: de track status op de klok; groen = "IF SAFETY CAR NOW"),
+      plaatsen verloren (FREE), dezelfde stop onder groen, wie nog moet stoppen en wie al in de
+      pit is. Getest op Monza 2026 R lap 3 (SC: iedereen achteraan, RUS al in de pit) en Monza 2025
+      R lap 25 (VER zou P3 worden)
 - [ ] **Remwegen en bochtfases**: rempunt, apex en uitgang per bocht, vergeleken tussen laps
 - [ ] **Gear- en throttle-map** op de baan
 - [ ] **Long runs in FP**: herkennen en vergelijken

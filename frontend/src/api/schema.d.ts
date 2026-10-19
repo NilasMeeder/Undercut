@@ -282,6 +282,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/pit-calculator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pit Calculator
+         * @description Every car's rejoin if it stops now under a safety car (or VSC), nobody else stopping.
+         */
+        get: operations["pit_calculator_api_sessions__year___round___session__pit_calculator_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/telemetry": {
         parameters: {
             query?: never;
@@ -1758,6 +1778,46 @@ export interface components {
             text: string;
             /** Served */
             served: number | null;
+        };
+        /**
+         * PitCalculator
+         * @description Who should stop under a safety car: every car's rejoin if it stops now.
+         */
+        PitCalculator: {
+            /** Lap */
+            lap: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+            /** Loss */
+            loss: number;
+            /** Green Loss */
+            green_loss: number;
+            /** Rows */
+            rows: components["schemas"]["PitNowRow"][];
+        };
+        /**
+         * PitNowRow
+         * @description One car stopping now (at the cutoff) under the given track status, nobody else stopping.
+         */
+        PitNowRow: {
+            /** Driver */
+            driver: string;
+            /** Position */
+            position: number;
+            /** Compound */
+            compound: string | null;
+            /** Life */
+            life: number | null;
+            /** Owes Stop */
+            owes_stop: boolean;
+            /** In Pit */
+            in_pit: boolean;
+            rejoin: components["schemas"]["Rejoin"] | null;
+            /** Places */
+            places: number | null;
         };
         /** PitStop */
         PitStop: {
@@ -3329,6 +3389,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Forecast"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pit_calculator_api_sessions__year___round___session__pit_calculator_get: {
+        parameters: {
+            query?: {
+                /** @description Session time (s): only laps completed by then count; omit for all */
+                until?: number | null;
+                /** @description Whose pit loss: safety car or VSC */
+                status?: "sc" | "vsc" | "green";
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PitCalculator"];
                 };
             };
             /** @description Validation Error */

@@ -28,6 +28,7 @@ import {
   type CornersProgress,
   type PitWindow,
   type Forecast,
+  type PitCalculator,
   type RaceHistory,
   type RaceControlMessage,
   type ReplayPositions,
@@ -210,6 +211,14 @@ export const useTrackEvolution = (until: Until, enabled = true) =>
 /** Races: the predicted result from the pace at the cutoff. */
 export const useForecast = (until: Until, fuel: number, enabled = true) =>
   useStrategyQuery<Forecast>('/forecast', { until, fuel }, enabled && until !== undefined);
+
+/** Races: every car's rejoin if it stops now with the pit loss of `status`. */
+export const usePitCalculator = (until: Until, status: 'sc' | 'vsc' | 'green', enabled = true) =>
+  useStrategyQuery<PitCalculator>(
+    '/pit-calculator',
+    { until, status },
+    enabled && until !== undefined
+  );
 
 /** Tyre degradation per stint up to the cutoff; `fuel` in s per kg. */
 export const useDegradation = (until: Until, fuel: number) =>

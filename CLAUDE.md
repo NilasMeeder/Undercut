@@ -878,6 +878,11 @@ Modelkeuzes (in de (i)-uitleg van de widgets ook):
   het veld op hard is vroeg in de race de achterhoede). Volgorde op laps bij de vlag en lijntijd;
   PASSES = auto's die nu voor staan en eindigen erachter, met de lap vanaf waar hij blijvend
   voor ligt (de UI zegt "(stop)" als dat de aangenomen stop van de ander is).
+- **Safety car** (`strategy.pit_calculator`, `/pit-calculator?until=&status=sc|vsc|green`, widget
+  `safetycar`): per rijdende auto `_rejoin` op de gaps bij de cutoff + het pitverlies van die
+  status (`strategies.pit_losses`), `owes_stop`, `in_pit` (laatste lap een in-lap: geen rejoin).
+  De widget vraagt twee keer (status en groen) en kiest bij Auto de status op de klok. Onder een
+  SC krimpen de gaps per lap: de getallen gelden voor de laatste lijn.
 - **Lap-charts** (`LapChart`): x = lapnummer op de lijn, vaste x-range (0 of 1 tot het totaal) zodat de
   chart niet verspringt; uPlot `cursor.sync` per link-groep; SC/VSC/rood als banden via
   `lapAxis` (sessietijd → leiderslap). Data hangt aan `crossingsKey` (aantal passages), niet aan t.
