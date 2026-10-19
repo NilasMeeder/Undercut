@@ -6,6 +6,7 @@ import { deltaWidget } from './delta/widget';
 import { energyWidget } from './energy/widget';
 import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
+import { liveDeltaWidget } from './livedelta/widget';
 import { liveLapWidget } from './livelap/widget';
 import { markersWidget } from './markers/widget';
 import { miniSectorsWidget } from './minisectors/widget';
@@ -38,6 +39,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   telemetryWidget,
   deltaWidget,
   liveLapWidget,
+  liveDeltaWidget,
   releaseWidget,
   trackMapWidget,
   bestsWidget,

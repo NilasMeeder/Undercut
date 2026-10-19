@@ -453,8 +453,22 @@ dan pas bouwen.
       ERS) en of race control iets over straight mode zegt
 - [ ] Weinig grip in de UI nog niet gezien: Zandvoort R had het alleen vóór de start (buiten de
       tijdlijn). Bij een natte sessie nakijken
-- [ ] Later (optie B): overtake mode (detectie- en activatielijn uit dezelfde kaart, ENABLED/
+- [ ] Optie B (overtake mode) staat nu in fase 12 (detectie- en activatielijn uit dezelfde kaart, ENABLED/
       DISABLED uit race control, wie binnen 1 s zit bij de detectielijn)
+
+## Fase 12 — Pitwall: delta, overtake mode en eigen presets
+
+Nilas (2026-10-19): optie B uit fase 11 (overtake mode) en de delta in cijfers; daarnaast zijn eigen
+qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) en zelf presets maken.
+
+- [x] Widget **Live delta** (2026-10-19): de live delta als groot getal, het gat naar de auto ervoor
+      erboven en erachter eronder (kleiner), grijs als er geen auto is (P1, laatste); groeit mee met
+      het paneel zoals de klok. Achterliggen is geel, zoals in Live lap (oranje/amber is clipping).
+      Getest in replay (Monza 2025 Q3: VER L17 −0.073 tegen L14, LEC 0.084 erachter)
+- [ ] Qualifying board volgens Nilas' screenshot
+- [ ] Eigen presets: een dashboard opslaan als preset, ook in Pitwall
+- [ ] Overtake mode (optie B): detectie- en activatielijn uit de FIA-kaart, ENABLED/DISABLED uit
+      race control, wie binnen 1 s zit bij de detectielijn
 
 ## Later / backlog
 
@@ -471,11 +485,6 @@ dan pas bouwen.
 - **Corners live** (Nilas, 2026-10-18): Corners ook als live view, zoals Live lap: de bochten van
   de lap die nu bezig is vergeleken met de beste of de vorige lap (keuze, zoals de referentie van
   Live lap), per bocht bijgewerkt zodra de auto erdoor is
-
-- **Delta in cijfers** (Nilas, 2026-10-19): een klein blokje (widget) met de delta als getal,
-  zoals bovenin Live lap, groot en in één oogopslag: groen als hij voorligt, oranje als hij
-  achterligt. Misschien ook de gap op de auto ervoor en erachter. Let op de stijl: oranje/amber
-  betekent nu clipping en geel "langzamer"; kiezen welke kleur achterliggen krijgt
 
 - **Automatische analyses** (Nilas, 2026-10-18): na (of tijdens) een sessie zelf analyses laten
   draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten

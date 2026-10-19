@@ -13,8 +13,8 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met negenentwintig widgets (Laps, Telemetry, Delta,
-Live lap, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta,
+Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
@@ -432,6 +432,12 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   bovenin lopen per frame mee. Tot de klok op de nieuwe lap is en 3 s erna (`HOLD`) staat de
   afgeronde lap er, apart gevraagd op zijn eindtijd − 1 ms (`precise`), met de eind-delta. Lijnen
   zijn voor het tekenen licht gladgestreken (driehoek over ±10 m); de getallen zijn ruw.
+- **Live delta** (widget `livedelta`, fase 12, Nilas): dezelfde delta als Live lap als één groot
+  getal (groen voor, geel achter, zoals Live lap), erboven het gat naar de auto ervoor en eronder
+  dat naar de auto erachter, uit de tower (race: intervallen op de laatste timinglijn; Q/FP:
+  verschil in beste lap). Grijs = geen auto ervoor (P1) of erachter. Eén SVG met een viewBox, dus
+  alles groeit mee met het paneel (zoals Clock). De lap-logica (2 s vooruit, afgeronde lap 3 s
+  vasthouden) zit in `widgets/livelap/useLiveLap.ts`, gedeeld met Live lap.
 
 ## Energie (fase 8)
 
