@@ -457,6 +457,15 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   1 ms) tot de eerste bocht van de nieuwe lap af is. `diffCell` (de verschilcellen) staat in
   `lib/insights.ts`, gedeeld met Corners.
 
+## Bochtfases (fase 13)
+
+Widget Corner phases (`phases`, `lib/phases.ts` `cornerPhases`): per segment van `/compare` per lap
+de stukken remmen (brake 1), rollen (gas < 10%), deels gas en vol gas (≥ 95%) op het 5 m-grid,
+de apex (laagste snelheid) en het eerste remstuk vóór de apex (chicane: het eerste telt, zoals
+`brake_at`). De strookjes tonen `cornerView`: vroegste rempunt − 40 m tot laatste vol gas + 40 m.
+Kleur = de lapkleur met dekking per fase (geen nieuwe betekeniskleuren). Let op: `DriverCell` is
+zelf een `<td>`.
+
 ## Energie (fase 8)
 
 Er is geen kanaal voor de batterij of de MGU-K, dus het is een schatting, en de UI zegt dat ook. Het

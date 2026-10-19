@@ -61,6 +61,7 @@ function engineer(api: DockviewApi) {
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const corners = addWidget(api, 'corners', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'energy', 'blue', { referencePanel: corners, direction: 'within' });
+  addWidget(api, 'phases', 'blue', { referencePanel: corners, direction: 'within' });
   corners.api.setActive();
   const feed = addWidget(api, 'racecontrol', 'blue', {
     referencePanel: corners,
@@ -92,6 +93,7 @@ function qualifying(api: DockviewApi) {
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
   const mini = addWidget(api, 'minisectors', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });
+  addWidget(api, 'phases', 'blue', { referencePanel: mini, direction: 'within' });
   addWidget(api, 'energy', 'blue', { referencePanel: mini, direction: 'within' });
   addWidget(api, 'setups', 'blue', { referencePanel: mini, direction: 'within' });
   addWidget(api, 'evolution', 'blue', { referencePanel: mini, direction: 'within' });

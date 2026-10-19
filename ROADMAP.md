@@ -541,7 +541,11 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       plaatsen verloren (FREE), dezelfde stop onder groen, wie nog moet stoppen en wie al in de
       pit is. Getest op Monza 2026 R lap 3 (SC: iedereen achteraan, RUS al in de pit) en Monza 2025
       R lap 25 (VER zou P3 worden)
-- [ ] **Remwegen en bochtfases**: rempunt, apex en uitgang per bocht, vergeleken tussen laps
+- [x] **Remwegen en bochtfases** (2026-10-19, `lib/phases.ts`, widget Corner phases, tab in de
+      presets Qualifying en Engineer): per bocht per lap een strookje (remmen, rollen, deels gas, vol
+      gas, apex) van vlak voor het eerste rempunt tot na vol gas, en de tweede lap tegen de eerste:
+      rempunt, meters op de rem, apexsnelheid, vol gas. Alleen frontend, uit `/compare`. Getest op
+      Monza 2025 Q, VER L17 tegen NOR L20
 - [ ] **Gear- en throttle-map** op de baan
 - [ ] **Long runs in FP**: herkennen en vergelijken
 - [ ] **Starts**: posities en snelheid in de eerste 500 m uit het positiespoor

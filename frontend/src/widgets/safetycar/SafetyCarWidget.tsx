@@ -70,9 +70,7 @@ export function SafetyCarWidget({ config }: WidgetProps<SafetyCarConfig>) {
             return (
               <tr key={r.driver}>
                 <td className={td}>{r.position}</td>
-                <td className="px-1.5 py-[1px]">
-                  <DriverCell code={r.driver} drivers={drivers} />
-                </td>
+                <DriverCell code={r.driver} drivers={drivers} />
                 <td className="px-1.5 py-[1px]">
                   <span className="inline-flex items-center gap-1">
                     <TyreBadge compound={r.compound} />

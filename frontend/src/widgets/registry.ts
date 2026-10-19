@@ -9,6 +9,7 @@ import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
 import { liveDeltaWidget } from './livedelta/widget';
 import { forecastWidget } from './forecast/widget';
+import { phasesWidget } from './phases/widget';
 import { safetyCarWidget } from './safetycar/widget';
 import { liveCornersWidget } from './livecorners/widget';
 import { liveLapWidget } from './livelap/widget';
@@ -56,6 +57,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   evolutionWidget,
   cornersWidget,
   liveCornersWidget,
+  phasesWidget,
   miniSectorsWidget,
   energyWidget,
   reportWidget,

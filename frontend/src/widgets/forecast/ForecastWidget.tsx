@@ -76,9 +76,7 @@ export function ForecastWidget({ config }: WidgetProps<ForecastConfig>) {
                 >
                   {moved > 0 ? `▲${moved}` : moved < 0 ? `▼${-moved}` : '='}
                 </td>
-                <td className="px-1.5 py-[1px]">
-                  <DriverCell code={r.driver} drivers={drivers} />
-                </td>
+                <DriverCell code={r.driver} drivers={drivers} />
                 <td className={td}>
                   {r.laps_down > 0
                     ? `+${r.laps_down} LAP${r.laps_down > 1 ? 'S' : ''}`
