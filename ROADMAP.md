@@ -468,7 +468,10 @@ qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) 
 - [x] Qualifying board volgens Nilas' screenshot (2026-10-19): tower + Corners, kaart + Live lap,
       klok (sessie, lokale tijd als tab), Race control, Release, Track line + Weather; maten als deel
       van het scherm. Getest op 1512×900 en 2560×1400 (Monza 2025 Q3)
-- [ ] Eigen presets: een dashboard opslaan als preset, ook in Pitwall
+- [x] Eigen presets (2026-10-19): "Save this dashboard as a preset…" in het +-menu, bovenaan in
+      + en Layout in beide werkplekken (verwijderen met het kruisje), "Empty dashboard" om zelf te
+      vullen (EDIT gaat aan), presets mee in export/import. Getest in Pitwall (opslaan, nieuw
+      dashboard eruit met dezelfde 11 panelen, leeg blijft leeg na herladen, verwijderen)
 - [ ] Overtake mode (optie B): detectie- en activatielijn uit de FIA-kaart, ENABLED/DISABLED uit
       race control, wie binnen 1 s zit bij de detectielijn
 

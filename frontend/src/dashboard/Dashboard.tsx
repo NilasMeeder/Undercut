@@ -236,9 +236,14 @@ function EmptyDashboard({ containerApi }: { containerApi: DockviewApi }) {
   );
 }
 
-/** Show a tab: its saved layout if it still loads, otherwise its preset. */
+/** Show a tab: its saved layout if it still loads, otherwise its preset (or nothing, if it
+ * started empty). */
 function loadTab(api: DockviewApi, tab: DashboardTab | undefined) {
   const layout = validLayout(tab?.layout);
+  if (tab?.blank && !layout) {
+    api.clear();
+    return;
+  }
   if (layout) {
     try {
       api.fromJSON(layout);

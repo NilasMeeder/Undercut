@@ -594,6 +594,12 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
 - **Dashboards per werkplek**: elke werkplek heeft zijn eigen tabs (ook Pitwall: + voor een preset
   of "Duplicate this dashboard", `duplicate` zet de kopie ernaast). Toetsen **1–9** = de n-de tab van
   de werkplek waar je staat (het cijfer staat klein in de tab), ook in de palette.
+- **Eigen presets** (fase 12, Nilas): in het +-menu "Save this dashboard as a preset…" (naam,
+  Enter) bewaart `api.toJSON()` als `UserPreset` in `store/dashboards.ts` (`presets`, zelfde
+  localStorage). Ze staan bovenaan in het +-menu (nieuw dashboard) en in het Layout-menu (dit
+  dashboard vervangen, `replaceLayout`), in beide werkplekken, met een kruisje om te verwijderen.
+  "Empty dashboard" maakt een tab zonder panelen (`blank`: zonder panelen valt hij niet terug op
+  zijn preset) en zet EDIT aan. Export/import neemt de presets mee (`presets` in het bestand).
 - **Klok per werkplek** (`features/workspace/useWorkspaceClock.ts`): bij het wisselen wordt de stand
   (t, spelen, live volgen) van de oude werkplek bewaard en die van de nieuwe teruggezet; een nieuwe
   sessie vergeet ze. Een gepauzeerde klok op het einde blijft op het einde als het bereik groeit

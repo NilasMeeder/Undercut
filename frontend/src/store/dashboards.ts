@@ -24,6 +24,17 @@ export type DashboardTab = {
   workspace?: Workspace;
   /** The saved view this tab shows: opening that view again reuses the tab. */
   viewId?: number;
+  /** Started empty: without panels it stays empty instead of falling back to its preset. */
+  blank?: boolean;
+};
+
+/** A dashboard saved by the user as a preset, to start new dashboards from. */
+export type UserPreset = {
+  id: string;
+  name: string;
+  layout: SerializedDockview;
+  /** Where it was saved; it can be used in either workspace. */
+  workspace: Workspace;
 };
 
 type DashboardsState = {
@@ -39,6 +50,16 @@ type DashboardsState = {
   editing: boolean;
   setEditing: (editing: boolean) => void;
   add: (name: string, preset: PresetId) => void;
+  /** A new dashboard without panels (editing switched on, so the Pitwall can be filled). */
+  addBlank: () => void;
+  /** Presets the user saved, oldest first. */
+  presets: UserPreset[];
+  savePreset: (name: string, layout: SerializedDockview) => void;
+  removePreset: (id: string) => void;
+  /** A new dashboard from one of the user's presets. */
+  addFromPreset: (id: string) => void;
+  /** Replace a tab's layout and show it. */
+  replaceLayout: (id: string, layout: SerializedDockview) => void;
   /** A copy of a tab (layout and all) right after it, made active: a variant of a board. */
   duplicate: (id: string) => void;
   rename: (id: string, name: string) => void;
@@ -56,7 +77,7 @@ type DashboardsState = {
   }) => void;
   linkView: (id: string, viewId: number | undefined) => void;
   /** Append tabs from an exported file. */
-  importTabs: (tabs: Omit<DashboardTab, 'id'>[]) => void;
+  importTabs: (tabs: Omit<DashboardTab, 'id'>[], presets?: Omit<UserPreset, 'id'>[]) => void;
 };
 
 const newId = () => `dash-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -68,11 +89,23 @@ export function tabWorkspace(tab: DashboardTab): Workspace {
   return tab.workspace ?? (PITWALL_PRESETS.has(tab.preset) ? 'pitwall' : 'analysis');
 }
 
+/** The preset a workspace falls back on. */
+const basePreset = (workspace: Workspace): PresetId =>
+  workspace === 'pitwall' ? 'pitwall' : 'quali-duel';
+
 /** The tab a workspace starts with. */
 function defaultTab(workspace: Workspace): DashboardTab {
-  return workspace === 'pitwall'
-    ? { id: newId(), name: 'Pitwall', layout: null, preset: 'pitwall', workspace }
-    : { id: newId(), name: 'Analysis', layout: null, preset: 'quali-duel', workspace };
+  const name = workspace === 'pitwall' ? 'Pitwall' : 'Analysis';
+  return { id: newId(), name, layout: null, preset: basePreset(workspace), workspace };
+}
+
+/** Add `tab` to the workspace and make it active. */
+function opened(s: DashboardsState, tab: DashboardTab) {
+  return {
+    tabs: [...s.tabs, tab],
+    active: tab.id,
+    actives: { ...s.actives, [s.workspace]: tab.id },
+  };
 }
 
 function urlWorkspace(): Workspace | null {
@@ -144,14 +177,45 @@ export const useDashboards = create<DashboardsState>()(
       editing: false,
       setEditing: (editing) => set({ editing }),
       add: (name, preset) =>
+        set((s) => opened(s, { id: newId(), name, layout: null, preset, workspace: s.workspace })),
+      addBlank: () =>
+        set((s) => ({
+          ...opened(s, {
+            id: newId(),
+            name: 'Dashboard',
+            layout: null,
+            preset: basePreset(s.workspace),
+            workspace: s.workspace,
+            blank: true,
+          }),
+          editing: true,
+        })),
+      presets: [],
+      savePreset: (name, layout) =>
+        set((s) => ({
+          presets: [
+            ...s.presets,
+            { id: newId(), name, layout: structuredClone(layout), workspace: s.workspace },
+          ],
+        })),
+      removePreset: (id) => set((s) => ({ presets: s.presets.filter((p) => p.id !== id) })),
+      addFromPreset: (id) =>
         set((s) => {
-          const tab = { id: newId(), name, layout: null, preset, workspace: s.workspace };
-          return {
-            tabs: [...s.tabs, tab],
-            active: tab.id,
-            actives: { ...s.actives, [s.workspace]: tab.id },
-          };
+          const preset = s.presets.find((p) => p.id === id);
+          if (!preset) return s;
+          return opened(s, {
+            id: newId(),
+            name: preset.name,
+            layout: structuredClone(preset.layout),
+            preset: basePreset(s.workspace),
+            workspace: s.workspace,
+          });
         }),
+      replaceLayout: (id, layout) =>
+        set((s) => ({
+          tabs: s.tabs.map((t) => (t.id === id ? { ...t, layout: structuredClone(layout) } : t)),
+          reload: s.reload + 1,
+        })),
       duplicate: (id) =>
         set((s) => {
           const at = s.tabs.findIndex((t) => t.id === id);
@@ -206,27 +270,25 @@ export const useDashboards = create<DashboardsState>()(
         }),
       linkView: (id, viewId) =>
         set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, viewId } : t)) })),
-      importTabs: (imported) =>
+      importTabs: (imported, presets = []) =>
         set((s) => {
+          const added = presets.map((p) => ({ ...p, id: newId() }));
           const tabs = imported.map((t) => ({
             ...t,
             id: newId(),
             workspace: tabWorkspace(t as DashboardTab),
           }));
           const here = tabs.find((t) => t.workspace === s.workspace);
-          return tabs.length
-            ? {
-                tabs: [...s.tabs, ...tabs],
-                ...(here
-                  ? { active: here.id, actives: { ...s.actives, [s.workspace]: here.id } }
-                  : {}),
-              }
-            : s;
+          return {
+            presets: [...s.presets, ...added],
+            tabs: [...s.tabs, ...tabs],
+            ...(here ? { active: here.id, actives: { ...s.actives, [s.workspace]: here.id } } : {}),
+          };
         }),
     }),
     {
       name: 'f1dash-dashboards',
-      partialize: ({ tabs, active, actives }) => ({ tabs, active, actives }),
+      partialize: ({ tabs, active, actives, presets }) => ({ tabs, active, actives, presets }),
       // Older stores have no workspaces: the preset of each tab decides, and this window opens
       // where the last active tab was (unless the URL says otherwise).
       merge: (persisted, current) => {
@@ -234,7 +296,11 @@ export const useDashboards = create<DashboardsState>()(
         const actives = stored.actives ?? {};
         const last = stored.tabs.find((t) => t.id === stored.active);
         const workspace = urlWorkspace() ?? (last ? tabWorkspace(last) : current.workspace);
-        return { ...current, ...settle({ ...stored, actives }, workspace) };
+        return {
+          ...current,
+          presets: stored.presets ?? [],
+          ...settle({ ...stored, actives }, workspace),
+        };
       },
     }
   )
