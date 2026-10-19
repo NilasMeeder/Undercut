@@ -604,6 +604,7 @@ Starts gelijk aan de officiële (S en R), alle presets in beide werkplekken in h
 ## Fase 14 — De ideeënlijst (vóór Austin)
 
 Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de lijst hieronder dus nu.
+Af op 2026-10-19 (alle vier).
 
 - [x] **Starts in het race board** (2026-10-19): in een breed, laag paneel (≥ 480 px en ≥ 2× zo
       breed als hoog) staan de chart en de tabel naast elkaar; het race board (574×188) toont nu
@@ -619,7 +620,11 @@ Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de li
       2400 px een vierde kolom en minder tabs (Engineer, Qualifying, Debrief, Overview, Quali duel,
       Strategy als vier kolommen); daaronder de MacBook-indeling ongewijzigd. Getest in headless
       Chrome op 2560×1400 en 1512×900 (Monza 2025 Q en R, elke tab)
-- [ ] Automatische analyses: opvallende momenten als markeringen
+- [x] **Automatische markeringen** (2026-10-19, `lib/autoMarkers.ts`): wat Report vindt als
+      markeringen die niet opgeslagen worden: race-momenten op de klok (gestippeld) en per driver
+      de verliesbocht op zijn beste lap; dubbelklik/potlood = bewaren, AUTO in Markers. Monza
+      2025 R: start LAW/ANT, undercut BEA L20, stops PIA L46 en STR L50, elf bochten; Q: NOR L20
+      T1–2 in Delta, Telemetry en op de kaart. Nog niet: tempo-omslagen als moment
 
 ## Later / backlog
 
@@ -633,9 +638,7 @@ Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de li
 
 ## Ideeën (later, misschien)
 
-- **Automatische analyses** (Nilas, 2026-10-18): na (of tijdens) een sessie zelf analyses laten
-  draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten
-  (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag. Report doet
-  het verslag al; de momenten als markeringen nog niet
+- Automatische analyses verder: tempo-omslagen (een driver die ineens sneller of trager wordt)
+  als moment, en de markeringen ook live (Report rekent nu per omzetting)
 
 

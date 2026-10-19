@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Flag, Pause, Play } from 'lucide-react';
 import { radioUrl, type Marker, type SessionTimeline } from '@/api/client';
-import { useMarkers } from '@/api/markers';
+import { useAllMarkers } from '@/api/markers';
+import { isAuto } from '@/lib/autoMarkers';
 import {
   usePositionsStatus,
   usePreparePositions,
@@ -192,9 +193,16 @@ function Scrubber({ timeline, marks }: { timeline: SessionTimeline; marks: Marke
       {marks.map((m) => (
         <div
           key={m.id}
-          className="absolute inset-y-0 min-w-[3px] cursor-pointer border-x border-dim bg-marker-fill"
+          className={cn(
+            'absolute inset-y-0 min-w-[3px] cursor-pointer border-x',
+            isAuto(m) ? 'border-dashed border-faint' : 'border-dim bg-marker-fill'
+          )}
           style={{ left: pct(m.start), width: pct(start + ((m.end ?? m.start) - m.start)) }}
-          title={`${timeLabel(m)}. Click to go there, double-click to edit or delete.`}
+          title={
+            isAuto(m)
+              ? `${timeLabel(m)}. Automatic, from the session report. Click to go there, double-click to keep it as a marker.`
+              : `${timeLabel(m)}. Click to go there, double-click to edit or delete.`
+          }
           onPointerDown={(e) => {
             if (e.shiftKey) return;
             e.stopPropagation();
@@ -417,7 +425,7 @@ function NothingFollows() {
 /** The session clock at the bottom of the screen: play, speed, where we are, scrub. */
 export function ClockBar() {
   const timeline = useTimeline();
-  const markers = useMarkers();
+  const markers = useAllMarkers();
   const marks = useMemo(
     () => (markers.data ?? []).filter((m) => m.kind === 'time'),
     [markers.data]

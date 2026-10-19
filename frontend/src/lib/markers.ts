@@ -36,16 +36,22 @@ export function markerLap(marker: Marker): string {
 }
 
 export function distanceMarks(markers: Marker[] | undefined, selected: LapRef[]): DistanceMark[] {
-  return (markers ?? [])
-    .filter((m) => m.kind === 'distance')
-    .map((m) => ({
-      id: m.id,
-      start: m.start,
-      end: m.end ?? null,
-      label: markerLabel(m) || markerLap(m) || 'Marker',
-      dim: m.lap != null && !selected.some((l) => l.driver === m.driver && l.lap === m.lap),
-      marker: m,
-    }));
+  const picked = (m: Marker) => selected.some((l) => l.driver === m.driver && l.lap === m.lap);
+  return (
+    (markers ?? [])
+      .filter((m) => m.kind === 'distance')
+      // An automatic one only on its own lap (Report has one per driver: faint in every chart
+      // they would be noise).
+      .filter((m) => m.id >= 0 || picked(m))
+      .map((m) => ({
+        id: m.id,
+        start: m.start,
+        end: m.end ?? null,
+        label: markerLabel(m) || markerLap(m) || 'Marker',
+        dim: m.lap != null && !picked(m),
+        marker: m,
+      }))
+  );
 }
 
 /** Markers covering a distance; points count within `slack` metres. */

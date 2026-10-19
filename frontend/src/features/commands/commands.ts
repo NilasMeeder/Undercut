@@ -7,6 +7,7 @@ import { openView, sessionLabel } from '@/features/views/views';
 import { earlierLap, stepDriver, stepLap } from '@/lib/laps';
 import { bestLaps } from '@/lib/timing';
 import { useAtClock } from '@/store/atClock';
+import { useAutoMarkersOn } from '@/store/autoMarkers';
 import { clock } from '@/store/clock';
 import { useDashboards, type DashboardTab } from '@/store/dashboards';
 import { cursorBus } from '@/store/cursor';
@@ -145,6 +146,12 @@ export function buildCommands({
       key: 'M',
       keyLabel: '⇧M',
       run: markMoment,
+    },
+    {
+      id: 'auto-markers',
+      section: 'Markers',
+      title: 'Show or hide the automatic markers (from the session report)',
+      run: () => useAutoMarkersOn.getState().setOn(!useAutoMarkersOn.getState().on),
     },
     {
       id: 'workspace',

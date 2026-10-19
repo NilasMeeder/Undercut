@@ -36,17 +36,19 @@ export function markNew(draft: Pick<MarkerDraft, 'kind' | 'start'> & Partial<Mar
   open({ end: null, driver: null, lap: null, note: '', tags: [], ...draft });
 }
 
+/** Edit a stored marker; an automatic one (negative id) opens as a new marker to keep. */
 export function editMarker(marker: Marker, group?: GroupId) {
   const { id, kind, start, end, driver, lap, note, tags } = marker;
+  const auto = id < 0;
   open({
-    id,
+    id: auto ? undefined : id,
     kind,
     start,
     end: end ?? null,
     driver: driver ?? null,
     lap: lap ?? null,
     note,
-    tags,
+    tags: auto ? tags.filter((t) => t !== 'auto') : tags,
     group,
   });
 }

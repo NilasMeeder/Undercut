@@ -1,18 +1,21 @@
 import { useMemo, useState } from 'react';
 import { Pencil } from 'lucide-react';
-import { useMarkers } from '@/api/markers';
+import { useAllMarkers } from '@/api/markers';
 import { useTimeline } from '@/api/queries';
 import { PanelMessage } from '@/components/data/bits';
 import { jumpToMarker, markDistance, markMoment } from '@/features/markers/actions';
+import { isAuto } from '@/lib/autoMarkers';
 import { describePlace, markerLap } from '@/lib/markers';
+import { useAutoMarkersOn } from '@/store/autoMarkers';
 import { cn } from '@/lib/utils';
 import { editMarker } from '@/store/markerEditor';
 import type { WidgetProps } from '../types';
 import type { MarkersConfig } from './widget';
 
 export function MarkersWidget({ group, config }: WidgetProps<MarkersConfig>) {
-  const markers = useMarkers();
+  const markers = useAllMarkers();
   const timeline = useTimeline();
+  const { on: auto, setOn: setAuto } = useAutoMarkersOn();
   const [tag, setTag] = useState<string | null>(null);
 
   const ofKind = useMemo(
@@ -34,6 +37,15 @@ export function MarkersWidget({ group, config }: WidgetProps<MarkersConfig>) {
         </button>
         <button type="button" className={button} onClick={markMoment}>
           Mark moment <span className="text-faint">⇧M</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={auto}
+          title="Automatic markers: what the session report finds (race moments, and where each driver's best lap loses most). Not stored; the pencil keeps one as a marker."
+          onClick={() => setAuto(!auto)}
+          className={cn(button, auto && 'border-dim bg-raised text-text')}
+        >
+          AUTO
         </button>
         {tags.length > 0 ? (
           <span className="ml-1 text-[10px] uppercase text-faint">Tag</span>
@@ -104,8 +116,8 @@ export function MarkersWidget({ group, config }: WidgetProps<MarkersConfig>) {
                   <td className="px-1">
                     <button
                       type="button"
-                      title="Edit or delete"
-                      aria-label="Edit marker"
+                      title={isAuto(m) ? 'Keep as a marker' : 'Edit or delete'}
+                      aria-label={isAuto(m) ? 'Keep marker' : 'Edit marker'}
                       onClick={(e) => {
                         e.stopPropagation();
                         editMarker(m, group);

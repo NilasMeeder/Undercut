@@ -33,7 +33,9 @@ gebouwd: twee werkplekken, Analyse en Pitwall, elk met eigen tabs, en het sessie
 preset Debrief (zie "Werkplekken"). Fase 10 (2026-10-18): Q-cut en voorspelde laptijd in de tower,
 Qualifying-presets (Analyse en Pitwall), Mini-sectors, Tyre sets, Speed map, Teammates, Battles,
 Weekend en Release (zie ROADMAP.md fase 10 en de secties hieronder). Fase 11: de straight-mode-zones
-van de FIA (2026) op de kaart en in Telemetry/Delta (zie "Straight mode").
+van de FIA (2026) op de kaart en in Telemetry/Delta (zie "Straight mode"). Fase 14 (2026-10-19): Starts naast de
+tabel in een laag paneel en bij herstarts na rood, analyse-presets naar schermgrootte en
+automatische markeringen uit Report (zie ROADMAP.md fase 14).
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -910,6 +912,17 @@ editor voor de hele app (`features/markers/MarkerEditor.tsx`, opent ook vanuit e
 hoofdvenster). Bewerken of verwijderen: klik op een markering in een chart (punt binnen 5 px, bereik
 erbinnen), dubbelklik op de klokbalk, of het potlood in het Markers-paneel. Tags: vrij, ontdubbeld zonder hoofdletters; suggesties zijn de vaste lijst in
 `lib/markers.ts` plus de tags die al gebruikt zijn (`/api/markers/tags`).
+
+**Automatische markeringen** (fase 14, `lib/autoMarkers.ts`, `useAllMarkers` in `api/markers.ts`,
+`store/autoMarkers.ts`, localStorage `f1dash-auto-markers`, standaard aan): wat `/report` vindt
+als markeringen, niet opgeslagen (negatieve id, tag `auto`): elk race-moment (start, snelste en
+traagste stop, undercut, SC/VSC/rood als periode) op de klok, en per driver de bocht waar zijn
+beste lap het meest verliest als bereik op die lap (het zoombereik van Report). Klokbalk, charts,
+kaart, Track line, Readout en Markers gebruiken `useAllMarkers`; een automatische
+afstandsmarkering alleen als zijn lap in de groep gekozen is (`distanceMarks`), anders zou elke
+chart er tien vage hebben. Op de klokbalk gestippeld; dubbelklik of het potlood opent hem als
+nieuwe markering (zonder `auto`) om te bewaren. AUTO in Markers en in de palette zet ze aan/uit.
+Niet tijdens een live sessie (dan zou de report bij elke omzetting opnieuw rekenen).
 
 **Kaart op afstand:** de outline van de kaart komt los van elke lap (MultiViewer, in decimeters, begint
 ergens op de baan). `analysis.outline_distance` koppelt elk outline-punt aan een lapafstand via de
