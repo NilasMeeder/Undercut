@@ -131,7 +131,7 @@ export const useSeasonQuali = (kind: 'Q' | 'SQ') =>
 export const useTeamRadio = (enabled = true) =>
   useSessionQuery<TeamRadio[]>('/team-radio', enabled);
 /** Races: the start from each car's first-lap telemetry. */
-export const useStarts = (enabled = true) => useSessionQuery<Starts>('/starts', enabled);
+export const useStarts = (enabled = true) => useSessionQuery<Starts[]>('/starts', enabled);
 /** Deleted laps, black-and-white flags, incidents and penalties from race control. */
 export const useStewarding = (enabled = true) => useSessionQuery<Stewarding>('/stewards', enabled);
 export const useSectors = (enabled = true) => useSessionQuery<TrackSectors>('/sectors', enabled);

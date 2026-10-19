@@ -635,9 +635,10 @@ def on_track_passes(year: int, round: int, session: SessionCode) -> list[Pass]:
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/starts")
-def race_start(year: int, round: int, session: SessionCode) -> Starts:
+def race_start(year: int, round: int, session: SessionCode) -> list[Starts]:
     """Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100–500 m
-    past the pole slot, 0–100 and 0–200 km/h); 404 until lap 1 has telemetry."""
+    past the pole slot, 0–100 and 0–200 km/h), then each standing restart after a red flag;
+    404 until lap 1 has telemetry."""
     return _guard(lambda: starts.get_starts(year, round, session))
 
 

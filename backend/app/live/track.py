@@ -34,6 +34,10 @@ class Outline:
 
     def fraction(self, px: np.ndarray, py: np.ndarray) -> np.ndarray:
         """Lap fraction (0-1) of each point, from the nearest point on the outline."""
+        return self.project(px, py)[0]
+
+    def project(self, px: np.ndarray, py: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Lap fraction (0-1) of each point and how far it is from the outline (its units)."""
         ax, ay = self.x, self.y
         bx, by = np.roll(ax, -1), np.roll(ay, -1)
         da, db = self.distance, np.roll(self.distance, -1)
@@ -48,7 +52,8 @@ class Outline:
         nearest = np.argmin(dx * dx + dy * dy, axis=1)
         rows = np.arange(len(px))
         d = da[nearest] + u[rows, nearest] * (db[nearest] - da[nearest])
-        return np.mod(d, self.length) / self.length
+        off = np.hypot(dx[rows, nearest], dy[rows, nearest])
+        return np.mod(d, self.length) / self.length, off
 
 
 def _singles() -> array:

@@ -629,7 +629,8 @@ export interface paths {
         /**
          * Race Start
          * @description Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100–500 m
-         *     past the pole slot, 0–100 and 0–200 km/h); 404 until lap 1 has telemetry.
+         *     past the pole slot, 0–100 and 0–200 km/h), then each standing restart after a red flag;
+         *     404 until lap 1 has telemetry.
          */
         get: operations["race_start_api_sessions__year___round___session__starts_get"];
         put?: never;
@@ -2530,11 +2531,16 @@ export interface components {
         };
         /**
          * Starts
-         * @description The race start (lights out, lap 1) from each car's first-lap telemetry.
+         * @description The race start (lights out, lap 1) from each car's first-lap telemetry, or a standing
+         *     restart after a red flag.
          */
         Starts: {
             /** Lights Out */
             lights_out: number;
+            /** Lap */
+            lap: number;
+            /** Restart */
+            restart: boolean;
             /** Checkpoints */
             checkpoints: number[];
             /** Cars */
@@ -4293,7 +4299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Starts"];
+                    "application/json": components["schemas"]["Starts"][];
                 };
             };
             /** @description Validation Error */

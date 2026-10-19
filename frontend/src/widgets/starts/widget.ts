@@ -23,6 +23,10 @@ export const startsWidget = defineWidget<StartsConfig>({
       'Pit-lane starters are not timed (another line to the checkpoints); a car whose first lap ' +
         'has no car data in the archive is left out of the order.',
       'In a replay the chart and the table fill in as the clock passes each point.',
+      'A standing restart after a red flag (RESTART) is measured the same way: its lights out ' +
+        'is where the field moved off together (less the reaction at the start), its grid the ' +
+        'order the cars stood in, and the last column the place at the end of the first lap ' +
+        'after it. AUTO shows the last start the clock has reached.',
     ],
     controls:
       'Click a driver to compare his first lap in this link group (Telemetry then shows the ' +

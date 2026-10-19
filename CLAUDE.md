@@ -825,7 +825,22 @@ telemetrie-afstand vanaf die plek; checkpoints 100–500 m voorbij de pole-plek,
 van passeren. Pitstraat-starter = ≥ 3 s na de mediaan weg (niet getimed). Valkuil: het archief heeft
 lap-1-telemetrie met x/y maar speed 0 en afstand 0 (Monza 2025 ALB): `moved` false, buiten de
 volgorde ("NO DATA"; zonder lap-1-positie "DNS"). De widget toont elke waarde pas als de klok erlangs
-is (replay en live). Herstarts na een rode vlag (`STANDING START`) zitten er nog niet in.
+is (replay en live). Grid-slots die meer dan 1,5 plek (`SLOT_SLACK` 12 m) van 8 m per plek
+afwijken tellen niet (dan 8 m per plek): Monaco 2026 R heeft vóór lap 1 x/y = 0 en samples die
+daarvandaan geïnterpoleerd zijn; alleen samples ≤ 25 m van de outline (`Outline.project`).
+**Herstarts na rood** (`suspensions`, `restart`): per rode vlag met daarna `STANDING START` in race
+control. Niet per lap: de grid ligt midden in een lap (Monza 2026: ~300 m voorbij de lijn, lap 6) of
+vlak voor de lijn (Monaco 2026: lap 70 → 71), en lapnummers verschillen per auto (Zandvoort
+2026: ANT een lap verder geteld). Dus de laps van elke auto vanaf de vlag aan elkaar (`joined`,
+sessietijd), de momenten waarop hij na ≥ 3 s stilstand wegrijdt (`move_offs`), en de start = het
+laatste moment waarop ≥ 60% van de auto's binnen 2 s wegrijdt (`standing_start`; pit-exits gaan
+een voor een, een afgebroken start wordt gevolgd door een nieuwe: Monza 2026 had een extra
+formatieronde). Lights out = dat moment min de reactie van het veld bij de start (mediaan van
+`moved_off` op lap 1, dezelfde 4 Hz-vertraging). Grid = volgorde van de slots, auto's zonder slot
+achter hen op hun plaats van de laatste lap ervoor (`order`; Monaco 2026 heeft geen x/y). De laatste
+kolom (`Starts.lap`) = de eerste lap die een auto ≥ 30 s na lights out afmaakt. `/starts` geeft een
+lijst (start, dan herstarts); de widget kiest AUTO (de laatste die de klok heeft bereikt), START of
+RESTART. Gevonden in 2025–2026: Monaco 2026 (lap 70), Zandvoort 2026 (lap 3) en Monza 2026 (lap 4–6).
 
 ## Season: teammates (fase 13)
 

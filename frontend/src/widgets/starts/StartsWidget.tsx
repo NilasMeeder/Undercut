@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import type { DriverInfo, StartCar, Starts } from '@/api/client';
 import { useSessionDetail, useStarts } from '@/api/queries';
 import { DriverCell, PanelMessage } from '@/components/data/bits';
@@ -27,21 +27,38 @@ export function StartsWidget({ group, config }: WidgetProps<StartsConfig>) {
   const t = useClockTime(200);
   const selected = useGroupDrivers(group);
   const { isSelected, toggle } = useLapSelection(group);
+  /** The start picked above the chart; null = the last one the clock has reached. */
+  const [pick, setPick] = useState<number | null>(null);
 
   if (!race) return <PanelMessage>Starts are for races and sprints.</PanelMessage>;
   if (starts.error) return <PanelMessage>{starts.error.message}</PanelMessage>;
-  if (!starts.data || !detail.data) return <PanelMessage>Loading the start…</PanelMessage>;
-  const data = starts.data;
+  if (!starts.data?.length || !detail.data) return <PanelMessage>Loading the start…</PanelMessage>;
+  const all = starts.data;
+  const reached = all.findLastIndex((s) => s.lights_out <= t);
+  const index = pick != null && pick < all.length ? pick : Math.max(reached, 0);
+  const data = all[index];
   const drivers = detail.data.drivers;
   const seen = { t, lightsOut: data.lights_out };
   const last = data.checkpoints.length - 1;
+  const picker =
+    all.length > 1 ? <StartPicker all={all} index={index} pick={pick} onPick={setPick} /> : null;
   if (t < data.lights_out)
-    return <PanelMessage>The start is the first thing after lights out at the clock.</PanelMessage>;
+    return (
+      <div className="flex h-full flex-col">
+        {picker}
+        <PanelMessage>
+          {data.restart
+            ? 'This restart is the first thing after its lights out at the clock.'
+            : 'The start is the first thing after lights out at the clock.'}
+        </PanelMessage>
+      </div>
+    );
   // The order at the last checkpoint once everyone who got there has, else the grid.
   const leader = data.cars.find((c) => c.positions[last] === 1);
 
   return (
     <Split
+      top={picker}
       chart={
         config.chart
           ? (beside) => (
@@ -79,8 +96,8 @@ export function StartsWidget({ group, config }: WidgetProps<StartsConfig>) {
             <th className={cn(th, 'text-right')} title="Seconds from lights out (±0.25 s)">
               0–200
             </th>
-            <th className={cn(th, 'text-right')} title="Place at the end of lap 1">
-              L1
+            <th className={cn(th, 'text-right')} title={`Place at the end of lap ${data.lap}`}>
+              L{data.lap}
             </th>
           </tr>
         </thead>
@@ -144,9 +161,11 @@ export function StartsWidget({ group, config }: WidgetProps<StartsConfig>) {
 
 /** The chart over the table, or beside it when the panel is wide and low (the race board). */
 function Split({
+  top,
   chart,
   children,
 }: {
+  top: ReactNode;
   chart: ((beside: boolean) => ReactNode) | null;
   children: ReactNode;
 }) {
@@ -154,16 +173,60 @@ function Split({
   const { width, height } = useElementSize(box);
   const beside = chart != null && width >= 480 && width >= 2 * height;
   return (
-    <div ref={box} className={cn('flex h-full', beside ? 'flex-row' : 'flex-col')}>
-      {chart?.(beside)}
-      <div
-        className={cn(
-          'min-h-0 overflow-auto border-line',
-          beside ? 'shrink-0 border-l' : 'flex-1 border-t'
-        )}
-      >
-        {children}
+    <div className="flex h-full flex-col">
+      {top}
+      <div ref={box} className={cn('flex min-h-0 flex-1', beside ? 'flex-row' : 'flex-col')}>
+        {chart?.(beside)}
+        <div
+          className={cn(
+            'min-h-0 overflow-auto border-line',
+            beside ? 'shrink-0 border-l' : 'flex-1 border-t'
+          )}
+        >
+          {children}
+        </div>
       </div>
+    </div>
+  );
+}
+
+/** AUTO (the last start the clock has reached), the race start and every restart. */
+function StartPicker({
+  all,
+  index,
+  pick,
+  onPick,
+}: {
+  all: Starts[];
+  index: number;
+  pick: number | null;
+  onPick: (pick: number | null) => void;
+}) {
+  const button = (key: string, label: string, title: string, on: boolean, value: number | null) => (
+    <button
+      key={key}
+      type="button"
+      title={title}
+      onClick={() => onPick(value)}
+      className={cn('font-semibold', on ? 'text-text' : 'text-faint hover:text-dim')}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-b border-line px-1.5 py-0.5 text-[10px]">
+      {button('auto', 'AUTO', 'The last start the clock has reached', pick == null, null)}
+      {all.map((s, k) =>
+        button(
+          String(k),
+          !s.restart ? 'START' : all.length > 2 ? `RESTART ${k}` : 'RESTART',
+          s.restart
+            ? `Standing restart after the red flag; the grid is the order the cars stood in`
+            : 'The race start',
+          pick != null && k === index,
+          k
+        )
+      )}
     </div>
   );
 }
@@ -189,7 +252,7 @@ function PlacesChart({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
-  const columns = ['GRID', ...data.checkpoints.map((c) => `${c}`), 'L1'];
+  const columns = ['GRID', ...data.checkpoints.map((c) => `${c}`), `L${data.lap}`];
   const field = data.cars.length;
   const x = (k: number) =>
     PAD.left + (k / (columns.length - 1)) * Math.max(width - PAD.left - PAD.right, 1);

@@ -1496,7 +1496,7 @@ class StartCar(BaseModel):
 
     driver: str
     grid: int | None
-    """Grid position (Jolpica); null when unknown."""
+    """Grid position (Jolpica; at a restart the order on the grid); null when unknown."""
     slot: float | None
     """Metres behind the pole sitter's grid slot, from the car's position before it moved
     (about 8 m a place); null for a pit-lane start."""
@@ -1514,16 +1514,22 @@ class StartCar(BaseModel):
     to_200: float | None
     """Seconds after lights out to 100 and 200 km/h (±0.25 s: telemetry is ~4 Hz)."""
     lap_1: int | None
-    """Place at the end of lap 1."""
+    """Place at the end of lap 1 (a restart: of Starts.lap)."""
     lap_1_end: float | None
-    """Session time (s) the car completed lap 1."""
+    """Session time (s) the car completed that lap."""
 
 
 class Starts(BaseModel):
-    """The race start (lights out, lap 1) from each car's first-lap telemetry."""
+    """The race start (lights out, lap 1) from each car's first-lap telemetry, or a standing
+    restart after a red flag."""
 
     lights_out: float
-    """Session time (s) of the start."""
+    """Session time (s) of the start (a restart: where the field moved off together, less the
+    reaction at the race start)."""
+    lap: int
+    """The lap whose end StartCar.lap_1 is: 1 at the race start, else the first lap after it."""
+    restart: bool
+    """A standing restart after a red flag; its grid is the order the cars stood in."""
     checkpoints: list[float]
     """Metres past the pole sitter's grid slot."""
     cars: list[StartCar]

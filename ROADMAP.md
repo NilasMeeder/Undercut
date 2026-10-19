@@ -608,7 +608,13 @@ Op 2026-10-19 was er tot de live-test in Austin niets open; de ideeën van de li
 - [x] **Starts in het race board** (2026-10-19): in een breed, laag paneel (≥ 480 px en ≥ 2× zo
       breed als hoog) staan de chart en de tabel naast elkaar; het race board (574×188) toont nu
       8 rijen in plaats van 3. Kolommen zonder "m" als ze dicht op elkaar staan
-- [ ] Starts: herstarts na een rode vlag (staande start halverwege) ook meten
+- [x] **Starts bij herstarts na rood** (2026-10-19, `starts.restart`): per rode vlag gevolgd door
+      `STANDING START` het moment waarop het veld samen wegrijdt, uit de laps van elke auto aan
+      elkaar (de grid ligt midden in een lap of vlak voor de lijn); grid = volgorde waarin ze
+      stonden. Widget: AUTO / START / RESTART. Monza 2026 R (extra formatieronde, start lap 6:
+      RUS houdt P1, GAS P2 → P8), Zandvoort 2026 (ANT P2 → P1), Monaco 2026 (geen x/y: grid uit de
+      volgorde ervoor). Meteen: slots die > 1,5 plek van hun gridplek afwijken tellen niet
+      (Monaco 2026 lap 1 had x/y = 0)
 - [ ] Presets naar schermgrootte voor de analyse-presets
 - [ ] Automatische analyses: opvallende momenten als markeringen
 

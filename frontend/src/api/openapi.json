@@ -2570,7 +2570,7 @@
     "/api/sessions/{year}/{round}/{session}/starts": {
       "get": {
         "summary": "Race Start",
-        "description": "Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100\u2013500 m\npast the pole slot, 0\u2013100 and 0\u2013200 km/h); 404 until lap 1 has telemetry.",
+        "description": "Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100\u2013500 m\npast the pole slot, 0\u2013100 and 0\u2013200 km/h), then each standing restart after a red flag;\n404 until lap 1 has telemetry.",
         "operationId": "race_start_api_sessions__year___round___session__starts_get",
         "parameters": [
           {
@@ -2617,7 +2617,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Starts"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Starts"
+                  },
+                  "title": "Response Race Start Api Sessions  Year   Round   Session  Starts Get"
                 }
               }
             }
@@ -8738,6 +8742,14 @@
             "type": "number",
             "title": "Lights Out"
           },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "restart": {
+            "type": "boolean",
+            "title": "Restart"
+          },
           "checkpoints": {
             "items": {
               "type": "number"
@@ -8756,11 +8768,13 @@
         "type": "object",
         "required": [
           "lights_out",
+          "lap",
+          "restart",
           "checkpoints",
           "cars"
         ],
         "title": "Starts",
-        "description": "The race start (lights out, lap 1) from each car's first-lap telemetry."
+        "description": "The race start (lights out, lap 1) from each car's first-lap telemetry, or a standing\nrestart after a red flag."
       },
       "StatusPeriod": {
         "properties": {
