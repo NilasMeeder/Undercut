@@ -671,7 +671,11 @@ Overtake mode is iets anders (MGU-K, binnen 1 s bij de detectielijn, `OVERTAKE E
   laatste passage gaf het, en race control staat nog aan; geldt tot de volgende passage): Track
   map "Overtake mode (2026)" (standaard aan) met OT D/OT A over de baan en met alle auto's een
   paarse ring (`ers`, inzet) om wie het heeft; tower-kolom OT (races); OT naast de auto ervoor in
-  Live delta.
+  Live delta; kolom OT in Battles (de auto erachter heeft het). Wie het heeft op t komt uit één
+  hook (`widgets/useOvertakeMode.ts`). Telemetry en Delta "Overtake lines (2026)" (standaard aan,
+  alleen R/S): OT D en OT A als dunne paarse lijnen (`UPlotChart` `lines`, `useOvertakeLines`),
+  het label van D links van de lijn en van A rechts (ze liggen dicht bij elkaar), een rij onder de
+  zonelabels.
 
 ## Bandensets (fase 10)
 

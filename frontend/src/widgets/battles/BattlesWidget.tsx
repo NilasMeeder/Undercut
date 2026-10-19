@@ -2,11 +2,13 @@ import { useMemo } from 'react';
 import { PanelMessage } from '@/components/data/bits';
 import { battles, ATTACK } from '@/lib/battles';
 import { formatGap, formatLapTime } from '@/lib/format';
+import { describeCheck } from '@/lib/overtake';
 import { latestLap } from '@/lib/strategy';
 import { rowStyle, td, th } from '@/lib/table';
 import { cn } from '@/lib/utils';
 import { useGroups } from '@/store/groups';
 import type { WidgetProps } from '../types';
+import { useOvertakeMode } from '../useOvertakeMode';
 import { crossingsKey, useGroupDrivers, useStrategyClock } from '../useStrategy';
 import type { BattlesConfig } from './widget';
 
@@ -26,6 +28,8 @@ export function BattlesWidget({ group, config }: WidgetProps<BattlesConfig>) {
   const selected = useGroupDrivers(group);
   const setLaps = useGroups((s) => s.setLaps);
   const crossings = crossingsKey(history, t);
+  // Overtake mode (2026): the car behind has it at the clock.
+  const overtakeAt = useOvertakeMode(history?.kind === 'race');
 
   const rows = useMemo(
     () => (history && history.kind === 'race' ? battles(history, t, config.window) : []),
@@ -68,6 +72,14 @@ export function BattlesWidget({ group, config }: WidgetProps<BattlesConfig>) {
             <th className={cn(th, 'text-right')} title="At the line of the last lap both completed">
               Int
             </th>
+            {overtakeAt ? (
+              <th
+                className={cn(th, 'text-left')}
+                title="Overtake mode: within 1 s at the detection line"
+              >
+                OT
+              </th>
+            ) : null}
             <th className={cn(th, 'text-right')} title="Seconds per lap the car behind gains">
               Trend
             </th>
@@ -88,6 +100,7 @@ export function BattlesWidget({ group, config }: WidgetProps<BattlesConfig>) {
         <tbody>
           {shown.map((b) => {
             const isSelected = picked.has(b.behind.driver) || picked.has(b.ahead.driver);
+            const overtake = overtakeAt?.(b.behind.driver, t) ?? null;
             return (
               <tr
                 key={b.behind.driver}
@@ -111,6 +124,16 @@ export function BattlesWidget({ group, config }: WidgetProps<BattlesConfig>) {
                 >
                   {b.interval == null ? '–' : formatGap(b.interval).replace('+', '')}
                 </td>
+                {overtakeAt ? (
+                  <td
+                    className="px-1.5 py-[1px] text-left"
+                    title={overtake ? describeCheck(overtake) : undefined}
+                  >
+                    {overtake ? (
+                      <span className="text-[10px] font-semibold text-ers">OT</span>
+                    ) : null}
+                  </td>
+                ) : null}
                 <td
                   className={cn(
                     td,

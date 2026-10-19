@@ -1,17 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Lap, LapPrediction, OvertakeCheck, TimingState, TowerRow } from '@/api/client';
-import {
-  useLaps,
-  useOvertake,
-  usePredictions,
-  useSessionDetail,
-  useStraightMode,
-  useTimingState,
-} from '@/api/queries';
+import { useLaps, usePredictions, useSessionDetail, useTimingState } from '@/api/queries';
 import { DriverCell, PanelMessage, TyreBadge } from '@/components/data/bits';
 import { TRACK_STATUS_COLORS } from '@/lib/colors';
 import { formatGap, formatLapTime, formatSector } from '@/lib/format';
-import { describeCheck, hasOvertake, overtakeIndex } from '@/lib/overtake';
+import { describeCheck } from '@/lib/overtake';
 import { TRACK_STATUS_LABEL } from '@/lib/replay';
 import { rowStyle, td, th } from '@/lib/table';
 import { TIMING_TEXT } from '@/lib/timing';
@@ -19,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useClockTime } from '@/store/clock';
 import { useGroupLaps, useGroups } from '@/store/groups';
 import type { WidgetProps } from '../types';
+import { useOvertakeMode } from '../useOvertakeMode';
 import type { TowerConfig } from './widget';
 
 const STATUS_LABEL: Partial<Record<TowerRow['status'], string>> = {
@@ -213,9 +207,7 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   const timed = timing.data != null && timing.data.kind !== 'race';
   const predictions = usePredictions(t, timed && config.columns.includes('predicted')).data;
   const wantOvertake = timing.data?.kind === 'race' && config.columns.includes('overtake');
-  const lines = useStraightMode(wantOvertake).data;
-  const checks = useOvertake(wantOvertake && lines?.overtake != null).data;
-  const otIndex = useMemo(() => overtakeIndex(checks), [checks]);
+  const overtakeAt = useOvertakeMode(wantOvertake);
 
   if (timing.error) return <PanelMessage>{timing.error.message}</PanelMessage>;
   const state = timing.data;
@@ -224,7 +216,7 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
   const show = new Set(config.columns);
   const race = state.kind === 'race';
   const showCut = show.has('cut') && state.cutoff != null;
-  const showOvertake = race && show.has('overtake') && checks != null && checks.checks.length > 0;
+  const showOvertake = race && show.has('overtake') && overtakeAt != null;
   const showPredicted = show.has('predicted') && !race;
   const byDriver = new Map((showPredicted ? (predictions ?? []) : []).map((p) => [p.driver, p]));
   // Only a live recording has them (F1's own timing), the archive does not.
@@ -305,13 +297,7 @@ export function TowerWidget({ group, config }: WidgetProps<TowerConfig>) {
                     </td>
                   ) : null}
                   {showOvertake ? (
-                    <OvertakeCell
-                      check={
-                        out
-                          ? null
-                          : hasOvertake(otIndex, lines?.overtake_enabled ?? [], row.driver, t)
-                      }
-                    />
+                    <OvertakeCell check={out || !overtakeAt ? null : overtakeAt(row.driver, t)} />
                   ) : null}
                   {showCut ? (
                     <td

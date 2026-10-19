@@ -27,6 +27,10 @@ export type ChartBand = { start: number; end: number; color: string; lane: numbe
 /** A stretch behind the lines from `start` to `end` (m) with its name: a straight-mode zone. */
 export type ChartZone = { start: number; end: number; label: string };
 
+/** A thin line across the plot at `at` (m) with a short name beside it, on the `side` the label
+ * goes: an overtake detection or activation line. */
+export type ChartLine = { at: number; label: string; color: string; side: 'left' | 'right' };
+
 /** A small triangle hanging from the top of the plot at `at` (m): a moment on a lap (a
  * downshift at full throttle), in the lap's colour. */
 export type ChartTick = { at: number; color: string };
@@ -49,6 +53,8 @@ type Props = {
   ticks?: ChartTick[];
   /** Shaded behind the lines; named in the chart that writes the marker labels. */
   zones?: ChartZone[];
+  /** Behind the lines, like the zones; named in the chart that writes the marker labels. */
+  lines?: ChartLine[];
   /** Set to the uPlot instance while it exists: for a caller that updates the data every frame
    * (`setData(data, false)`) instead of rebuilding the chart. */
   chartRef?: { current: uPlot | null };
@@ -62,6 +68,7 @@ const NO_MARKS: DistanceMark[] = [];
 const NO_BANDS: ChartBand[] = [];
 const NO_TICKS: ChartTick[] = [];
 const NO_ZONES: ChartZone[] = [];
+const NO_LINES: ChartLine[] = [];
 const TICK_SIZE = 4;
 const FILL_OPACITY = 0.19;
 const BAND_HEIGHT = 3;
@@ -142,6 +149,38 @@ function drawZones(u: uPlot, zones: ChartZone[], labels: boolean) {
     if (labels && x1 - x0 > 24 * px) {
       ctx.fillStyle = COLORS.textFaint;
       ctx.fillText(zone.label, Math.min(x1, left + width) - 3 * px, top + 2 * px);
+    }
+  }
+  ctx.restore();
+}
+
+function drawLines(u: uPlot, lines: ChartLine[], labels: boolean) {
+  if (lines.length === 0) return;
+  const { ctx } = u;
+  const { left, top, width, height } = u.bbox;
+  const px = uPlot.pxRatio;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(left, top, width, height);
+  ctx.clip();
+  ctx.lineWidth = px;
+  ctx.font = `600 ${10 * px}px system-ui, sans-serif`;
+  ctx.textBaseline = 'top';
+  for (const line of lines) {
+    const x = Math.round(u.valToPos(line.at, 'x', true)) + 0.5;
+    if (x < left || x > left + width) continue;
+    ctx.strokeStyle = line.color;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, top + height);
+    ctx.stroke();
+    if (labels) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = line.color;
+      ctx.textAlign = line.side === 'left' ? 'right' : 'left';
+      // A row below the zone labels, which sit at the zones' ends.
+      ctx.fillText(line.label, x + (line.side === 'left' ? -3 : 3) * px, top + 14 * px);
     }
   }
   ctx.restore();
@@ -257,6 +296,7 @@ export function UPlotChart({
   bands = NO_BANDS,
   ticks = NO_TICKS,
   zones = NO_ZONES,
+  lines = NO_LINES,
   chartRef: outerRef,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -266,16 +306,18 @@ export function UPlotChart({
   const bandsRef = useRef(bands);
   const ticksRef = useRef(ticks);
   const zonesRef = useRef(zones);
+  const linesRef = useRef(lines);
 
-  // Markers, bands and ticks change without rebuilding the chart: redraw with the new ones.
+  // Markers, bands, ticks, zones and lines change without rebuilding the chart: redraw with the new ones.
   useEffect(() => {
     marksRef.current = marks;
     markLabelsRef.current = markLabels;
     bandsRef.current = bands;
     ticksRef.current = ticks;
     zonesRef.current = zones;
+    linesRef.current = lines;
     chartRef.current?.redraw(false);
-  }, [marks, markLabels, bands, ticks, zones]);
+  }, [marks, markLabels, bands, ticks, zones, lines]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -370,6 +412,7 @@ export function UPlotChart({
         drawAxes: [
           (u) => {
             drawZones(u, zonesRef.current, markLabelsRef.current);
+            drawLines(u, linesRef.current, markLabelsRef.current);
             drawFills(u, series);
           },
         ],

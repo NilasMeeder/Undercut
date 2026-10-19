@@ -16,6 +16,9 @@ export const battlesWidget = defineWidget<BattlesConfig>({
       'ATTACK: laps until the car behind is within 1 s (DRS until 2025, overtake mode from 2026) ' +
         'at this rate; CATCH: laps until he is on the car ahead. Red when that happens before ' +
         'the end of the race.',
+      'OT (2026): the car behind has overtake mode at the clock: within 1 s of the car ahead ' +
+        'at its last passage of the FIA’s detection line, while race control has it enabled ' +
+        '(from the positions, so a car right on 1 s can be wrong; see the Track map).',
       'No trend over a window with a pit stop, a safety car or lap 1 in it: the gap then says ' +
         'nothing about pace.',
       'A car on a newer tyre usually closes for a few laps and then levels off: the rate is a ' +

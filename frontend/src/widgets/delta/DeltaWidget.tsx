@@ -7,7 +7,7 @@ import { formatGap } from '@/lib/format';
 import { lengthOff } from '@/lib/insights';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
-import { useStraightModeZones } from '../useStraightModeZones';
+import { useOvertakeLines, useStraightModeZones } from '../useStraightModeZones';
 import type { DeltaConfig } from './widget';
 
 const deltaFormat = (v: number) =>
@@ -18,7 +18,9 @@ export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
   const { laps, data, styles, detail, error } = useGroupComparison(group, { step: config.step });
   const marks = useDistanceMarks(group);
   // Straight mode replaced DRS in 2026.
-  const zones = useStraightModeZones(data, config.straightMode && detail?.has_drs === false);
+  const is2026 = detail?.has_drs === false;
+  const zones = useStraightModeZones(data, config.straightMode && is2026);
+  const overtakeLines = useOvertakeLines(data, config.overtake && is2026);
 
   const chart = useMemo(() => {
     if (!data) return null;
@@ -73,6 +75,7 @@ export function DeltaWidget({ group, config }: WidgetProps<DeltaConfig>) {
         marks={marks}
         markLabels
         zones={zones}
+        lines={overtakeLines}
       />
     </div>
   );

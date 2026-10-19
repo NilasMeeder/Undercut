@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type DeltaConfig = { step: number; straightMode: boolean };
+export type DeltaConfig = { step: number; straightMode: boolean; overtake: boolean };
 
 export const deltaWidget = defineWidget<DeltaConfig>({
   id: 'delta',
@@ -21,6 +21,9 @@ export const deltaWidget = defineWidget<DeltaConfig>({
         '(A1, A2… as on the FIA’s circuit map; in low grip the later low-grip starts). The ' +
         'start is the FIA’s activation point (±50 m), the end where most laps brake. Whether ' +
         'a car actually used it is not in the data.',
+      'Overtake mode (2026, races): purple lines OT D and OT A where the FIA’s map puts the ' +
+        'detection and activation line (±50 m). Within 1 s of the car ahead at OT D gives extra ' +
+        'battery power from OT A on; who has it is on the Track map and in the tower.',
     ],
     controls:
       'Hover moves the group cursor. Drag to zoom the whole group, double-click to reset. ' +
@@ -28,7 +31,7 @@ export const deltaWidget = defineWidget<DeltaConfig>({
       'grey bands, fainter when they belong to a lap that is not selected. Click a marker to ' +
       'edit or delete it.',
   },
-  defaults: { step: 5, straightMode: true },
+  defaults: { step: 5, straightMode: true, overtake: true },
   settings: [
     {
       key: 'step',
@@ -41,6 +44,7 @@ export const deltaWidget = defineWidget<DeltaConfig>({
       ],
     },
     { key: 'straightMode', label: 'Straight mode zones (2026)', kind: 'toggle' },
+    { key: 'overtake', label: 'Overtake lines (2026)', kind: 'toggle' },
   ],
   component: lazy(() => import('./DeltaWidget').then((m) => ({ default: m.DeltaWidget }))),
 });

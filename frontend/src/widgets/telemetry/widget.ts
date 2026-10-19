@@ -8,6 +8,7 @@ export type TelemetryConfig = {
   step: number;
   clipping: boolean;
   straightMode: boolean;
+  overtake: boolean;
 };
 
 export const telemetryWidget = defineWidget<TelemetryConfig>({
@@ -38,6 +39,9 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
         '(A1, A2… as on the FIA’s circuit map; in low grip the later low-grip starts). The ' +
         'start is the FIA’s activation point (±50 m), the end where most laps brake. Whether ' +
         'a car actually used it is not in the data.',
+      'Overtake mode (2026, races): purple lines OT D and OT A where the FIA’s map puts the ' +
+        'detection and activation line (±50 m). Within 1 s of the car ahead at OT D gives extra ' +
+        'battery power from OT A on; who has it is on the Track map and in the tower.',
       'Triangles at the top of the gear chart: a downshift at full throttle above 200 km/h. ' +
         'In 2026 that keeps the engine above 10,500 rpm, where the fuel flow is at its maximum, ' +
         'while the car loses speed harvesting. Some teams do it, others let the rpm drop.',
@@ -53,6 +57,7 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
     step: 5,
     clipping: true,
     straightMode: true,
+    overtake: true,
   },
   settings: [
     {
@@ -81,6 +86,7 @@ export const telemetryWidget = defineWidget<TelemetryConfig>({
     },
     { key: 'clipping', label: 'Clipping and downshifts (2026)', kind: 'toggle' },
     { key: 'straightMode', label: 'Straight mode zones (2026)', kind: 'toggle' },
+    { key: 'overtake', label: 'Overtake lines (2026)', kind: 'toggle' },
   ],
   component: lazy(() => import('./TelemetryWidget').then((m) => ({ default: m.TelemetryWidget }))),
 });

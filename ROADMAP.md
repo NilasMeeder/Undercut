@@ -478,7 +478,11 @@ qualifying-layout voor Pitwall (screenshot in `~/Projecten/f1dash/screenshots`) 
       OT D/OT A en paarse ringen op de kaart, kolom OT in de tower, OT in Live delta. Getest op
       Monza 2026 R (lap 15: RUS kreeg OT 0,63 s achter VER en ging erlangs) en Monaco R. Ook
       gevonden: Monaco R had `'None'` in x/y, waardoor `/compare` en het positiespoor faalden
-- [ ] Overtake mode: OT D/OT A ook als lijnen in Telemetry en Delta; OT in Battles
+- [x] Overtake mode in de analyse (2026-10-19): OT D/OT A als paarse lijnen in Telemetry en Delta
+      (races en sprints), kolom OT in Battles. Getest op Monza 2026 R (lap 9: dezelfde OT-auto's in
+      Battles als in de tower)
+- [ ] Race board: een Pitwall-preset voor de race met Live delta en Battles (Battles zit nu als tab
+      in Pitwall; Live delta in geen enkele preset)
 - [ ] Na Austin: klopt de 1 s uit het positiespoor met wat F1 doet (een opname heeft geen OT-kanaal,
       maar de race control en de inhaalacties wel)?
 

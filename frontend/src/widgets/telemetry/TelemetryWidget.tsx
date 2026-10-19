@@ -18,7 +18,7 @@ import { useCursor, useFrozen } from '@/store/cursor';
 import type { GroupId } from '@/store/groups';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
-import { useStraightModeZones } from '../useStraightModeZones';
+import { useOvertakeLines, useStraightModeZones } from '../useStraightModeZones';
 import type { ChannelKey, TelemetryConfig } from './widget';
 
 type Channel = {
@@ -108,6 +108,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
   const showDeploy = is2026 && config.channels.includes('deploy');
   const energy = useEnergy(laps, showClipping || showDeploy, showDeploy ? config.step : undefined);
   const zones = useStraightModeZones(data, config.straightMode && is2026);
+  const overtakeLines = useOvertakeLines(data, config.overtake && is2026);
 
   /** The energy estimate per compared lap, in the order of /compare (none while it loads). */
   const energyLaps = useMemo(() => {
@@ -262,6 +263,7 @@ export function TelemetryWidget({ group, config }: WidgetProps<TelemetryConfig>)
               bands={channel.key === 'speed' ? bands : undefined}
               ticks={channel.key === 'gear' ? downshifts : undefined}
               zones={zones}
+              lines={overtakeLines}
             />
           </div>
         ))}

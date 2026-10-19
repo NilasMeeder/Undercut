@@ -1,15 +1,16 @@
 import { useMemo, useRef } from 'react';
 import type { TowerRow } from '@/api/client';
-import { useOvertake, useSessionDetail, useStraightMode, useTimingState } from '@/api/queries';
+import { useSessionDetail, useTimingState } from '@/api/queries';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import { formatGap } from '@/lib/format';
-import { describeCheck, hasOvertake, overtakeIndex } from '@/lib/overtake';
+import { describeCheck } from '@/lib/overtake';
 import { useClockTime } from '@/store/clock';
 import { useGroupLaps } from '@/store/groups';
 import { useClockDraw } from '../hooks';
 import { progressAt, useLiveLap } from '../livelap/useLiveLap';
 import type { WidgetProps } from '../types';
+import { useOvertakeMode } from '../useOvertakeMode';
 import type { LiveDeltaConfig } from './widget';
 
 // One SVG scaled to fit the panel, so the numbers grow with it (like the Clock).
@@ -63,13 +64,9 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
   const around = useMemo(() => (rows && driver ? neighbours(rows, driver) : null), [rows, driver]);
 
   // Overtake mode (2026 races): OT beside the car ahead while the driver has it.
-  const race = timing.data?.kind === 'race';
-  const lines = useStraightMode(race).data;
-  const checks = useOvertake(race && lines?.overtake != null).data;
-  const otIndex = useMemo(() => overtakeIndex(checks), [checks]);
+  const overtakeAt = useOvertakeMode(timing.data?.kind === 'race');
   const t = useClockTime(500);
-  const overtake =
-    driver && checks ? hasOvertake(otIndex, lines?.overtake_enabled ?? [], driver, t) : null;
+  const overtake = driver && overtakeAt ? overtakeAt(driver, t) : null;
 
   const deltaRef = useRef<SVGTextElement>(null);
   const draw = useMemo(() => {
