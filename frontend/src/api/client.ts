@@ -111,5 +111,7 @@ export type SetupMap = Schemas['SetupMap'];
 export type Teammates = Schemas['Teammates'];
 export type WeekendOverview = Schemas['WeekendOverview'];
 export type LongRun = Schemas['LongRun'];
+export type Starts = Schemas['Starts'];
+export type StartCar = Schemas['StartCar'];
 export type LongRuns = Schemas['LongRuns'];
 export type TyreSet = Schemas['TyreSet'];

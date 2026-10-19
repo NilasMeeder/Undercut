@@ -319,6 +319,7 @@ function raceBoard(api: DockviewApi) {
   pit.api.setActive();
   const battles = addWidget(api, 'battles', 'blue', { referencePanel: tower, direction: 'below' });
   addWidget(api, 'passes', 'blue', { referencePanel: battles, direction: 'within' });
+  addWidget(api, 'starts', 'blue', { referencePanel: battles, direction: 'within' });
   battles.api.setActive();
   const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: map, direction: 'below' });
   addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
@@ -360,6 +361,7 @@ function strategy(api: DockviewApi) {
   gaps.api.setActive();
   const pace = addWidget(api, 'pace', 'blue', { referencePanel: gaps, direction: 'right' });
   addWidget(api, 'battles', 'blue', { referencePanel: pace, direction: 'within' });
+  addWidget(api, 'starts', 'blue', { referencePanel: pace, direction: 'within' });
   pace.api.setActive();
   map.group.api.setSize({ width: 470, height: 330 });
   stints.group.api.setSize({ height: 380 });

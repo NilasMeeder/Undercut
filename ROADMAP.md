@@ -560,7 +560,13 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       groep lap voor lap. Standaard ook de trainingen ervoor. `reports.long_runs` (Report,
       Weekend) gebruikt dezelfde herkenning. Monza 2025 FP2: NOR M 11 laps 1:23.616, VER +0.072,
       RUS snelste op hard 1:24.016; FP1 hield 2 runs over (ARO's push-laps vielen af)
-- [ ] **Starts**: posities en snelheid in de eerste 500 m uit het positiespoor
+- [x] **Starts** (2026-10-19, `starts.py`, `/starts`, widget Starts, tab naast Passes in het race
+      board en naast Battles in Strategy): uit de telemetrie van lap 1, niet uit het positiespoor
+      (dat zet lap 1 vanaf de lijn terug en knipt de grid af op 0). Gridplek = x/y vóór het
+      wegrijden op de outline (Monza: 8 m per plek ±3), checkpoints 100–500 m voorbij de pole-plek
+      (volgorde van passeren), top speed, 0–100 en 0–200, plaats na lap 1; vult zich op de klok.
+      Pitstraat-starters (≥ 3 s na het veld weg) niet getimed. Monza 2025 R: PIA P3 → P2 op 500 m,
+      ANT 6 → 11 (0–100 3,58 s), LAW 18 → 13; HUL DNS, ALB zonder car data in het archief
 - [ ] **Team radio** op de tijdlijn (OpenF1)
 - [ ] **Dashboard delen als URL**
 - [ ] **Seizoensoverzicht**: quali-gaps tussen teamgenoten over het jaar

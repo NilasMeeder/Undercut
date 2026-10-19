@@ -1491,6 +1491,45 @@ class LongRuns(BaseModel):
     """Seconds a lap gets quicker from the fuel burnt on the lap before (assumed)."""
 
 
+class StartCar(BaseModel):
+    """One car off the line: where it stood, when it passed each checkpoint, how it launched."""
+
+    driver: str
+    grid: int | None
+    """Grid position (Jolpica); null when unknown."""
+    slot: float | None
+    """Metres behind the pole sitter's grid slot, from the car's position before it moved
+    (about 8 m a place); null for a pit-lane start."""
+    pit_lane: bool
+    """Started from the pit lane (moved off well after the field)."""
+    times: list[float | None]
+    """Seconds after lights out at each checkpoint of Starts.checkpoints; null if not reached."""
+    positions: list[int | None]
+    """Place at each checkpoint, by the order the cars passed it."""
+    speed: float | None
+    """Top speed (km/h) up to the last checkpoint."""
+    moved: bool
+    """The car's telemetry shows it moving off (false: did not start, or no car data)."""
+    to_100: float | None
+    to_200: float | None
+    """Seconds after lights out to 100 and 200 km/h (±0.25 s: telemetry is ~4 Hz)."""
+    lap_1: int | None
+    """Place at the end of lap 1."""
+    lap_1_end: float | None
+    """Session time (s) the car completed lap 1."""
+
+
+class Starts(BaseModel):
+    """The race start (lights out, lap 1) from each car's first-lap telemetry."""
+
+    lights_out: float
+    """Session time (s) of the start."""
+    checkpoints: list[float]
+    """Metres past the pole sitter's grid slot."""
+    cars: list[StartCar]
+    """In the order at the last checkpoint; cars that did not get there last."""
+
+
 class WeekendLongRun(BaseModel):
     """A driver's longest run in practice (the race simulation; median lap, no fuel correction)."""
 

@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta, Corners live,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs, Starts), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -154,6 +154,7 @@ backend/app/straight_mode.py straight-mode-zones (2026): de FIA-punten uit strai
                            waar de straight remt; sources/fia.py leest de FIA-kaart en schrijft die JSON
 backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
 backend/app/longruns.py    long runs in FP: herkennen per set, vergelijken per compound (zie "Long runs")
+backend/app/starts.py      de start uit de lap-1-telemetrie: gridplek, checkpoints tot 500 m (zie "Starts")
 backend/app/evolution.py   baanevolutie in Q (fit per push-lap: driver + band + baan(t)), zie "Baanevolutie"
 backend/app/stewards.py    race control → deleted laps, zwart-wit, incidenten en straffen (zie "Stewards")
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
@@ -810,6 +811,20 @@ vlag, formatie: Monza 2026 R heeft een onderbreking die niet in de track status 
 onder 35% van het tempo van de ander (±6 s, mediaan van de stappen: ALB's spoor op Monza 2025
 blijft seconden op 0,9999 hangen), na de finish. 2026: `overtake_mode` = de laatste
 detectiepassage gaf OT en race control had het aan.
+
+## Starts (fase 13)
+
+`starts.py` (`grid_slot`, `time_at`, `time_to`, `analyse`: puur, getest), `/starts` (R/S), widget
+Starts (`starts`). Uit de lap-1-telemetrie van elke auto, want het positiespoor meet lap 1 vanaf de
+lijn terug en knipt daarvoor op 0. Lights out = mediaan van de lap-1-starttijden (archief en live
+gelijk voor iedereen; de auto's rijden ~0,5 s later). Gridplek: de x/y vóór de eerste snelheid
+≥ 1 km/h, met `live.track.Outline.fraction` op de outline (Monza 2025: pole 273 m voorbij de lijn,
+dan ~8 m per plek ±3; de lap-1-lengte min de eigen laplengte was ±15 m). Afstand = de eigen
+telemetrie-afstand vanaf die plek; checkpoints 100–500 m voorbij de pole-plek, plaatsen op volgorde
+van passeren. Pitstraat-starter = ≥ 3 s na de mediaan weg (niet getimed). Valkuil: het archief heeft
+lap-1-telemetrie met x/y maar speed 0 en afstand 0 (Monza 2025 ALB): `moved` false, buiten de
+volgorde ("NO DATA"; zonder lap-1-positie "DNS"). De widget toont elke waarde pas als de klok erlangs
+is (replay en live). Herstarts na een rode vlag (`STANDING START`) zitten er nog niet in.
 
 ## Meldingen (fase 13)
 

@@ -24,6 +24,7 @@ from app import (
     schedule,
     sessions,
     setups,
+    starts,
     stewards,
     store,
     straight_mode,
@@ -72,6 +73,7 @@ from app.schemas import (
     SessionReport,
     SessionTimeline,
     SetupMap,
+    Starts,
     Stewarding,
     StraightMode,
     TagCount,
@@ -626,6 +628,13 @@ def on_track_passes(year: int, round: int, session: SessionCode) -> list[Pass]:
     """Races: every pass for position on track (from the position track: 404 until it is
     prepared), with where and, in 2026, whether the passer had overtake mode."""
     return _guard(lambda: passes.get_passes(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/starts")
+def race_start(year: int, round: int, session: SessionCode) -> Starts:
+    """Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100–500 m
+    past the pole slot, 0–100 and 0–200 km/h); 404 until lap 1 has telemetry."""
+    return _guard(lambda: starts.get_starts(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/stewards")

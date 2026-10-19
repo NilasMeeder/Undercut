@@ -619,6 +619,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/starts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Race Start
+         * @description Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100–500 m
+         *     past the pole slot, 0–100 and 0–200 km/h); 404 until lap 1 has telemetry.
+         */
+        get: operations["race_start_api_sessions__year___round___session__starts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/stewards": {
         parameters: {
             query?: never;
@@ -2355,6 +2376,48 @@ export interface components {
             /** Drivers */
             drivers: components["schemas"]["SetupDriver"][];
         };
+        /**
+         * StartCar
+         * @description One car off the line: where it stood, when it passed each checkpoint, how it launched.
+         */
+        StartCar: {
+            /** Driver */
+            driver: string;
+            /** Grid */
+            grid: number | null;
+            /** Slot */
+            slot: number | null;
+            /** Pit Lane */
+            pit_lane: boolean;
+            /** Times */
+            times: (number | null)[];
+            /** Positions */
+            positions: (number | null)[];
+            /** Speed */
+            speed: number | null;
+            /** Moved */
+            moved: boolean;
+            /** To 100 */
+            to_100: number | null;
+            /** To 200 */
+            to_200: number | null;
+            /** Lap 1 */
+            lap_1: number | null;
+            /** Lap 1 End */
+            lap_1_end: number | null;
+        };
+        /**
+         * Starts
+         * @description The race start (lights out, lap 1) from each car's first-lap telemetry.
+         */
+        Starts: {
+            /** Lights Out */
+            lights_out: number;
+            /** Checkpoints */
+            checkpoints: number[];
+            /** Cars */
+            cars: components["schemas"]["StartCar"][];
+        };
         /** StatusPeriod */
         StatusPeriod: {
             /** Start */
@@ -4059,6 +4122,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Pass"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    race_start_api_sessions__year___round___session__starts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Starts"];
                 };
             };
             /** @description Validation Error */

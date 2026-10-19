@@ -2567,6 +2567,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/starts": {
+      "get": {
+        "summary": "Race Start",
+        "description": "Races: the start from each car's first-lap telemetry (grid slot, checkpoints 100\u2013500 m\npast the pole slot, 0\u2013100 and 0\u2013200 km/h); 404 until lap 1 has telemetry.",
+        "operationId": "race_start_api_sessions__year___round___session__starts_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Starts"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/stewards": {
       "get": {
         "summary": "Stewarding",
@@ -8065,6 +8133,174 @@
         ],
         "title": "SetupMap",
         "description": "Top speed against cornering speed per driver (best laps): low drag or high downforce."
+      },
+      "StartCar": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "grid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grid"
+          },
+          "slot": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot"
+          },
+          "pit_lane": {
+            "type": "boolean",
+            "title": "Pit Lane"
+          },
+          "times": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Times"
+          },
+          "positions": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Positions"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "moved": {
+            "type": "boolean",
+            "title": "Moved"
+          },
+          "to_100": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To 100"
+          },
+          "to_200": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To 200"
+          },
+          "lap_1": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap 1"
+          },
+          "lap_1_end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap 1 End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "grid",
+          "slot",
+          "pit_lane",
+          "times",
+          "positions",
+          "speed",
+          "moved",
+          "to_100",
+          "to_200",
+          "lap_1",
+          "lap_1_end"
+        ],
+        "title": "StartCar",
+        "description": "One car off the line: where it stood, when it passed each checkpoint, how it launched."
+      },
+      "Starts": {
+        "properties": {
+          "lights_out": {
+            "type": "number",
+            "title": "Lights Out"
+          },
+          "checkpoints": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          },
+          "cars": {
+            "items": {
+              "$ref": "#/components/schemas/StartCar"
+            },
+            "type": "array",
+            "title": "Cars"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lights_out",
+          "checkpoints",
+          "cars"
+        ],
+        "title": "Starts",
+        "description": "The race start (lights out, lap 1) from each car's first-lap telemetry."
       },
       "StatusPeriod": {
         "properties": {

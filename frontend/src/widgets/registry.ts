@@ -25,6 +25,7 @@ import { releaseWidget } from './release/widget';
 import { reportWidget } from './report/widget';
 import { setupsWidget } from './setups/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
+import { startsWidget } from './starts/widget';
 import { stewardsWidget } from './stewards/widget';
 import { stintsWidget } from './stints/widget';
 import { teammatesWidget } from './teammates/widget';
@@ -76,6 +77,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   gapsWidget,
   battlesWidget,
   passesWidget,
+  startsWidget,
   positionsWidget,
   paceWidget,
   pitWindowWidget,
