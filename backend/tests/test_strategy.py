@@ -186,6 +186,31 @@ def test_forecast_projects_the_pace_with_the_stop_still_owed() -> None:
     assert ver.passes == [] and pia.laps_down == 0
 
 
+def test_after_the_flag_a_retired_car_is_not_running() -> None:
+    laps = stint_laps("VER", range(1, 21), 80.0, 0.05)
+    laps += stint_laps("NOR", range(1, 20), 88.0, 0.05)  # a lap down, still on track at the flag
+    laps += stint_laps("PIA", range(1, 6), 80.2, 0.05)
+    # PIA's last lap has no time but does end: how FastF1 leaves a retirement lap.
+    laps[-1] = laps[-1].model_copy(update={"lap_time": None})
+    p = strategy.paces(laps, 20, 0.0, None)
+    assert [r.driver for r in strategy.forecast(laps, p, None, 25.0).rows] == ["VER", "NOR"]
+    assert strategy.forecast(laps, p, None, 25.0).rows[1].laps_down == 1
+
+
+def test_live_a_car_on_its_lap_without_a_row_yet_is_running() -> None:
+    laps = stint_laps("VER", range(1, 11), 80.0, 0.05)
+    laps += stint_laps("NOR", range(1, 10), 80.2, 0.05)  # lap 10 not done yet
+    until = laps[9].end_time  # VER's tenth line
+    losses = {"green": 25.0, "sc": 15.0, "vsc": 18.0, "vsc_ending": 18.0, "red": 0.0}
+    rows = strategy.pit_calculator(laps, until, losses, "sc", live=True).rows
+    assert [r.driver for r in rows] == ["VER", "NOR"]
+    p = strategy.paces(laps, 20, 0.0, None)
+    forecast = strategy.forecast(laps, p, None, 25.0, live=True)
+    assert {r.driver for r in forecast.rows} == {"VER", "NOR"}
+    # In the archive every lap has its row: no row means no longer in the race.
+    assert [r.driver for r in strategy.pit_calculator(laps, until, losses, "sc").rows] == ["VER"]
+
+
 def test_pit_calculator_rejoins_everyone_with_the_safety_car_loss() -> None:
     laps = stint_laps("VER", range(1, 21), 80.0, 0.05)
     laps += stint_laps("NOR", range(1, 21), 80.2, 0.05)

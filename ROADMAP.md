@@ -586,6 +586,21 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       deel dat beiden reden, H2H (wie verder kwam, dan sneller), mediaan (gaten > 3% eruit), klik =
       die Q openen met beide laps. Monza 2025 t/m R16: ALO–STR 16–0, VER–TSU 14–0, PIA–NOR 9–7
 
+**Austin-generale** (2026-10-19): alles op Austin 2025 (ronde 19, sprintweekend) vóór de live-test.
+Elk endpoint op FP1, SQ, S, Q en R (alles 200; de 404's zijn "alleen voor races/Q"), de grid van
+Starts gelijk aan de officiële (S en R), alle presets in beide werkplekken in headless Chrome
+(elke tab), en live met de simulator (R vanaf lap 20). Bochten voor 2026 live: geleend van 2025
+(`_borrow_corners`), dezelfde eventnaam. Gevonden en opgelost:
+- [x] Forecast en Safety car aan het eind van de race: een uitgevallen auto telde als rijdend
+      (SAI van P20 naar P2 in de Forecast); nu wie op de baan was bij de vlag. Live viel na elke
+      lijn van de leider de rest van het veld weg (hun lap had nog geen rij); nu, zoals de tower,
+      rijdend met een lijn < 180 s geleden
+- [x] Safety car-calculator op lap 2: alleen de leider had een regel (cutoff = zijn eerste lijn);
+      nu tot zijn tweede lijn de laatste auto over de eerste
+- [x] Live liep de klok een lap achter op de tower (LAP 20 tegen 21): de lap die bezig is heeft
+      nog geen rij; nu begint hij op de laatste lijn van de leider
+- [x] Season: teammates: "UNI" → USA (ook São Paulo BRA, Las Vegas LVG)
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
@@ -598,22 +613,14 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
 
 ## Ideeën (later, misschien)
 
-- **Corners live** (Nilas, 2026-10-18): Corners ook als live view, zoals Live lap: de bochten van
-  de lap die nu bezig is vergeleken met de beste of de vorige lap (keuze, zoals de referentie van
-  Live lap), per bocht bijgewerkt zodra de auto erdoor is
-
 - **Automatische analyses** (Nilas, 2026-10-18): na (of tijdens) een sessie zelf analyses laten
   draaien, bv. per driver waar de tijd zit, stints en degradatie samengevat, opvallende momenten
-  (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag
+  (snelle stop, undercut gelukt, tempo-omslag) als markeringen of als een verslag. Report doet
+  het verslag al; de momenten als markeringen nog niet
 
 - **Presets naar schermgrootte** (Nilas, 2026-10-18): op een groot scherm (curved monitor thuis)
   meer panelen in de presets dan op de MacBook. Pitwall doet dit sinds fase 9 (`window.innerWidth`);
   de analyse-presets nog niet
 
-- Remwegen en corner-fases automatisch detecteren uit speed/throttle/brake (braking point, apex, exit)
-- Team radio afspelen op de tijdlijn (OpenF1 heeft opnames)
-- Corner-analyse: min-speed, remwegen, apex-snelheid per bocht vergeleken
-- Gear-map / throttle-map op de track
-- Long-run vs short-run detectie in vrije trainingen
-- Seizoensoverzicht: quali-gaps tussen teammates over een heel jaar
-- Dashboard delen als URL (selectie + layout in querystring)
+- Starts: herstarts na een rode vlag (staande start halverwege) ook meten
+- Starts: de chart is krap in het race board (tab naast Passes)

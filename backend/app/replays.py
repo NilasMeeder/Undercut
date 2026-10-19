@@ -67,6 +67,12 @@ def get_timeline(year: int, round_number: int, code: str) -> SessionTimeline:
         for lap in laps:
             if lap.start_time is not None:
                 first[lap.lap] = min(lap.start_time, first.get(lap.lap, math.inf))
+        # Live, the lap in progress has no row yet: it starts where the leader's last line is.
+        lines = [(lap.lap, lap.end_time) for lap in laps if lap.end_time is not None]
+        if lines:
+            last = max(n for n, _ in lines)
+            if last < total_laps and last + 1 not in first:
+                first[last + 1] = min(at for n, at in lines if n == last)
         lap_starts = [first[n] for n in sorted(first)]
         first_lap = min(first, default=1)
     messages = _race_control(year, round_number, code)
@@ -180,6 +186,10 @@ def _live(year: int, round_number: int, code: str):  # -> LiveSession | None
 
     live = service.get((year, round_number, code))
     return live if live is not None and not live.finished else None
+
+
+def is_live(year: int, round_number: int, code: str) -> bool:
+    return _live(year, round_number, code) is not None
 
 
 def status(year: int, round_number: int, code: str) -> ReplayStatus:

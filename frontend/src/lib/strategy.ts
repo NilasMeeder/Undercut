@@ -40,7 +40,9 @@ export function orderAt(history: RaceHistory, t: number): { driver: DriverRace; 
 /**
  * Where the degradation fits and the pit window are cut off at clock time t: in a race the end
  * of the leader's last completed lap, so they change once a lap; otherwise the whole minute. Null
- * at the end of the session (= everything).
+ * at the end of the session (= everything). Until the leader's second line it is the last car
+ * across the first: at the leader's first line nobody else has a gap yet, and a safety car on
+ * lap 1 is when the safety car calculator matters.
  */
 export function strategyCutoff(
   history: RaceHistory,
@@ -53,6 +55,12 @@ export function strategyCutoff(
   for (const end of history.leader_line) {
     if (end > t) break;
     cutoff = end;
+  }
+  if (cutoff === history.leader_line[0]) {
+    for (const driver of history.drivers) {
+      const first = driver.laps[0] === 1 ? driver.line[0] : undefined;
+      if (first != null && first <= t && first > cutoff) cutoff = first;
+    }
   }
   return cutoff;
 }

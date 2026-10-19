@@ -833,7 +833,8 @@ is (replay en live). Herstarts na een rode vlag (`STANDING START`) zitten er nog
 met de geselecteerde die gereden zijn, 6 tegelijk gelezen), widget `season`. Per team en ronde de
 beste laps in het laatste deel dat beide drivers een tijd zetten; `ahead`: wie verder kwam, anders
 sneller, een driver zonder tijd verliest; gat > 3% (`OUTLIER_PCT`) telt niet voor de mediaan.
-Paren per (team, drivers), wie vaker voor zat eerst. Klik op een ronde: sessie wisselen, dan
+Paren per (team, drivers), wie vaker voor zat eerst. Kolomkop: drie letters van de naam, met
+uitzonderingen in `SHORT` (United States USA, São Paulo BRA, Las Vegas LVG). Klik op een ronde: sessie wisselen, dan
 `setLaps` (de wissel leegt de groepen eerst).
 
 ## Meldingen (fase 13)
@@ -921,7 +922,16 @@ Alles uit de lapdata (geen telemetrie), rekenwerk in `strategy.py` (getest), per
   als niemand anders stopt) en undercut/overcut op de auto ervoor en erachter.
 De frontend vraagt die twee laatste op met **`until` = einde van de laatste leiderslap** op de klok
 (`lib/strategy.ts` `strategyCutoff`; buiten races per minuut), dus één query per ronde, gecachet. Klok
-op het einde = `until` weg = alles.
+op het einde = `until` weg = alles. Tussen de eerste en tweede lijn van de leider: de laatste auto die
+de eerste lijn over is (bij de eerste lijn heeft verder niemand een gap; Austin 2025 S, SC op lap 1).
+**Rijdend** (`_running_cars`): op een lap die de cutoff overspant; zonder cutoff op de baan toen de
+leider de vlag kreeg (`_flag`). Niet "laatste lap heeft een eindtijd": FastF1 geeft de lap waarin een
+auto uitvalt ook een eindtijd (Austin 2025 R: SAI zou in de Forecast P2 worden). Live heeft de
+lap waar een auto op zit nog geen rij: dan is een lijn < 180 s vóór de cutoff genoeg
+(`LIVE_RUNNING_FOR`, zoals de tower; `replays.is_live`), anders viel na elke lijn van de leider
+de rest van het veld weg uit Forecast, Safety car en Pit window.
+**Lap op de klok** (`replays.get_timeline` `lap_starts`): live heeft de lap die bezig is nog geen rij;
+zijn start is de laatste lijn van de leider (zoals de tower: laps van de leider + 1).
 
 Modelkeuzes (in de (i)-uitleg van de widgets ook):
 - **Schone lap** (`is_clean`): getimed, geen pit in/out, niet lap 1, niet verwijderd, track status

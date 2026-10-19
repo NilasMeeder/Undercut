@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.replay import driven, status_at
+from app.replay import LIVE_RUNNING_FOR, driven, status_at
 from app.schemas import (
     CompoundPace,
     DegFit,
@@ -459,11 +459,12 @@ def pit_window(
     losses: dict[TrackStatus, float],
     status: TrackStatus,
     compound: str | None = None,
+    live: bool = False,
 ) -> PitWindow:
     per_driver = by_driver(laps)
     if driver not in per_driver:
         raise LookupError(f"{driver} has no laps in this session")
-    running = [d for d in classification(per_driver, until) if _running(per_driver[d], until)]
+    running = _running_cars(per_driver, until, live)
     if driver not in running:
         raise LookupError(f"{driver} is not running at that moment")
     seen = {d: [lap for lap in per_driver[d] if done(lap, until)] for d in running}
@@ -533,17 +534,40 @@ def _rival_model(p: Paces, rival: str, seen: list[Lap], notes: list[str]) -> Tyr
     return tyre_model(p, rival, seen, NEXT_COMPOUND.get(compound or "", compound), notes)
 
 
-def _running(own: list[Lap], until: float | None) -> bool:
-    """Still in the race at the cutoff: on a lap that ends after it (or the race is over)."""
-    if until is None:
-        return own[-1].end_time is not None
-    return any(
+def _running_cars(
+    per_driver: dict[str, list[Lap]], until: float | None, live: bool = False
+) -> list[str]:
+    """The cars still in the race at the cutoff, in classification order: on a lap that spans it.
+    Without a cutoff the race is over: the cars on track when the leader takes the flag (a car
+    that retired has an end time on its last lap too, so that is not enough)."""
+    at = until if until is not None else _flag(per_driver)
+    return [d for d in classification(per_driver, until) if _running(per_driver[d], at, live)]
+
+
+def _flag(per_driver: dict[str, list[Lap]]) -> float | None:
+    """When the leader crossed the line at the end of the last lap anyone completed."""
+    ends = [(lap.lap, lap.end_time) for own in per_driver.values() for lap in own if lap.end_time]
+    if not ends:
+        return None
+    last = max(n for n, _ in ends)
+    return min(t for n, t in ends if n == last)
+
+
+def _running(own: list[Lap], at: float | None, live: bool = False) -> bool:
+    """On a lap that starts before `at` and ends after it. Live, the lap a car is on has no row
+    until it is done: then its last line being recent is enough (as in the tower)."""
+    if at is None:
+        return False
+    if any(
         lap.start_time is not None
-        and lap.start_time <= until + LAP_DONE_SLACK
+        and lap.start_time <= at + LAP_DONE_SLACK
         and lap.end_time is not None
-        and lap.end_time >= until - LAP_DONE_SLACK
+        and lap.end_time >= at - LAP_DONE_SLACK
         for lap in own
-    )
+    ):
+        return True
+    last = max((lap.end_time for lap in own if lap.end_time is not None), default=None)
+    return live and last is not None and last <= at and at - last < LIVE_RUNNING_FOR
 
 
 def _gap(seen: list[Lap], leaders: list[float]) -> float | None:
@@ -626,7 +650,9 @@ def assumed_stop(last_lap: int, total: int) -> int | None:
     return last_lap + (total - last_lap + 1) // 2
 
 
-def forecast(laps: list[Lap], p: Paces, until: float | None, loss: float) -> Forecast:
+def forecast(
+    laps: list[Lap], p: Paces, until: float | None, loss: float, live: bool = False
+) -> Forecast:
     """Every running car from its last line to the flag on its own tyre model (TyreModel, plus the
     fuel still on board), with the stop it still owes at its quickest lap. The order at the flag
     and the gaps follow from the predicted line times; nobody is held up and nothing else
@@ -635,7 +661,7 @@ def forecast(laps: list[Lap], p: Paces, until: float | None, loss: float) -> For
     if not total:
         raise LookupError("The forecast is for races and sprints")
     per_driver = by_driver(laps)
-    running = [d for d in classification(per_driver, until) if _running(per_driver[d], until)]
+    running = _running_cars(per_driver, until, live)
     seen = {d: [lap for lap in per_driver[d] if done(lap, until)] for d in running}
     leaders = leader_line({d: seen[d] for d in running})
     notes: list[str] = []
@@ -738,12 +764,16 @@ def _ahead_from(mine: list[float], theirs: list[float]) -> int:
 
 
 def pit_calculator(
-    laps: list[Lap], until: float | None, losses: dict[TrackStatus, float], status: TrackStatus
+    laps: list[Lap],
+    until: float | None,
+    losses: dict[TrackStatus, float],
+    status: TrackStatus,
+    live: bool = False,
 ) -> PitCalculator:
     """Per running car: where it rejoins if it alone stops now with the pit loss of `status`,
     on the gaps at the cutoff (under a safety car they shrink as the field bunches up)."""
     per_driver = by_driver(laps)
-    running = [d for d in classification(per_driver, until) if _running(per_driver[d], until)]
+    running = _running_cars(per_driver, until, live)
     seen = {d: [lap for lap in per_driver[d] if done(lap, until)] for d in running}
     leaders = leader_line({d: seen[d] for d in running})
     gaps = {d: _gap(seen[d], leaders) for d in running}

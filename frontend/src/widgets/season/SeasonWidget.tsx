@@ -11,12 +11,19 @@ import type { SeasonConfig } from './widget';
 const signed = (v: number, digits: number) =>
   `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(digits)}`;
 
+/** Where the first three letters say little: United States, São Paulo. */
+const SHORT: Record<string, string> = {
+  'United States': 'USA',
+  'São Paulo': 'BRA',
+  'Las Vegas': 'LVG',
+};
+
 /** Three letters per round, unique: Australian AUS, Austrian AUT. */
 function shortNames(names: string[]): string[] {
   const used = new Set<string>();
   return names.map((name) => {
     const letters = name.replace(/[^A-Za-z]/g, '').toUpperCase();
-    let label = letters.slice(0, 3);
+    let label = SHORT[name] ?? letters.slice(0, 3);
     for (let i = 3; used.has(label) && i < letters.length; i++)
       label = letters.slice(0, 2) + letters[i];
     used.add(label);

@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from app import replay, sessions
+from app import replay, replays, sessions
 from app.schemas import Lap, RaceControlMessage, Segment, StatusPeriod
 from app.sources import jolpica
 
@@ -346,3 +346,27 @@ def test_session_clock_counts_down_each_part_and_stops_for_red_flags() -> None:
     ]
     assert [p.remaining for p in replay.session_clock("practice", 50.0, [], [])] == [3600.0]
     assert replay.session_clock("race", 0.0, [], red) == []
+
+
+def test_live_the_lap_in_progress_starts_at_the_leaders_line(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    laps = [
+        race_lap("VER", 1, 0.0, 30.0, 30.0, 30.0),
+        race_lap("VER", 2, 90.0, 30.0, 30.0, 30.0),
+        race_lap("NOR", 1, 1.0, 30.0, 30.0, 31.0),
+    ]
+    monkeypatch.setattr(sessions, "get_laps", lambda y, r, c: laps)
+    monkeypatch.setattr(sessions, "scheduled_laps", lambda y, r, c: 5)
+    monkeypatch.setattr(sessions, "get_t0", lambda y, r, c: None)
+    monkeypatch.setattr(replays, "_race_control", lambda y, r, c: [])
+    replays.get_timeline.cache_clear()
+    try:
+        # VER is on lap 3, which has no row until it is done; the tower says LAP 3 too.
+        assert replays.get_timeline(2099, 1, "R").lap_starts == [0.0, 90.0, 180.0]
+        laps.extend(race_lap("VER", n, 90.0 * (n - 1), 30.0, 30.0, 30.0) for n in (3, 4, 5))
+        replays.get_timeline.cache_clear()
+        # After the flag there is no lap 6.
+        assert replays.get_timeline(2099, 1, "R").lap_starts == [0.0, 90.0, 180.0, 270.0, 360.0]
+    finally:
+        replays.get_timeline.cache_clear()

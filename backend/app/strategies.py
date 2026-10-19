@@ -77,6 +77,7 @@ def get_pit_window(
         pit_losses(year, round_number, code),
         strategy.status_at(timeline.track_status, at),
         compound,
+        replays.is_live(year, round_number, code),
     )
 
 
@@ -91,6 +92,7 @@ def get_forecast(
         get_paces(year, round_number, code, fuel, until),
         until,
         pit_losses(year, round_number, code)["green"],
+        replays.is_live(year, round_number, code),
     )
 
 
@@ -105,4 +107,5 @@ def get_pit_calculator(
         until,
         pit_losses(year, round_number, code),
         status,
+        replays.is_live(year, round_number, code),
     )
