@@ -2076,6 +2076,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/stewards": {
+      "get": {
+        "summary": "Stewarding",
+        "description": "Deleted laps, black-and-white flags, incidents and penalties, read from race control.",
+        "operationId": "stewarding_api_sessions__year___round___session__stewards_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stewarding"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/track-evolution": {
       "get": {
         "summary": "Track Evolution",
@@ -2848,6 +2916,36 @@
   },
   "components": {
     "schemas": {
+      "BlackAndWhiteFlag": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "time",
+          "reason"
+        ],
+        "title": "BlackAndWhiteFlag"
+      },
       "CarTrack": {
         "properties": {
           "driver": {
@@ -3461,6 +3559,78 @@
           "compounds"
         ],
         "title": "Degradation"
+      },
+      "DeletedLap": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          },
+          "lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap"
+          },
+          "lap_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lap Time"
+          },
+          "turn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn"
+          },
+          "track_limits": {
+            "type": "boolean",
+            "title": "Track Limits"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "time",
+          "lap",
+          "lap_time",
+          "turn",
+          "track_limits",
+          "reason"
+        ],
+        "title": "DeletedLap",
+        "description": "A lap time deleted by race control (track limits, a double yellow)."
       },
       "Downshift": {
         "properties": {
@@ -4240,6 +4410,106 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "Incident": {
+        "properties": {
+          "drivers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "place": {
+            "type": "string",
+            "title": "Place"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "noted",
+              "investigating",
+              "after",
+              "no_investigation",
+              "no_action",
+              "penalty",
+              "reprimand"
+            ],
+            "title": "Status"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "drivers",
+          "place",
+          "reason",
+          "status",
+          "events"
+        ],
+        "title": "Incident",
+        "description": "One incident from NOTED to the stewards' decision."
+      },
+      "IncidentEvent": {
+        "properties": {
+          "time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "noted",
+              "investigating",
+              "after",
+              "no_investigation",
+              "no_action",
+              "penalty",
+              "reprimand"
+            ],
+            "title": "Status"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "status",
+          "text",
+          "driver"
+        ],
+        "title": "IncidentEvent"
       },
       "Lap": {
         "properties": {
@@ -5203,6 +5473,90 @@
         ],
         "title": "OvertakePoints",
         "description": "Overtake mode (2026, races): within 1 s of the car ahead at the detection line, a car gets\nextra MGU-K energy to use from the activation line. Metres from the line, like the zones\n(a corner's position plus the metres: \u00b150 m)."
+      },
+      "Penalty": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "time",
+              "drive_through",
+              "stop_go",
+              "reprimand",
+              "grid",
+              "disqualified"
+            ],
+            "title": "Kind"
+          },
+          "seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds"
+          },
+          "places": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Places"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "served": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Served"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "time",
+          "kind",
+          "seconds",
+          "places",
+          "reason",
+          "text",
+          "served"
+        ],
+        "title": "Penalty"
       },
       "PitStop": {
         "properties": {
@@ -6666,6 +7020,47 @@
           "status"
         ],
         "title": "StatusPeriod"
+      },
+      "Stewarding": {
+        "properties": {
+          "deleted": {
+            "items": {
+              "$ref": "#/components/schemas/DeletedLap"
+            },
+            "type": "array",
+            "title": "Deleted"
+          },
+          "black_and_white": {
+            "items": {
+              "$ref": "#/components/schemas/BlackAndWhiteFlag"
+            },
+            "type": "array",
+            "title": "Black And White"
+          },
+          "incidents": {
+            "items": {
+              "$ref": "#/components/schemas/Incident"
+            },
+            "type": "array",
+            "title": "Incidents"
+          },
+          "penalties": {
+            "items": {
+              "$ref": "#/components/schemas/Penalty"
+            },
+            "type": "array",
+            "title": "Penalties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted",
+          "black_and_white",
+          "incidents",
+          "penalties"
+        ],
+        "title": "Stewarding",
+        "description": "What race control said about deleted laps, flags, incidents and penalties."
       },
       "Stint": {
         "properties": {

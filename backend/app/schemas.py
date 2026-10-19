@@ -505,6 +505,80 @@ class StraightMode(BaseModel):
     """When race control had overtake mode enabled (OVERTAKE ENABLED until DISABLED)."""
 
 
+IncidentStatus = Literal[
+    "noted", "investigating", "after", "no_investigation", "no_action", "penalty", "reprimand"
+]
+PenaltyKind = Literal["time", "drive_through", "stop_go", "reprimand", "grid", "disqualified"]
+
+
+class DeletedLap(BaseModel):
+    """A lap time deleted by race control (track limits, a double yellow)."""
+
+    driver: str
+    time: float | None
+    """Session time (s) of the message."""
+    lap: int | None
+    lap_time: str | None
+    """As race control writes it: '1:37.326'."""
+    turn: str | None
+    """'TURN 4', 'PIT ENTRY'."""
+    track_limits: bool
+    """A track-limits strike (3 in a race give the black-and-white flag, the next a penalty)."""
+    reason: str
+
+
+class BlackAndWhiteFlag(BaseModel):
+    driver: str
+    time: float | None
+    reason: str
+
+
+class IncidentEvent(BaseModel):
+    time: float | None
+    status: IncidentStatus
+    text: str
+    """The message without its prefix ('FIA STEWARDS:') and time stamp."""
+    driver: str | None
+    """For a decision: the car it is for."""
+
+
+class Incident(BaseModel):
+    """One incident from NOTED to the stewards' decision."""
+
+    drivers: list[str]
+    place: str
+    """'TURN 4', 'PIT LANE', 'Q1', or empty."""
+    reason: str
+    """'CAUSING A COLLISION'; empty until race control gives one."""
+    status: IncidentStatus
+    """The last status (at the end of the session; the events say when it changed)."""
+    events: list[IncidentEvent]
+
+
+class Penalty(BaseModel):
+    driver: str
+    time: float | None
+    kind: PenaltyKind
+    seconds: int | None
+    """Time penalty or stop-go seconds."""
+    places: int | None
+    """Grid penalty places."""
+    reason: str
+    text: str
+    """'5 SECOND TIME PENALTY'."""
+    served: float | None
+    """Session time (s) race control said it was served."""
+
+
+class Stewarding(BaseModel):
+    """What race control said about deleted laps, flags, incidents and penalties."""
+
+    deleted: list[DeletedLap]
+    black_and_white: list[BlackAndWhiteFlag]
+    incidents: list[Incident]
+    penalties: list[Penalty]
+
+
 class EvolutionLap(BaseModel):
     """A push lap in the track-evolution fit."""
 

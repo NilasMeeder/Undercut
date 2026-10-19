@@ -517,6 +517,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/stewards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stewarding
+         * @description Deleted laps, black-and-white flags, incidents and penalties, read from race control.
+         */
+        get: operations["stewarding_api_sessions__year___round___session__stewards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/track-evolution": {
         parameters: {
             query?: never;
@@ -746,6 +766,15 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BlackAndWhiteFlag */
+        BlackAndWhiteFlag: {
+            /** Driver */
+            driver: string;
+            /** Time */
+            time: number | null;
+            /** Reason */
+            reason: string;
+        };
         /** CarTrack */
         CarTrack: {
             /** Driver */
@@ -935,6 +964,26 @@ export interface components {
             stints: components["schemas"]["StintPace"][];
             /** Compounds */
             compounds: components["schemas"]["CompoundPace"][];
+        };
+        /**
+         * DeletedLap
+         * @description A lap time deleted by race control (track limits, a double yellow).
+         */
+        DeletedLap: {
+            /** Driver */
+            driver: string;
+            /** Time */
+            time: number | null;
+            /** Lap */
+            lap: number | null;
+            /** Lap Time */
+            lap_time: string | null;
+            /** Turn */
+            turn: string | null;
+            /** Track Limits */
+            track_limits: boolean;
+            /** Reason */
+            reason: string;
         };
         /**
          * Downshift
@@ -1198,6 +1247,39 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * Incident
+         * @description One incident from NOTED to the stewards' decision.
+         */
+        Incident: {
+            /** Drivers */
+            drivers: string[];
+            /** Place */
+            place: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "noted" | "investigating" | "after" | "no_investigation" | "no_action" | "penalty" | "reprimand";
+            /** Events */
+            events: components["schemas"]["IncidentEvent"][];
+        };
+        /** IncidentEvent */
+        IncidentEvent: {
+            /** Time */
+            time: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "noted" | "investigating" | "after" | "no_investigation" | "no_action" | "penalty" | "reprimand";
+            /** Text */
+            text: string;
+            /** Driver */
+            driver: string | null;
         };
         /** Lap */
         Lap: {
@@ -1486,6 +1568,28 @@ export interface components {
             detection_text: string;
             /** Activation Text */
             activation_text: string;
+        };
+        /** Penalty */
+        Penalty: {
+            /** Driver */
+            driver: string;
+            /** Time */
+            time: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "time" | "drive_through" | "stop_go" | "reprimand" | "grid" | "disqualified";
+            /** Seconds */
+            seconds: number | null;
+            /** Places */
+            places: number | null;
+            /** Reason */
+            reason: string;
+            /** Text */
+            text: string;
+            /** Served */
+            served: number | null;
         };
         /** PitStop */
         PitStop: {
@@ -1966,6 +2070,20 @@ export interface components {
              * @enum {string}
              */
             status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+        };
+        /**
+         * Stewarding
+         * @description What race control said about deleted laps, flags, incidents and penalties.
+         */
+        Stewarding: {
+            /** Deleted */
+            deleted: components["schemas"]["DeletedLap"][];
+            /** Black And White */
+            black_and_white: components["schemas"]["BlackAndWhiteFlag"][];
+            /** Incidents */
+            incidents: components["schemas"]["Incident"][];
+            /** Penalties */
+            penalties: components["schemas"]["Penalty"][];
         };
         /** Stint */
         Stint: {
@@ -3458,6 +3576,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OvertakeChecks"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stewarding_api_sessions__year___round___session__stewards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stewarding"];
                 };
             };
             /** @description Validation Error */

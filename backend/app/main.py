@@ -22,6 +22,7 @@ from app import (
     schedule,
     sessions,
     setups,
+    stewards,
     store,
     straight_mode,
     strategies,
@@ -63,6 +64,7 @@ from app.schemas import (
     SessionReport,
     SessionTimeline,
     SetupMap,
+    Stewarding,
     StraightMode,
     TagCount,
     Teammates,
@@ -524,6 +526,12 @@ def overtake_checks(year: int, round: int, session: SessionCode) -> OvertakeChec
     """Races (2026): every passage of the overtake detection line, with the gap to the car ahead
     and whether it gave overtake mode. Needs the position track (404 until it is prepared)."""
     return _guard(lambda: overtake.get_checks(year, round, session))
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/stewards")
+def stewarding(year: int, round: int, session: SessionCode) -> Stewarding:
+    """Deleted laps, black-and-white flags, incidents and penalties, read from race control."""
+    return _guard(lambda: stewards.get_stewarding(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/track-evolution")

@@ -295,6 +295,8 @@ function raceBoard(api: DockviewApi) {
     { cars: 'all' }
   );
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
+  addWidget(api, 'stewards', 'blue', { referencePanel: feed, direction: 'within' });
+  feed.api.setActive();
   const clock = addWidget(
     api,
     'clock',
@@ -412,7 +414,7 @@ export const PRESETS = [
     id: 'race-board',
     title: 'Race board',
     description:
-      'Tower and battles, every car on the map over the gaps, race clock, live delta, race control, pit window, track line, weather',
+      'Tower and battles, every car on the map over the gaps, race clock, live delta, race control and stewards, pit window, track line, weather',
     workspaces: ['pitwall'],
     apply: raceBoard,
   },

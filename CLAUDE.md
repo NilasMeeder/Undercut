@@ -15,7 +15,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
-Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution), link-groepen, gedeelde cursor/zoom,
+Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
 presets, replay (een sessieklok onderin waar de tower, de kaart met alle auto's, de Track line en race
 control op lopen, zie "Replay"), markeringen met notitie en tags plus opgeslagen views als bladwijzer
@@ -154,6 +154,7 @@ backend/app/straight_mode.py straight-mode-zones (2026): de FIA-punten uit strai
                            waar de straight remt; sources/fia.py leest de FIA-kaart en schrijft die JSON
 backend/app/zones.py       zones voor de kaart: DRS-zones uit de flap (race: uit Q), of de straights met clippunt (2026)
 backend/app/evolution.py   baanevolutie in Q (fit per push-lap: driver + band + baan(t)), zie "Baanevolutie"
+backend/app/stewards.py    race control → deleted laps, zwart-wit, incidenten en straffen (zie "Stewards")
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
                            pure functies (long_runs, start_moves, stop_extremes, undercuts, flags) getest
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
@@ -582,7 +583,8 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   rechts 24%, onderin 19%), dus op de MacBook en een breed scherm dezelfde indeling.
 - **Race board** (Pitwall, `race-board`, fase 12): links de tower (fit) boven Battles, in het midden
   de kaart met alle auto's boven Gaps (Positions en Live lap als tab), rechts Clock op de sessieklok
-  (racetijd en lap, lokale tijd als tab), Live delta, Race control en Pit window (Stints als tab),
+  (racetijd en lap, lokale tijd als tab), Live delta, Race control (Stewards als tab) en Pit window
+  (Stints als tab),
   onderin Track line en Weather. Maten als deel van het scherm (tower 38%, rechts 25%, onderin
   17%). Getest op 1512×900 en 2560×1400 (Monza 2026 R, lap 11).
 - **Release** (widget `release`, `lib/release.ts`, alleen frontend): voor de eerste driver van de
@@ -730,6 +732,23 @@ verschillen (`SMOOTHING` 0,5: 2 vlakt het steile begin te veel af, Monza −0,08
 plaatsen. De frontend vraagt met `until` = eindtijd van de laatste lap die op de klok af is
 (`useLapsAtClock`, instelling "Laps shown"). Alles wat iedereen sneller maakt telt als baan (ook
 meer risico in Q3). FP geprobeerd en weggelaten (zie ROADMAP fase 13).
+
+## Stewards (fase 13)
+
+`stewards.py` (`stewarding`, puur, getest met echte berichten), `/stewards`, widget Stewards
+(`stewards`, `lib/stewards.ts`: `recordsAt`/`incidentsAt` op de klok). Race control schrijft alles
+als tekst in een paar vaste vormen (verzameld uit alle races, sprints en Q van 2025–2026, zie de
+docstring): deleted laps (`CAR 12 (ANT) TIME … DELETED - TRACK LIMITS AT TURN 4 LAP 16`, ook
+`LAP DELETED`, `CAR LEC TIME …`, en om een dubbele gele vlag: geen strike), `BLACK AND WHITE FLAG`,
+incidenten (`[FIA STEWARDS:|UPDATE:|CORRECTION:] <plek> INCIDENT INVOLVING CARS … <status> - <reden>
+(hh:mm:ss)`, status NOTED → UNDER INVESTIGATION / WILL BE INVESTIGATED AFTER THE … → REVIEWED NO
+FURTHER INVESTIGATION / NO FURTHER ACTION) en besluiten (`5 SECOND TIME PENALTY FOR CAR …`, DRIVE
+THROUGH, STOP-AND-GO, `10 SECOND STOP/GO`, REPRIMAND, `PENALTY SERVED - …`). Koppelen: zelfde set
+auto's (volgorde wisselt), plek, stempel en reden als beide er een geven; NOTED opnieuw = update
+zolang het nog alleen genoteerd is, anders een nieuw incident (PER Monza 2026: practice start en
+escape road). Een straf sluit het open incident met die reden, anders het laatste in onderzoek
+(ANT Monza 2025: onderzocht voor ALB van de baan duwen, straf voor driving erratically).
+"After the session"-besluiten staan niet in de feed.
 
 ## Markeringen en views (fase 5)
 

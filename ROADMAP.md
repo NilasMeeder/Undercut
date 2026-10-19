@@ -498,7 +498,11 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       1:21.770 waard, sneller dan GAS' pole), Zandvoort/Baku 2026 ~2 s. Alleen Q/SQ: in FP1/FP2
       lijkt de baan aan het eind langzamer (long runs, brandstof staat niet in de data), ook met
       alleen de snelste lap per run
-- [ ] **Penalty tracker**: track-limits-strikes per driver, onderzoeken en straffen uit race control
+- [x] **Penalty tracker** (2026-10-19, `stewards.py`, `/stewards`, widget Stewards, tab naast Race
+      control in het race board): deleted laps (strikes), zwart-wit, incidenten van NOTED tot het
+      besluit, straffen tot ze uitgezeten zijn. Getest op alle berichten van 2025–2026 (580
+      incidenten, elke straf aan een incident, elke PENALTY SERVED gevonden) en in replay (Monza
+      2025 R lap 33: OCO +5 s open, ANT B/W na 3, SAI reprimande)
 - [ ] **Inhaalacties**: elke inhaalactie op de baan (wie, waar, lap, met of zonder OT), op de kaart;
       per driver hoe vaak OT en wat hij ermee deed
 - [ ] **Meldingen op het bord**: toasts voor pitstops, snelste lap, OT, onderzoek, SC/VSC, gat < 1 s

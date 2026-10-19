@@ -19,6 +19,7 @@ import { releaseWidget } from './release/widget';
 import { reportWidget } from './report/widget';
 import { setupsWidget } from './setups/widget';
 import { speedTrapsWidget } from './speedtraps/widget';
+import { stewardsWidget } from './stewards/widget';
 import { stintsWidget } from './stints/widget';
 import { teammatesWidget } from './teammates/widget';
 import { telemetryWidget } from './telemetry/widget';
@@ -56,6 +57,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   weekendWidget,
   clockWidget,
   raceControlWidget,
+  stewardsWidget,
   weatherWidget,
   towerWidget,
   trackLineWidget,

@@ -32,6 +32,7 @@ import {
   type SeasonEvents,
   type SessionDetail,
   type SessionTimeline,
+  type Stewarding,
   type TimingState,
   type TrackEvolution,
   type Weather,
@@ -115,6 +116,8 @@ export const useSetupMap = () => useSessionQuery<SetupMap>('/setups');
 export const useTeammates = () => useSessionQuery<Teammates>('/teammates');
 /** Every driver from the first practice up to this session. */
 export const useWeekend = () => useSessionQuery<WeekendOverview>('/weekend');
+/** Deleted laps, black-and-white flags, incidents and penalties from race control. */
+export const useStewarding = (enabled = true) => useSessionQuery<Stewarding>('/stewards', enabled);
 export const useSectors = (enabled = true) => useSessionQuery<TrackSectors>('/sectors', enabled);
 /** Straight-mode zones (2026) from the FIA's circuit map, and when low grip applied. */
 export const useStraightMode = (enabled = true) =>
