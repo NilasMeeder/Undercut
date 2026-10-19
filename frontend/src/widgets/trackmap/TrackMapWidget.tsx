@@ -511,8 +511,9 @@ function TrackMap({
           {note ?? 'Mini-sectors: fastest lap colours the track'}
         </div>
       ) : null}
-      {(zones && zones.zones.length > 0) || straightMode || overtake ? (
+      {(zones && zones.zones.length > 0) || straightMode || overtake || (passes && cars) ? (
         <div className="absolute bottom-1 left-1.5 z-10 flex flex-col gap-0.5 text-[10px] text-faint">
+          {passes && cars ? <PassesLegend passes={passes} /> : null}
           {overtake && cars ? <OvertakeLegend /> : null}
           {straightMode ? <StraightModeLegend data={straightMode} lowGrip={lowGrip} /> : null}
           {zones && zones.zones.length > 0 ? <ZoneLegend zones={zones} /> : null}
@@ -941,9 +942,14 @@ function OvertakeLayer({ along, data, unit }: { along: Along; data: StraightMode
 
 /** Seconds a pass stays big on the map after it happened. */
 const PASS_RECENT = 60;
+/** Dots stacked outward per place before the rest is a count. */
+const PASS_STACK = 5;
+/** Spacing of the dots in a column, in map units. */
+const PASS_STEP = 1.3;
 
-/** Every pass up to the clock as a dot just outside the track, in the passer's colour: the
- * last minute's big, older ones small and faint (where the passing happens). */
+/** Every pass up to the clock as a dot just outside the track, in the passer's colour: passes
+ * at the same place stack outward in the order they happened (a column = a passing place), the
+ * last minute's big, older ones faint. A column taller than PASS_STACK ends in "+n". */
 function PassesLayer({
   along,
   passes,
@@ -957,31 +963,82 @@ function PassesLayer({
 }) {
   const t = useClockTime(1000);
   const color = (code: string) => drivers.find((d) => d.code === code)?.color ?? COLORS.textDim;
+  // Columns from the passes in time order, so the dots up to t are always the inner ones.
+  const placed = useMemo(() => {
+    const columns: { x: number; y: number; nx: number; ny: number; count: number }[] = [];
+    return passes.map((p) => {
+      const i = Math.min(
+        indexAt(along.distance, p.fraction * along.length),
+        along.points.length - 1
+      );
+      const [x, y] = along.points[i];
+      let column = columns.find((c) => Math.hypot(c.x - x, c.y - y) < unit * 2);
+      if (!column) {
+        const [nx, ny] = along.normals[i];
+        column = { x, y, nx, ny, count: 0 };
+        columns.push(column);
+      }
+      const level = column.count++;
+      return { pass: p, column, level };
+    });
+  }, [along, passes, unit]);
+  const shown = placed.filter((d) => d.pass.time <= t);
+  const overflow = new Map<(typeof placed)[number]['column'], number>();
+  for (const d of shown) {
+    if (d.level >= PASS_STACK) overflow.set(d.column, d.level + 1 - PASS_STACK);
+  }
+  // "+n" past the full columns, the biggest first; one that would touch another is left out.
+  const labels: { x: number; y: number; anchor: 'start' | 'middle' | 'end'; more: number }[] = [];
+  const out = unit * (3.6 + PASS_STACK * PASS_STEP + 0.4);
+  for (const [c, more] of [...overflow].sort((a, b) => b[1] - a[1])) {
+    const [x, y] = [c.x + c.nx * out, c.y + c.ny * out];
+    if (labels.some((l) => Math.hypot(l.x - x, l.y - y) < unit * 4)) continue;
+    labels.push({ x, y, more, anchor: c.nx < -0.3 ? 'end' : c.nx > 0.3 ? 'start' : 'middle' });
+  }
   return (
     <g>
-      {passes.map((p) => {
-        if (p.time > t) return null;
-        const i = Math.min(
-          indexAt(along.distance, p.fraction * along.length),
-          along.points.length - 1
-        );
-        const [x, y] = along.points[i];
-        const [nx, ny] = along.normals[i];
+      {shown.map(({ pass: p, column: c, level }) => {
+        if (level >= PASS_STACK) return null;
         const recent = t - p.time < PASS_RECENT;
+        const out = unit * (3.6 + level * PASS_STEP);
         return (
           <circle
             key={`${p.time}-${p.driver}-${p.passed}`}
-            cx={x + nx * unit * 3.6}
-            cy={y + ny * unit * 3.6}
-            r={unit * (recent ? 1.2 : 0.6)}
+            cx={c.x + c.nx * out}
+            cy={c.y + c.ny * out}
+            r={unit * (recent ? 1 : 0.55)}
             fill={color(p.driver)}
-            opacity={recent ? 1 : 0.4}
+            opacity={recent ? 1 : 0.55}
           >
             <title>{`L${p.lap} ${p.driver} past ${p.passed} into ${p.corner ?? '?'}${p.overtake_mode ? ' (overtake mode)' : ''}`}</title>
           </circle>
         );
       })}
+      {labels.map(({ x, y, anchor, more }) => (
+        <text
+          key={`${x},${y}`}
+          x={x}
+          y={y}
+          fill={COLORS.textDim}
+          fontSize={unit * 1.8}
+          textAnchor={anchor}
+          dominantBaseline="central"
+        >
+          +{more}
+        </text>
+      ))}
     </g>
+  );
+}
+
+function PassesLegend({ passes }: { passes: Pass[] }) {
+  const t = useClockTime(1000);
+  const count = passes.filter((p) => p.time <= t).length;
+  return (
+    <span className="flex items-center gap-1">
+      <span className="h-1.5 w-1.5 rounded-full bg-dim" />
+      {count} {count === 1 ? 'pass' : 'passes'} up to the clock, a dot each in the passer’s colour
+    </span>
   );
 }
 

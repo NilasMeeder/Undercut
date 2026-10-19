@@ -55,8 +55,9 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
         'it lasts until the next passage. Worked out from the positions (4 Hz), not F1’s own ' +
         'timing loop, so a car right on 1 s can be wrong.',
       'Passes (races, with all cars; off by default): every pass for position up to the clock ' +
-        'as a dot outside the track in the passer’s colour, the last minute’s big. See the ' +
-        'Passes panel for what counts.',
+        'as a dot outside the track in the passer’s colour, the last minute’s big. Passes at ' +
+        'the same place stack outward in the order they happened, so a column is a passing ' +
+        'place; past five dots the rest is a number (+12). See the Passes panel for what counts.',
       'Sectors (off by default): where sector 1 and 2 end, from the quickest laps’ sector times.',
       'Pit ghosts (all cars): for each driver selected in this link group, a hollow ring where he ' +
         'would be now had he stopped (PIT: green-flag pit loss; SC, dashed: under a safety car), ' +

@@ -754,7 +754,9 @@ escape road). Een straf sluit het open incident met die reden, anders het laatst
 
 `passes.py` (`swaps` + `passes`, puur, getest), `/passes` (R/S, na het positiespoor), widget
 Passes (`lib/passes.ts`: telling per driver, per bocht), Track map "Passes (races, all cars)"
-(standaard uit, aan in het race board). Een pass: twee auto's binnen een halve lap wisselen van
+(standaard uit, aan in het race board): een stip per pass in de kleur van de inhaler, passes op
+dezelfde plek (binnen 2 eenheden) stapelen naar buiten in tijdsvolgorde, na vijf een "+n" (bij
+labels die elkaar raken alleen de grootste). Een pass: twee auto's binnen een halve lap wisselen van
 volgorde met een drempel (`MARGIN` 25 m achter → 25 m voor, `HOLD` 2 s), het moment = de
 nuldoorgang na het laatste duidelijke punt van de oude volgorde. Eruit: ±pitstop van een van
 beiden, lap 1 en laps met `STANDING START` (race control), laps > 120% van de mediaan (SC, rode

@@ -507,7 +507,9 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       uit het positiespoor, van ≥ 25 m achter naar ≥ 25 m voor, elk 2 s; zonder pitstops, start en
       staande herstarts, SC/rood/formatie (lap > 120% mediaan), stilgevallen auto's, lapping.
       Monza 2025 R 33 (T1 18, T4 9), Monza 2026 R 369 (283 met OT, jojo bij Roggia). Getest in
-      replay (race board, lap 27: 20 passes, ALB +7). Kaartlaag nog niet visueel bekeken
+      replay (race board, lap 27: 20 passes, ALB +7). Kaartlaag (2026-10-19): passes op dezelfde
+      plek stapelen naar buiten (een kolom = een inhaalplek), na vijf een getal; nagekeken op Monza
+      2025 R en 2026 R (T4 +75, de jojo) op 1512×900 en 2560×1400
 - [ ] **Meldingen op het bord**: toasts voor pitstops, snelste lap, OT, onderzoek, SC/VSC, gat < 1 s
 - [ ] **Live lap voor meerdere drivers** (uit fase 7)
 - [ ] **Corners live**: de bochten van de lap die bezig is, per bocht bijgewerkt (uit Ideeën)
