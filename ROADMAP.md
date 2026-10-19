@@ -523,7 +523,11 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       van de groep, max 4; of alleen de eerste), elk zijn lap tot de klok op één afstandsas met een
       eigen delta en "→" per regel; met één driver de referentielap gestippeld zoals eerst. Getest
       in het quali board (Monza 2025 Q3: VER L17 en NOR L20 tegelijk)
-- [ ] **Corners live**: de bochten van de lap die bezig is, per bocht bijgewerkt (uit Ideeën)
+- [x] **Corners live** (2026-10-19, `progress.corners_in_progress`, `/corners-progress`, widget
+      Corners live, tab naast Corners in het quali board): de bochtsegmenten van de referentielap
+      (vorige of beste, zoals Live lap), elke bocht ingevuld zodra de auto erdoor is, de laatste
+      uitgelegd; na de lijn blijft de hele lap staan tot de eerste bocht van de volgende. Monza
+      2025 Q, VER L17 tegen L14: bochten samen −0.133, laptijd −0.131
 - [ ] **Voorspelde einduitslag**: met het tempo en de trends van nu, en waar gaten nul worden
 - [ ] **Safety car-calculator**: bij SC/VSC per auto wat stoppen nu oplevert, als tabel
 - [ ] **Remwegen en bochtfases**: rempunt, apex en uitgang per bocht, vergeleken tussen laps

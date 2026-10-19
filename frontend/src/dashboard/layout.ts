@@ -231,7 +231,7 @@ function pitwall(api: DockviewApi) {
 
 /**
  * Preset: the qualifying board, as Nilas laid it out (2026-10-18). The tower (laps as a tab) over
- * corners on the left; every car on the map over the live lap in the middle; the session clock
+ * corners (Corners live as a tab) on the left; every car on the map over the live lap in the middle; the session clock
  * (local time as a tab), race control and release on the right; the track line and the weather
  * along the bottom. Sizes are shares of the screen, so it fits a laptop and a wide screen alike.
  */
@@ -261,6 +261,8 @@ function qualiBoard(api: DockviewApi) {
   clock.api.setActive();
   const release = addWidget(api, 'release', 'blue', { referencePanel: feed, direction: 'below' });
   const corners = addWidget(api, 'corners', 'blue', { referencePanel: tower, direction: 'below' });
+  addWidget(api, 'livecorners', 'blue', { referencePanel: corners, direction: 'within' });
+  corners.api.setActive();
   const live = addWidget(api, 'livelap', 'blue', { referencePanel: map, direction: 'below' });
   const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
   const weather = addWidget(api, 'weather', 'blue', { referencePanel: line, direction: 'right' });

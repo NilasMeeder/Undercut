@@ -154,7 +154,7 @@ def _corner_groups(
     return groups
 
 
-def _stats(lap: Resampled, grid: np.ndarray, start: float, end: float) -> CornerStats:
+def segment_stats(lap: Resampled, grid: np.ndarray, start: float, end: float) -> CornerStats:
     inside = np.flatnonzero((grid >= start) & (grid <= end))
     speed = lap.channels["speed"][inside]
     slowest = int(np.argmin(speed))
@@ -208,7 +208,7 @@ def corner_segments(
     for group, start, end in zip(groups, bounds[:-1], bounds[1:], strict=True):
         first, last = group[0][0], group[-1][0]
         label = f"T{first}" if first == last else f"T{first}–{last}"
-        laps = [_stats(lap, grid, start, end) for lap in comparison.laps]
+        laps = [segment_stats(lap, grid, start, end) for lap in comparison.laps]
         segments.append(CornerSegment(label=label, start=start, end=end, laps=laps))
     return segments
 

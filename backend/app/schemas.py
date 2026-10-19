@@ -261,6 +261,34 @@ class CornerSegment(BaseModel):
     """One per compared lap, same order as Comparison.laps."""
 
 
+class LiveCorner(BaseModel):
+    """A corner segment of the reference lap, and the lap in progress through it once done."""
+
+    label: str
+    start: float
+    end: float
+    reference: CornerLap
+    current: CornerLap | None
+    """Null until the car is past the segment's end."""
+
+
+class CornersProgress(BaseModel):
+    """Corners for the lap a driver is on at t, against his previous or best lap: each corner
+    filled in once the car is through it."""
+
+    driver: str
+    lap: int
+    start: float
+    """Session time (s) the lap started."""
+    out_lap: bool
+    progress: float
+    """Metres into the lap, on the reference's scale."""
+    reference_lap: int | None
+    reference_time: float | None
+    corners: list[LiveCorner]
+    """Empty without a reference lap or corner data."""
+
+
 class Comparison(BaseModel):
     distance: list[float]
     """Shared grid (m), stretched to the reference lap's length."""

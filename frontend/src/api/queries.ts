@@ -25,6 +25,7 @@ import {
   type Lap,
   type LapPrediction,
   type LapProgress,
+  type CornersProgress,
   type PitWindow,
   type RaceHistory,
   type RaceControlMessage,
@@ -142,6 +143,29 @@ export function useLapProgress(
     queryFn: () =>
       apiGet<LapProgress>(
         `${sessionPath(key!)}/lap-progress?driver=${driver}&t=${at}&reference=${reference}`
+      ),
+    enabled: key != null && driver != null,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** Corners for the lap a driver is on at t (each once he is through it); per whole second, or
+ * `precise` to the millisecond (the lap that just finished, asked at its end). */
+export function useCornersProgress(
+  driver: string | undefined,
+  t: number,
+  reference: ProgressReference,
+  precise = false
+) {
+  const key = useSessionKey();
+  const at = precise ? Math.round(t * 1000) / 1000 : Math.floor(t);
+  return useQuery({
+    queryKey: ['session', key, 'corners-progress', driver, at, reference],
+    queryFn: () =>
+      apiGet<CornersProgress>(
+        `${sessionPath(key!)}/corners-progress?driver=${driver}&t=${at}&reference=${reference}`
       ),
     enabled: key != null && driver != null,
     staleTime: Infinity,

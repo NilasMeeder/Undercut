@@ -8,6 +8,7 @@ import { evolutionWidget } from './evolution/widget';
 import { gapsWidget } from './gaps/widget';
 import { lapsWidget } from './laps/widget';
 import { liveDeltaWidget } from './livedelta/widget';
+import { liveCornersWidget } from './livecorners/widget';
 import { liveLapWidget } from './livelap/widget';
 import { markersWidget } from './markers/widget';
 import { miniSectorsWidget } from './minisectors/widget';
@@ -52,6 +53,7 @@ export const WIDGETS: AnyWidgetDef[] = [
   timelineWidget,
   evolutionWidget,
   cornersWidget,
+  liveCornersWidget,
   miniSectorsWidget,
   energyWidget,
   reportWidget,

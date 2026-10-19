@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from app.analysis import LapTrace, compare, corner_segments
 
@@ -86,3 +87,46 @@ def test_no_corners_gives_no_segments() -> None:
     lap = cornering_lap(4000, APEXES)
     assert corner_segments(compare([lap], step=5.0), []) == []
     assert corner_segments(compare([lap], step=5.0), [("9", 9999.0)]) == []
+
+
+def test_corners_in_progress_fill_in_once_the_car_is_through() -> None:
+    from app import progress
+
+    reference = cornering_lap(4000.0, APEXES)
+    later = cornering_lap(4000.0, [(1000.0, 110.0), (2500.0, 150.0)])  # quicker through T1
+    so_far = progress.clip(later, float(np.interp(2000.0, later.distance, later.time)))
+    assert so_far is not None
+    p = progress.Progress(
+        lap=5,
+        start=0.0,
+        out_lap=False,
+        trace=so_far,
+        length=None,
+        reference=None,
+        reference_trace=reference,
+    )
+    grid, corners = progress.corners_in_progress(p, CORNERS)
+    assert grid.progress == pytest.approx(2000.0, abs=1)
+    assert [c.segment.label for c in corners] == ["T1", "T2"]
+    first, second = corners
+    assert first.segment.end < 2000.0 and first.current is not None
+    assert first.current.min_speed == pytest.approx(110.0, abs=1)
+    assert first.current.time < first.segment.laps[0].time
+    assert second.current is None  # not through T2 yet
+    no_reference = progress.Progress(5, 0.0, False, so_far, None, None, None)
+    assert progress.corners_in_progress(no_reference, CORNERS)[1] == []
+
+
+def test_corners_in_progress_of_a_lap_that_just_finished() -> None:
+    from app import progress
+
+    reference = cornering_lap(4000.0, APEXES)
+    lap = cornering_lap(4003.0, APEXES)
+    whole = progress.clip(lap, float(lap.time[-1]) - 0.001)
+    assert whole is not None
+    p = progress.Progress(5, 0.0, False, whole, lap.length, None, reference)
+    _, corners = progress.corners_in_progress(p, CORNERS)
+    assert all(c.current is not None for c in corners)
+    for c in corners:
+        assert c.current is not None
+        assert abs(c.current.time - c.segment.laps[0].time) < 0.05  # same lap, a little stretched

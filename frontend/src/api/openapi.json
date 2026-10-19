@@ -1246,6 +1246,112 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/corners-progress": {
+      "get": {
+        "summary": "Corners Progress",
+        "description": "Corners for the lap the driver is on at t: each corner once the car is through it.",
+        "operationId": "corners_progress_api_sessions__year___round___session__corners_progress_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          },
+          {
+            "name": "driver",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 3,
+              "title": "Driver"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Session time (s)",
+              "title": "T"
+            },
+            "description": "Session time (s)"
+          },
+          {
+            "name": "reference",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "previous",
+                "best"
+              ],
+              "type": "string",
+              "description": "previous lap, or the best lap until t",
+              "default": "previous",
+              "title": "Reference"
+            },
+            "description": "previous lap, or the best lap until t"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CornersProgress"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/predictions": {
       "get": {
         "summary": "Lap Predictions",
@@ -3547,6 +3653,72 @@
         "title": "CornerSegment",
         "description": "A corner (or chicane) with its braking zone and the straight after it."
       },
+      "CornersProgress": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "out_lap": {
+            "type": "boolean",
+            "title": "Out Lap"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress"
+          },
+          "reference_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Lap"
+          },
+          "reference_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Time"
+          },
+          "corners": {
+            "items": {
+              "$ref": "#/components/schemas/LiveCorner"
+            },
+            "type": "array",
+            "title": "Corners"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "start",
+          "out_lap",
+          "progress",
+          "reference_lap",
+          "reference_time",
+          "corners"
+        ],
+        "title": "CornersProgress",
+        "description": "Corners for the lap a driver is on at t, against his previous or best lap: each corner\nfilled in once the car is through it."
+      },
       "DegFit": {
         "properties": {
           "slope": {
@@ -5086,6 +5258,45 @@
         ],
         "title": "LapProgress",
         "description": "The lap a driver is on at session time t, as far as it got (replay: a finished lap cut off\nat t; live: the samples so far), on a distance grid over the reference lap with the delta to\nit. Values past where the car is are null, so a chart over the whole lap grows."
+      },
+      "LiveCorner": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/CornerLap"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CornerLap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "start",
+          "end",
+          "reference",
+          "current"
+        ],
+        "title": "LiveCorner",
+        "description": "A corner segment of the reference lap, and the lap in progress through it once done."
       },
       "LiveSessionInfo": {
         "properties": {

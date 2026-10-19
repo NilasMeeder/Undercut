@@ -13,7 +13,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta, Corners live,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
@@ -446,6 +446,16 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   gelapt, in de pit of zonder spoor geldt het interval van de tower. Q/FP: verschil in beste lap. Grijs = geen auto ervoor (P1) of erachter. Eén SVG met een viewBox, dus
   alles groeit mee met het paneel (zoals Clock). De lap-logica (2 s vooruit, afgeronde lap 3 s
   vasthouden) zit in `widgets/livelap/useLiveLap.ts`, gedeeld met Live lap.
+
+- **Corners live** (widget `livecorners`, `GET .../corners-progress?driver=&t=&reference=`, fase
+  13): `progress.corners_in_progress` legt de lap tot t en de referentielap op het grid van
+  `on_grid`, maakt de segmenten uit de referentie (`analysis.corner_segments` met alleen die lap)
+  en rekent `analysis.segment_stats` voor de lap bezig op de gridpunten die hij al haalde plus zijn
+  laatste sample (anders gaf een NaN voorbij de auto onzin in de laatste bocht). Een segment is af
+  als zijn eind ≤ de voortgang (het laatste, tot de lijn, met 2,5 m speling). De frontend vraagt
+  per halve seconde klok (op hele seconden) en houdt de net afgeronde lap (gevraagd op zijn start −
+  1 ms) tot de eerste bocht van de nieuwe lap af is. `diffCell` (de verschilcellen) staat in
+  `lib/insights.ts`, gedeeld met Corners.
 
 ## Energie (fase 8)
 

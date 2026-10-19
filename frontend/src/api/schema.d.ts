@@ -296,6 +296,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/corners-progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Corners Progress
+         * @description Corners for the lap the driver is on at t: each corner once the car is through it.
+         */
+        get: operations["corners_progress_api_sessions__year___round___session__corners_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/predictions": {
         parameters: {
             query?: never;
@@ -960,6 +980,29 @@ export interface components {
             laps: components["schemas"]["CornerLap"][];
         };
         /**
+         * CornersProgress
+         * @description Corners for the lap a driver is on at t, against his previous or best lap: each corner
+         *     filled in once the car is through it.
+         */
+        CornersProgress: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** Start */
+            start: number;
+            /** Out Lap */
+            out_lap: boolean;
+            /** Progress */
+            progress: number;
+            /** Reference Lap */
+            reference_lap: number | null;
+            /** Reference Time */
+            reference_time: number | null;
+            /** Corners */
+            corners: components["schemas"]["LiveCorner"][];
+        };
+        /**
          * DegFit
          * @description Fuel-corrected lap time = base + slope × tyre age, fitted on the stint's clean laps.
          */
@@ -1420,6 +1463,20 @@ export interface components {
             reference: components["schemas"]["ProgressReference"] | null;
             /** Delta */
             delta: (number | null)[];
+        };
+        /**
+         * LiveCorner
+         * @description A corner segment of the reference lap, and the lap in progress through it once done.
+         */
+        LiveCorner: {
+            /** Label */
+            label: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            reference: components["schemas"]["CornerLap"];
+            current: components["schemas"]["CornerLap"] | null;
         };
         /**
          * LiveSessionInfo
@@ -3244,6 +3301,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LapProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    corners_progress_api_sessions__year___round___session__corners_progress_get: {
+        parameters: {
+            query: {
+                driver: string;
+                /** @description Session time (s) */
+                t: number;
+                /** @description previous lap, or the best lap until t */
+                reference?: "previous" | "best";
+            };
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CornersProgress"];
                 };
             };
             /** @description Validation Error */

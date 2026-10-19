@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ComparedLap, CornerLap, CornerSegment } from '@/api/client';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
 import { formatGap } from '@/lib/format';
-import { explainCorner, lengthOffNote, THRESHOLDS } from '@/lib/insights';
+import { diffCell, explainCorner, lengthOffNote, THRESHOLDS } from '@/lib/insights';
 import { td, th } from '@/lib/table';
 import type { LapStyle } from '@/lib/timing';
 import { cn } from '@/lib/utils';
@@ -74,22 +74,6 @@ export function CornersWidget({ group, config }: WidgetProps<CornersConfig>) {
       )}
     </div>
   );
-}
-
-function diffCell(
-  diff: number | null,
-  threshold: number,
-  unit: string,
-  positive: string,
-  negative: string
-) {
-  if (diff == null) return { text: '', faint: true };
-  const rounded = Math.round(Math.abs(diff));
-  if (rounded === 0) return { text: '=', faint: true };
-  return {
-    text: `${rounded} ${unit} ${diff > 0 ? positive : negative}`,
-    faint: Math.abs(diff) < threshold,
-  };
 }
 
 function CornerTable({

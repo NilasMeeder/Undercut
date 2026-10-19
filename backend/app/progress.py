@@ -196,6 +196,53 @@ def lap_in_progress(
     )
 
 
+@dataclass(frozen=True)
+class LiveCorner:
+    segment: analysis.CornerSegment
+    """With the reference lap's stats only (laps[0])."""
+    current: analysis.CornerStats | None
+    """The lap in progress through it, once the car is past its end."""
+
+
+def corners_in_progress(
+    p: Progress, corners: list[tuple[str, float]]
+) -> tuple[OnGrid, list[LiveCorner]]:
+    """The corner segments of the reference lap (as analysis.corner_segments) and, for each one
+    the car is through, the lap in progress there: Corners for the lap that is going on."""
+    grid = on_grid(p.trace, p.reference_trace, p.length)
+    if p.reference_trace is None:
+        return grid, []
+    reference = analysis.resample(p.reference_trace, grid.distance, p.reference_trace.length)
+    # Only the grid points the car has reached (past them the lap is NaN), and where it is now:
+    # the trace's last sample, so a segment that ends just short of the car is complete.
+    reached = ~np.isnan(grid.current["time"])
+    distance = np.append(grid.distance[reached], grid.progress)
+    current = analysis.Resampled(
+        time=np.append(grid.current["time"][reached], p.trace.time[-1]),
+        channels={
+            k: np.append(v[reached], p.trace.channels[k][-1])
+            for k, v in grid.current.items()
+            if k != "time"
+        },
+    )
+    zero = np.zeros(len(grid.distance))
+    segments = analysis.corner_segments(
+        analysis.Comparison(distance=grid.distance, laps=[reference], deltas=[zero]),
+        [(label, d) for label, d in corners if d < p.reference_trace.length],
+    )
+    out = []
+    last_end = segments[-1].end if segments else 0.0
+    for segment in segments:
+        # The last segment runs to the line: done when the lap is (within half a grid step).
+        slack = STEP / 2 if segment.end == last_end else 0.0
+        done = distance.size > 1 and segment.end <= grid.progress + slack
+        stats = (
+            analysis.segment_stats(current, distance, segment.start, segment.end) if done else None
+        )
+        out.append(LiveCorner(segment, stats))
+    return grid, out
+
+
 PREDICT_FROM = 300.0
 """Metres into a lap before a prediction says anything: the first corner decides little."""
 PREDICT_SLACK = 1.0

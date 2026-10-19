@@ -73,6 +73,23 @@ export function explainCorner(
   return `${head}: ${why.map((c) => c.text).join(', ')}${despite ? `, despite ${despite.despite}` : ''}.`;
 }
 
+/** A difference for a corner table: "10 m later", faint under its threshold, "=" when level. */
+export function diffCell(
+  diff: number | null,
+  threshold: number,
+  unit: string,
+  positive: string,
+  negative: string
+) {
+  if (diff == null) return { text: '', faint: true };
+  const rounded = Math.round(Math.abs(diff));
+  if (rounded === 0) return { text: '=', faint: true };
+  return {
+    text: `${rounded} ${unit} ${diff > 0 ? positive : negative}`,
+    faint: Math.abs(diff) < threshold,
+  };
+}
+
 /** "107 m longer", for a lap whose telemetry is not the length of a normal lap. */
 export function lengthOff(lap: ComparedLap): string | null {
   if (lap.length_off == null) return null;

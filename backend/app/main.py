@@ -40,12 +40,14 @@ from app.schemas import (
     Comparison,
     CornerLap,
     CornerSegment,
+    CornersProgress,
     Degradation,
     EnergyComparison,
     EnergySession,
     Lap,
     LapPrediction,
     LapProgress,
+    LiveCorner,
     LiveSessionInfo,
     Marker,
     MarkerIn,
@@ -330,6 +332,61 @@ def lap_progress(
     return _guard(load)
 
 
+def _corner_lap(s: analysis.CornerStats) -> CornerLap:
+    return CornerLap(
+        time=float(np.round(s.time, 3)),
+        brake_at=_maybe_one_decimal(s.brake_at),
+        min_speed=_one_decimal(s.min_speed),
+        min_speed_at=_one_decimal(s.min_speed_at),
+        throttle_at=_maybe_one_decimal(s.throttle_at),
+        top_speed=_one_decimal(s.top_speed),
+    )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/corners-progress")
+def corners_progress(
+    year: int,
+    round: int,
+    session: SessionCode,
+    driver: Annotated[str, Query(min_length=3, max_length=3)],
+    t: Annotated[float, Query(description="Session time (s)")],
+    reference: Annotated[
+        progress.Reference, Query(description="previous lap, or the best lap until t")
+    ] = "previous",
+) -> CornersProgress:
+    """Corners for the lap the driver is on at t: each corner once the car is through it."""
+
+    def load() -> CornersProgress:
+        p = progress.lap_in_progress(year, round, session, driver.upper(), t, reference)
+        try:
+            circuit = sessions.get_circuit(year, round, session)
+            corners = [(c.label, c.distance) for c in circuit.corners]
+        except SourceNotAvailable:
+            corners = []
+        grid, live_corners = progress.corners_in_progress(p, corners)
+        return CornersProgress(
+            driver=driver.upper(),
+            lap=p.lap,
+            start=float(np.round(p.start, 3)),
+            out_lap=p.out_lap,
+            progress=float(np.round(grid.progress, 1)),
+            reference_lap=p.reference.lap if p.reference is not None else None,
+            reference_time=p.reference.lap_time if p.reference is not None else None,
+            corners=[
+                LiveCorner(
+                    label=c.segment.label,
+                    start=_one_decimal(c.segment.start),
+                    end=_one_decimal(c.segment.end),
+                    reference=_corner_lap(c.segment.laps[0]),
+                    current=_corner_lap(c.current) if c.current is not None else None,
+                )
+                for c in live_corners
+            ],
+        )
+
+    return _guard(load)
+
+
 @app.get("/api/sessions/{year}/{round}/{session}/predictions")
 def lap_predictions(
     year: int,
@@ -455,17 +512,7 @@ def compare_laps(
                     label=segment.label,
                     start=_one_decimal(segment.start),
                     end=_one_decimal(segment.end),
-                    laps=[
-                        CornerLap(
-                            time=float(np.round(s.time, 3)),
-                            brake_at=_maybe_one_decimal(s.brake_at),
-                            min_speed=_one_decimal(s.min_speed),
-                            min_speed_at=_one_decimal(s.min_speed_at),
-                            throttle_at=_maybe_one_decimal(s.throttle_at),
-                            top_speed=_one_decimal(s.top_speed),
-                        )
-                        for s in segment.laps
-                    ],
+                    laps=[_corner_lap(s) for s in segment.laps],
                 )
                 for segment in corners
             ],
