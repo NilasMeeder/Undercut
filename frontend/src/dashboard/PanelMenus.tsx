@@ -34,7 +34,7 @@ export function HelpContent({ widget }: { widget: AnyWidgetDef }) {
   );
 }
 
-function Segment({
+export function Segment({
   active,
   onClick,
   children,

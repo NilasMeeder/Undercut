@@ -510,7 +510,12 @@ dan wat in Austin al helpt (race), dan de analyse en de rest.
       replay (race board, lap 27: 20 passes, ALB +7). Kaartlaag (2026-10-19): passes op dezelfde
       plek stapelen naar buiten (een kolom = een inhaalplek), na vijf een getal; nagekeken op Monza
       2025 R en 2026 R (T4 +75, de jojo) op 1512×900 en 2560×1400
-- [ ] **Meldingen op het bord**: toasts voor pitstops, snelste lap, OT, onderzoek, SC/VSC, gat < 1 s
+- [x] **Meldingen op het bord** (2026-10-19, `lib/alerts.ts`, `features/alerts/`): toasts in Pitwall
+      voor SC/VSC/rood en groen, snelste lap, pitstops (bij pit-uit: tijd in de lane, banden),
+      stewards (genoteerd, onderzoek, straf, uitgezeten, zwart-wit), deleted laps, gat < 1 s, OT en
+      passes; die laatste vier standaard alleen voor de drivers in de link-groepen. Bel in de topbalk.
+      Getest in replay: Monza 2025 R (VER PIT L37 24,4 s M → H, LEC snelste lap), Q (NOR 1:18.869,
+      VER 1:18.792)
 - [ ] **Live lap voor meerdere drivers** (uit fase 7)
 - [ ] **Corners live**: de bochten van de lap die bezig is, per bocht bijgewerkt (uit Ideeën)
 - [ ] **Voorspelde einduitslag**: met het tempo en de trends van nu, en waar gaten nul worden

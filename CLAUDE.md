@@ -765,6 +765,20 @@ onder 35% van het tempo van de ander (±6 s, mediaan van de stappen: ALB's spoor
 blijft seconden op 0,9999 hangen), na de finish. 2026: `overtake_mode` = de laatste
 detectiepassage gaf OT en race control had het aan.
 
+## Meldingen (fase 13)
+
+`lib/alerts.ts` (`buildAlerts`: alle gebeurtenissen van de sessie uit data die er al is: track status,
+laps, `/race-history`, `/stewards`, `/passes`, `/overtake`), `features/alerts/Alerts.tsx`
+(`AlertToasts` rechtsonder boven de klokbalk, alleen in Pitwall; `AlertsMenu`: de bel in de topbalk),
+`store/alerts.ts` (localStorage `f1dash-alerts`: aan/uit, soorten, `allCars`). Een melding komt één
+keer, als de klok erlangs loopt (afspelen of live); elke 250 ms wordt gekeken. Een sprong (seek, ook
+terug, of verder dan snelheid × 2 + 3 s) toont niets: dan geldt precies alles vóór de nieuwe tijd als
+gezien. Live komt data een paar seconden na het moment binnen, dus tot 30 s (`LOOKBACK`) achter de
+klok telt nog. Sleutels zijn stabiel over live-verversingen (driver + lap, of de tijd van het bericht).
+Snelste lap: in races vanaf lap 3, verwijderde laps niet. Gat < 1 s: op de lijn, van ≥ 1 s de lap
+ervoor naar < 1 s tegen dezelfde auto, niet op pit-laps. Deleted laps, gaten, OT en passes standaard
+alleen voor de drivers in de link-groepen. 9 s per toast, max 4, klik = weg.
+
 ## Markeringen en views (fase 5)
 
 **Twee soorten markeringen** in één tabel, altijd per sessie (niet per circuit: layouts en afstanden
