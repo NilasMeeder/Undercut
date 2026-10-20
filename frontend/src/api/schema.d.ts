@@ -832,6 +832,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/f1-archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Archive Status
+         * @description Downloading the session from F1's archive (F1 TV sign-in): offered, going, done.
+         */
+        get: operations["archive_status_api_sessions__year___round___session__f1_archive_get"];
+        put?: never;
+        /**
+         * Archive Download
+         * @description Download the session from F1's archive with the F1 TV sign-in and convert it like a
+         *     recording. For a session TracingInsights does not have and that was not recorded.
+         */
+        post: operations["archive_download_api_sessions__year___round___session__f1_archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/live/{year}/{round}/{session}/events": {
         parameters: {
             query?: never;
@@ -951,6 +976,28 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ArchiveDownload
+         * @description Downloading a session from F1's own archive with the F1 TV sign-in (sources/f1archive.py):
+         *     for a session TracingInsights does not have and that was not recorded.
+         */
+        ArchiveDownload: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "idle" | "downloading" | "converting" | "ready" | "error";
+            /** Progress */
+            progress: number;
+            /** Phase */
+            phase: string | null;
+            /** Error */
+            error: string | null;
+            /** Offered */
+            offered: boolean;
+            /** Signed In */
+            signed_in: boolean;
+        };
         /** BlackAndWhiteFlag */
         BlackAndWhiteFlag: {
             /** Driver */
@@ -4676,6 +4723,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecorderStatus"];
+                };
+            };
+        };
+    };
+    archive_status_api_sessions__year___round___session__f1_archive_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_download_api_sessions__year___round___session__f1_archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

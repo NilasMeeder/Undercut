@@ -2,9 +2,11 @@
 parsers -> convert.lap_columns, and the laps come out as they went in. No network: FastF1 gets a
 made-up schedule, and the archive is fake."""
 
+import json
 import socket
 from collections.abc import Iterator
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import fastf1
@@ -15,6 +17,7 @@ from fastf1.events import EventSchedule
 from app import replays, schedule, sessions
 from app.live import convert, feed, simulate, tower
 from app.schemas import EventInfo, SessionInfo
+from app.sources import f1archive
 from app.sources import tracinginsights as ti
 
 EVENT = EventInfo(
@@ -179,10 +182,13 @@ def archive(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     assert connections == []
 
 
-def converted_laps(join: float | None = None) -> dict[str, list[Any]]:
+def converted_laps(
+    join: float | None = None, lines: Iterator[str] | None = None
+) -> dict[str, list[Any]]:
     sim = simulate.Simulation(2025, 1, "R")
-    lines = simulate.lines(sim, join)
-    messages, joined = convert.joined_late([m for _, line in lines if (m := feed.parse_line(line))])
+    if lines is None:
+        lines = (line for _, line in simulate.lines(sim, join))
+    messages, joined = convert.joined_late([m for line in lines if (m := feed.parse_line(line))])
     livedata = convert.live_timing_data(messages, sim.t0, skip=convert.TELEMETRY_TOPICS)
     with fastf1.Cache.disabled():
         session = convert.load_session(2025, 1, "R", livedata, False, joined=joined is not None)
@@ -204,6 +210,37 @@ def test_a_simulated_race_converts_back_to_its_laps(archive: None) -> None:
     assert pits(out)[("NOR", 3)][0] == pytest.approx(NOR_STOP - 5.0, abs=0.5)
     assert pits(out)[("NOR", 4)][1] == pytest.approx(NOR_STOP + 18.0, abs=0.5)
     assert pits(out)[("VER", 3)] == (None, None)
+
+
+def as_archive(folder: Path) -> dict[str, Path]:
+    """The simulated feed as F1's archive keeps it: per topic <Topic>.jsonStream, each line the
+    time since the streams began and the JSON; the state as the first entries."""
+    sim = simulate.Simulation(2025, 1, "R")
+    began = sim.utc(sim.begin) - timedelta(seconds=7.5)  # the streams begin before the heartbeat
+    streams: dict[str, Path] = {}
+    for _, line in simulate.lines(sim):
+        message = feed.parse_line(line)
+        assert message is not None
+        offset = (message.utc or began) - began
+        seconds = offset.total_seconds()
+        stamp = f"{int(seconds // 3600):02}:{int(seconds % 3600 // 60):02}:{seconds % 60:06.3f}"
+        path = streams.setdefault(message.topic, folder / f"{message.topic}.jsonStream")
+        with path.open("a", encoding="utf-8") as f:
+            f.write(("\ufeff" if f.tell() == 0 else "") + stamp + json.dumps(message.data) + "\r\n")
+    return streams
+
+
+def test_f1s_archive_converts_like_a_recording(archive: None, tmp_path: Path) -> None:
+    target = tmp_path / "live.txt"
+    f1archive.write_recording(as_archive(tmp_path), target)
+    with target.open() as f:
+        out = converted_laps(lines=iter(f.readlines()))
+    keys = ("drv", "lap", "time", "s1", "s2", "s3", "compound", "stint", "life", "pos")
+    assert rows(out, keys) == rows(ARCHIVE["session_laptimes.json"], keys)
+    times = ("drv", "lap", "lST", "sesT", "s1T", "s2T")
+    assert rows(out, times) == rows(ARCHIVE["session_laptimes.json"], times)
+    # Dated at its last message: the live service must not take it for a live session.
+    assert target.stat().st_mtime < T0.timestamp() + 2 * 3600
 
 
 NOR_STOP = START + 61.4 + 59.3 + 59.6

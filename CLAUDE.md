@@ -436,6 +436,26 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   een echte feed anders zijn: de opname blijft ruw bewaard, dus fouten zijn achteraf te herstellen
   (`converted/` weggooien).
 
+## F1's archief met het F1 TV-token (fase 15)
+
+Voor een sessie die niet in TracingInsights staat en niet is opgenomen (`sources/f1archive.py`,
+`GET/POST /api/sessions/{y}/{r}/{s}/f1-archive`, knop NO DATA in de topbalk als `/laps` 404 geeft).
+Het token (FastF1's `f1auth.json`, hetzelfde als de recorder) gaat **alleen** naar
+`https://livetiming.formula1.com/static/...` als `Authorization: Bearer`, zonder redirects, nooit naar
+FastF1's mirror, nooit gelogd of naar de frontend. Per topic `<Topic>.jsonStream` (regels
+`HH:MM:SS.mmm` + JSON, tijd sinds het begin van de streams; 404 = overslaan; Heartbeat, TimingData
+en DriverList zijn nodig) naar een tijdelijke map in de sessiemap, dan met `heapq.merge` op tijd
+samengevoegd tot een gewone opname (`live.txt`, UTC = begin + offset, begin = mediaan van
+Heartbeat-`Utc` − offset). De eerste DriverList als toestandsregel (anders slaat FastF1 drivers over
+die > 1 uur in de data genoemd worden). Eerst `live.txt.part`, mtime op het laatste bericht (anders
+lijkt hij 2 minuten live), dan `meta.json` met `source: "f1-archive"`. De live-service zet hem om
+als een afgeronde opname; de job wacht daarop (`converting`). Extra topics die de recorder niet heeft:
+PitStopSeries, PitLaneTimeCollection, ChampionshipPrediction.
+**Niet getest met het echte archief** (Nilas was niet ingelogd, en zonder token geeft F1 hier 403):
+getest met de simulator als archief (`test_live_roundtrip.test_f1s_archive_converts_like_a_recording`,
+en visueel: Monza 2025 Q via een nep-`_http.get`, na 11 s VER 1:18.792, NOR +0.077). Eerste echte
+download: kijk of de eerste regels van de streams kloppen met dit formaat.
+
 ## Live lap en Follow
 
 Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessieklok:

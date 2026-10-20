@@ -23,11 +23,14 @@ def has_recording(year: int, event: str, session: str) -> bool:
     return recording_path(year, event, session).exists()
 
 
-def write_meta(year: int, round_number: int, code: str, event: str, session: str) -> Path:
-    """Mark the folder as a recording of this session (the service finds recordings by it)."""
+def write_meta(
+    year: int, round_number: int, code: str, event: str, session: str, source: str = "live"
+) -> Path:
+    """Mark the folder as a recording of this session (the service finds recordings by it).
+    `source`: recorded live, or made from F1's archive afterwards (sources/f1archive.py)."""
     folder = session_dir(year, event, session)
     folder.mkdir(parents=True, exist_ok=True)
-    meta = {"year": year, "round": round_number, "code": code}
+    meta = {"year": year, "round": round_number, "code": code, "source": source}
     (folder / "meta.json").write_text(json.dumps(meta))
     return folder
 

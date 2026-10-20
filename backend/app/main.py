@@ -40,6 +40,7 @@ from app.live import record, recorder, recordings
 from app.live import service as live
 from app.local_only import LocalOnly
 from app.schemas import (
+    ArchiveDownload,
     Circuit,
     ComparedLap,
     Comparison,
@@ -95,6 +96,7 @@ from app.schemas import (
     Weather,
     WeekendOverview,
 )
+from app.sources import f1archive
 from app.sources.tracinginsights import SourceNotAvailable
 
 FIRST_SEASON = 2018
@@ -780,6 +782,41 @@ def _recording_health(current: tuple[int, int, str, datetime] | None) -> Recordi
         error=session.error if session is not None else None,
         **found,
     )
+
+
+def _archive_download(year: int, round: int, session: SessionCode) -> ArchiveDownload:
+    event, info = schedule.resolve_session(year, round, session)
+    job = f1archive.status(year, round, session)
+    over = info.start_utc is not None and info.start_utc < datetime.now(UTC)
+    recorded = recordings.has_recording(year, event.name, info.name)
+    return ArchiveDownload(
+        state=job.state,
+        progress=job.progress,
+        phase=job.phase,
+        error=job.error,
+        offered=over and not recorded,
+        signed_in=record.signed_in(),
+    )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/f1-archive")
+def archive_status(year: int, round: int, session: SessionCode) -> ArchiveDownload:
+    """Downloading the session from F1's archive (F1 TV sign-in): offered, going, done."""
+    return _guard(lambda: _archive_download(year, round, session))
+
+
+@app.post("/api/sessions/{year}/{round}/{session}/f1-archive")
+def archive_download(year: int, round: int, session: SessionCode) -> ArchiveDownload:
+    """Download the session from F1's archive with the F1 TV sign-in and convert it like a
+    recording. For a session TracingInsights does not have and that was not recorded."""
+    current = _guard(lambda: _archive_download(year, round, session))
+    if not current.offered:
+        raise HTTPException(409, "Not over yet, or already recorded")
+    try:
+        f1archive.start(year, round, session, schedule.api_path(year, round, session))
+    except f1archive.NotSignedIn as error:
+        raise HTTPException(403, str(error)) from error
+    return _archive_download(year, round, session)
 
 
 @app.post("/api/live/recorder")

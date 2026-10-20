@@ -1217,6 +1217,20 @@ class ScheduledSession(BaseModel):
     start_utc: datetime
 
 
+class ArchiveDownload(BaseModel):
+    """Downloading a session from F1's own archive with the F1 TV sign-in (sources/f1archive.py):
+    for a session TracingInsights does not have and that was not recorded."""
+
+    state: Literal["idle", "downloading", "converting", "ready", "error"]
+    progress: float
+    """0 to 1."""
+    phase: str | None
+    error: str | None
+    offered: bool
+    """The session is over and not recorded: downloading it makes sense."""
+    signed_in: bool
+
+
 class RecordingHealth(BaseModel):
     """How the recording of the session on now is doing (whoever records it)."""
 

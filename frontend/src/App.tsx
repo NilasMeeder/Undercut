@@ -4,6 +4,7 @@ import { ClockBar } from '@/features/clock/ClockBar';
 import { useSessionClock } from '@/features/clock/useSessionClock';
 import { CommandPalette } from '@/features/commands/CommandPalette';
 import { DashboardTabs, LayoutMenu } from '@/features/dashboards/DashboardTabs';
+import { ArchiveMenu } from '@/features/live/ArchiveMenu';
 import { LiveBadge } from '@/features/live/LiveBadge';
 import { RecorderMenu } from '@/features/live/RecorderMenu';
 import { MarkerEditor } from '@/features/markers/MarkerEditor';
@@ -39,6 +40,7 @@ export default function App() {
         <SessionPicker />
         <GroupBar />
         <LiveBadge />
+        {session ? <ArchiveMenu /> : null}
         <div className="ml-auto" />
         <RecorderMenu />
         {session ? <CommandPalette /> : null}

@@ -85,3 +85,8 @@ def resolve_session(year: int, round_number: int, code: str) -> tuple[EventInfo,
     if session is None:
         raise KeyError(f"No session {code} at {event.name} {year}")
     return event, session
+
+
+def api_path(year: int, round_number: int, code: str) -> str:
+    """The session's folder in F1's archive: /static/<year>/<date>_<event>/<date>_<session>/."""
+    return fastf1.get_session(year, round_number, code).api_path

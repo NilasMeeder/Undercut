@@ -677,21 +677,19 @@ voor het bord.
       vertraging van de feed, aantal reconnects, grootte, omzetfout; tot wanneer de F1 TV-login
       geldig is (geel als hij binnen 3 dagen of vóór de volgende sessie verloopt). Getest met de
       simulator (Monza R als live) en daarna stil (71 s → rood)
-- [ ] **Archief via het F1 TV-token** (was backlog): sessies die niet in TracingInsights staan en
-      niet opgenomen zijn alsnog van livetiming.formula1.com (token alleen naar die host)
+- [x] **Archief via het F1 TV-token** (2026-10-20, was backlog): NO DATA in de topbalk bij een
+      sessie zonder data → "Download from F1": alle topics als jsonStream van
+      livetiming.formula1.com (token alleen daarheen, geen redirects, nooit gelogd), samengevoegd
+      tot een opname die de live-service omzet. Getest met de simulator als archief (Monza 2025 Q,
+      klaar in 11 s); **nog niet met het echte archief** (niet ingelogd)
 - [ ] **Kampioenschap "as it stands"**: de stand als de race nu zou eindigen
 - [ ] **Pitstop-tijden**: de stilstand per stop uit de feed (PitStopSeries), alleen in opnames
 - [ ] **Team radio als tekst**: lokaal transcriberen (Whisper), doorzoekbaar, tekst bij de clip
 
 ## Later / backlog
 
-- [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
-      en de FastF1 Companion-extensie. Voorwaarden:
-      - het token **alleen** meesturen naar `livetiming.formula1.com`, nooit naar `livetiming-mirror.fastf1.dev` (FastF1's
-        `_api.headers` worden voor beide gebruikt, dus niet daar injecteren maar host-specifiek)
-      - het token nooit loggen, nooit naar de frontend, nooit in de repo
-      - de extensie na het inloggen weer uitzetten
-      - het is alleen nodig voor sessies die nog niet in TracingInsights staan
+- [x] ~~**F1 TV-token als optionele bron**~~: gebouwd in fase 15. Blijft gelden: de FastF1
+      Companion-extensie na het inloggen weer uitzetten
 
 ## Ideeën (later, misschien)
 
