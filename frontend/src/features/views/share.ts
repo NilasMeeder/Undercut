@@ -1,6 +1,6 @@
 import type { SessionCode, View } from '@/api/client';
 import { useDashboards, type Workspace } from '@/store/dashboards';
-import { GROUP_IDS } from '@/store/groups';
+import { GROUP_IDS, MAX_LAPS_PER_GROUP, sameLap } from '@/store/groups';
 import { currentView, openView, type ViewLike } from './views';
 
 /**
@@ -12,9 +12,34 @@ export type Shared = ViewLike & { workspace: Workspace };
 
 const SESSIONS: SessionCode[] = ['FP1', 'FP2', 'FP3', 'SQ', 'SS', 'S', 'Q', 'R'];
 
-async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream) {
-  const out = new Blob([bytes as BlobPart]).stream().pipeThrough(stream);
-  return new Uint8Array(await new Response(out).arrayBuffer());
+/** A real link is ~1.5 KB, its JSON a few times that. Anything far larger is not one of ours, and
+ * deflate can blow a short link up a thousandfold. */
+const MAX_LINK = 64 * 1024;
+const MAX_JSON = 1024 * 1024;
+
+async function pipe(
+  bytes: Uint8Array,
+  stream: CompressionStream | DecompressionStream,
+  limit = Infinity
+) {
+  const reader = new Blob([bytes as BlobPart]).stream().pipeThrough(stream).getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (let read = await reader.read(); !read.done; read = await reader.read()) {
+    size += read.value.length;
+    if (size > limit) {
+      await reader.cancel();
+      throw new Error('Too large');
+    }
+    chunks.push(read.value);
+  }
+  const out = new Uint8Array(size);
+  let at = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, at);
+    at += chunk.length;
+  }
+  return out;
 }
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -37,9 +62,13 @@ export async function encodeShare(shared: Shared): Promise<string> {
  * half, or from another version). */
 export async function decodeShare(hash: string): Promise<Shared | null> {
   const match = /^#share=([A-Za-z0-9_-]+)$/.exec(hash);
-  if (!match) return null;
+  if (!match || match[1].length > MAX_LINK) return null;
   try {
-    const json = await pipe(fromBase64Url(match[1]), new DecompressionStream('deflate-raw'));
+    const json = await pipe(
+      fromBase64Url(match[1]),
+      new DecompressionStream('deflate-raw'),
+      MAX_JSON
+    );
     return valid(JSON.parse(new TextDecoder().decode(json)));
   } catch {
     return null;
@@ -52,8 +81,8 @@ function valid(value: unknown): Shared | null {
   const v = value as Record<string, unknown>;
   const state = v.state as Record<string, unknown> | undefined;
   if (
-    typeof v.year !== 'number' ||
-    typeof v.round !== 'number' ||
+    !Number.isInteger(v.year) ||
+    !Number.isInteger(v.round) ||
     !SESSIONS.includes(v.session as SessionCode) ||
     typeof state !== 'object' ||
     state == null
@@ -64,18 +93,27 @@ function valid(value: unknown): Shared | null {
   for (const group of GROUP_IDS) {
     const list = (state.laps as Record<string, unknown> | undefined)?.[group];
     if (Array.isArray(list))
-      laps[group] = list.filter(
-        (l): l is { driver: string; lap: number } =>
-          typeof l?.driver === 'string' && /^[A-Z]{3}$/.test(l.driver) && Number.isInteger(l.lap)
-      );
+      laps[group] = list
+        .filter(
+          (l): l is { driver: string; lap: number } =>
+            typeof l?.driver === 'string' && /^[A-Z]{3}$/.test(l.driver) && Number.isInteger(l.lap)
+        )
+        .map(({ driver, lap }) => ({ driver, lap }))
+        .filter((l, i, all) => all.findIndex((other) => sameLap(l, other)) === i)
+        .slice(0, MAX_LAPS_PER_GROUP);
     const range = (state.zoom as Record<string, unknown> | undefined)?.[group];
-    if (Array.isArray(range) && range.length === 2 && range.every(Number.isFinite))
+    if (
+      Array.isArray(range) &&
+      range.length === 2 &&
+      range.every(Number.isFinite) &&
+      range[0] < range[1]
+    )
       zoom[group] = [range[0] as number, range[1] as number];
   }
   return {
     name: typeof v.name === 'string' ? v.name.slice(0, 80) : 'Shared',
-    year: v.year,
-    round: v.round,
+    year: v.year as number,
+    round: v.round as number,
     session: v.session as SessionCode,
     workspace: v.workspace === 'pitwall' ? 'pitwall' : 'analysis',
     state: {

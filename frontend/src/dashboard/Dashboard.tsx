@@ -12,7 +12,8 @@ import {
 } from 'dockview-react';
 import { ExternalLink, Info, PanelTopClose, Plus, Settings, X } from 'lucide-react';
 import { PanelMessage } from '@/components/data/bits';
-import { GROUP_COLORS, nextGroup, type GroupId } from '@/store/groups';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { asGroup, GROUP_COLORS, nextGroup, type GroupId } from '@/store/groups';
 import { WIDGETS, WIDGETS_BY_ID } from '@/widgets/registry';
 import { diffFromDefaults, resolveConfig, type WidgetConfig } from '@/widgets/types';
 import { useDashboardApi } from './api';
@@ -42,9 +43,20 @@ const components = Object.fromEntries(
         [api, config]
       );
       return (
-        <Suspense fallback={<PanelMessage>Loading…</PanelMessage>}>
-          <Widget group={params.group ?? 'blue'} config={config} setConfig={setConfig} />
-        </Suspense>
+        <ErrorBoundary
+          fallback={(error, retry) => (
+            <PanelMessage>
+              This panel failed: {error.message}{' '}
+              <button className="underline" onClick={retry}>
+                Try again
+              </button>
+            </PanelMessage>
+          )}
+        >
+          <Suspense fallback={<PanelMessage>Loading…</PanelMessage>}>
+            <Widget group={asGroup(params.group)} config={config} setConfig={setConfig} />
+          </Suspense>
+        </ErrorBoundary>
       );
     };
     Panel.displayName = `Panel(${widget.id})`;
@@ -57,7 +69,7 @@ const useLocked = () => useDashboards((s) => s.workspace === 'pitwall' && !s.edi
 
 /** Tab: link-group square (click to cycle groups), title, close. */
 function PanelTab({ api, params }: IDockviewPanelHeaderProps<PanelParams>) {
-  const group: GroupId = params.group ?? 'blue';
+  const group: GroupId = asGroup(params.group);
   const locked = useLocked();
   if (locked)
     return (
@@ -159,7 +171,7 @@ function GroupActions({ containerApi, group, activePanel }: IDockviewHeaderActio
     () => (widget ? resolveConfig(widget, params?.config) : undefined),
     [widget, params?.config]
   );
-  const linkGroup = params?.group ?? 'blue';
+  const linkGroup = asGroup(params?.group);
 
   return (
     <div className="flex h-full items-center">
