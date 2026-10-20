@@ -15,7 +15,7 @@ MARKERS = "/api/sessions/2025/16/Q/markers"
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[TestClient]:
     monkeypatch.setattr(config, "DATABASE_PATH", tmp_path / "sub" / "test.db")
-    with TestClient(app) as test_client:
+    with TestClient(app, base_url="http://localhost") as test_client:
         yield test_client
 
 

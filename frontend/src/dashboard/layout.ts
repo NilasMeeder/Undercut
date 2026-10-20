@@ -673,7 +673,8 @@ export function validLayout(layout: unknown): SerializedDockview | null {
   if (!layout || typeof layout !== 'object' || !('grid' in layout)) return null;
   const panels = Object.values((layout as SerializedDockview).panels ?? {});
   const known =
-    panels.length > 0 && panels.every((p) => WIDGETS_BY_ID.has(p.contentComponent ?? ''));
+    panels.length > 0 &&
+    panels.every((p) => typeof p === 'object' && WIDGETS_BY_ID.has(p?.contentComponent ?? ''));
   return known ? (layout as SerializedDockview) : null;
 }
 

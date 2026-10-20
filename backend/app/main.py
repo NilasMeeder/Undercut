@@ -38,6 +38,7 @@ from app import (
 )
 from app.live import record, recorder
 from app.live import service as live
+from app.local_only import LocalOnly
 from app.schemas import (
     Circuit,
     ComparedLap,
@@ -111,6 +112,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="F1 Pitwall API", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(LocalOnly)
 
 
 def _guard[T](load: Callable[[], T]) -> T:

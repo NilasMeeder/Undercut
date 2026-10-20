@@ -146,7 +146,7 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[TestClie
     monkeypatch.setattr(schedule, "resolve_session", lambda y, r, c: (EVENT, EVENT.sessions[0]))
     for cached in CACHES:
         cached.cache_clear()
-    yield TestClient(app)
+    yield TestClient(app, base_url="http://localhost")
     for cached in CACHES:
         cached.cache_clear()
 

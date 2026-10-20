@@ -17,6 +17,11 @@ export const GROUP_COLORS: Record<GroupId, string> = {
   pink: '#ff63ad',
 };
 
+/** A group from stored or shared data, which may name one that does not exist. */
+export function asGroup(value: unknown): GroupId {
+  return GROUP_IDS.includes(value as GroupId) ? (value as GroupId) : 'blue';
+}
+
 export function nextGroup(group: GroupId): GroupId {
   return GROUP_IDS[(GROUP_IDS.indexOf(group) + 1) % GROUP_IDS.length];
 }

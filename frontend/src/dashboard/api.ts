@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { DockviewApi } from 'dockview-react';
 import { create } from 'zustand';
-import type { GroupId } from '@/store/groups';
+import { asGroup, type GroupId } from '@/store/groups';
 
 /** The dockview API, for controls outside the dock (top bar). */
 export const useDashboardApi = create<{
@@ -18,6 +18,6 @@ export function useActiveLinkGroup(): GroupId {
       const subs = [api?.onDidActivePanelChange(fn), api?.onDidLayoutChange(fn)];
       return () => subs.forEach((s) => s?.dispose());
     },
-    () => (api?.activePanel?.params as { group?: GroupId } | undefined)?.group ?? 'blue'
+    () => asGroup((api?.activePanel?.params as { group?: unknown } | undefined)?.group)
   );
 }
