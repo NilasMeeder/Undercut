@@ -1,4 +1,4 @@
-# F1 Pitwall
+# Undercut – Pitwall application
 
 An F1 analysis dashboard in the style of pitwall software. It compares laps corner by corner,
 replays a session as if it were live, works out strategy on the session clock and records live

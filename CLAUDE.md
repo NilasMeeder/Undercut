@@ -1,4 +1,4 @@
-# F1 Pitwall Dashboard
+# Undercut – Pitwall application
 
 Hobbyproject: een geavanceerd F1-analysedashboard in de stijl van een pitwall. Laptijden vergelijken,
 mini-sectoren, telemetrie (speed/throttle/brake/gear/RPM/DRS) van meerdere drivers of laps over elkaar,

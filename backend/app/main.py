@@ -119,7 +119,7 @@ async def lifespan(_: FastAPI):
     live.service.stop()
 
 
-app = FastAPI(title="F1 Pitwall API", lifespan=lifespan)
+app = FastAPI(title="Undercut API", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(LocalOnly)
 

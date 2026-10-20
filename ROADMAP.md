@@ -718,4 +718,13 @@ Uit de lijst voor update 3 (2026-10-20), niet gekozen:
 - Track limits per bocht op de kaart
 - Report exporteren als afbeelding of PDF
 
+Games koppelen (idee 2026-10-20, nog niet aan beginnen):
+- Een vertaler zoals `live/simulate.py`: game-data → F1's live-berichten → live.txt, zodat de hele
+  pijplijn (convert, tower, strategie) blijft zoals hij is
+- F1-game (F1 25) eerst: UDP-telemetrie op poort 20777, alle 20 auto's, ook vanaf PS5/Xbox via wifi
+- Daarna ACC (broadcasting-protocol, alle auto's; telemetrie alleen eigen auto); originele Assetto
+  Corsa alleen via shared memory op Windows plus een brugje naar de Mac
+- Nodig: een eigen soort sessie buiten F1's kalender, panels die "geen data" tonen
+  (kampioenschap, radio, stewards), circuitkaart opbouwen uit posities
+
 
