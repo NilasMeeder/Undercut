@@ -2225,7 +2225,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "fast_stop" | "slow_stop" | "start" | "undercut" | "flag";
+            kind: "fast_stop" | "slow_stop" | "start" | "undercut" | "flag" | "pace";
             /** T */
             t: number;
             /** Lap */
@@ -2241,6 +2241,8 @@ export interface components {
             /** Until Lap */
             until_lap: number | null;
             action: components["schemas"]["ReportAction"];
+            /** Known */
+            known?: number | null;
         };
         /**
          * ReportRun

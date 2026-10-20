@@ -7752,7 +7752,8 @@
               "slow_stop",
               "start",
               "undercut",
-              "flag"
+              "flag",
+              "pace"
             ],
             "title": "Kind"
           },
@@ -7837,6 +7838,17 @@
           },
           "action": {
             "$ref": "#/components/schemas/ReportAction"
+          },
+          "known": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known"
           }
         },
         "type": "object",

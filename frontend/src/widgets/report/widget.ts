@@ -22,7 +22,12 @@ export const reportWidget = defineWidget<ReportConfig>({
       'Clipping (2026): who loses most to the battery running out on the straights, against the ' +
         'driver who loses least (see Energy).',
       'Race moments: places gained or lost at the start, the quickest and slowest stop, undercuts ' +
-        'that worked and neutralisations.',
+        'that worked, neutralisations, and pace changes.',
+      'A pace change: a driver whose lap times step to another level within a stint (0.7 s a ' +
+        'lap or more, five laps either side), against the field on each lap, so fuel, track and ' +
+        'weather do not count and the driver’s own degradation stays out of it. "Behind" names ' +
+        'the car caught (within 1.2 s), "free of" the one that held it up. The click compares ' +
+        'the lap before with the first at the new pace.',
     ],
     controls:
       'Click a line: its laps go into this link group (with the zoom), or the clock moves there.',

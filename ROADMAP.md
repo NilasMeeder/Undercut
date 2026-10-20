@@ -624,7 +624,16 @@ Af op 2026-10-19 (alle vier).
       markeringen die niet opgeslagen worden: race-momenten op de klok (gestippeld) en per driver
       de verliesbocht op zijn beste lap; dubbelklik/potlood = bewaren, AUTO in Markers. Monza
       2025 R: start LAW/ANT, undercut BEA L20, stops PIA L46 en STR L50, elf bochten; Q: NOR L20
-      T1–2 in Delta, Telemetry en op de kaart. Nog niet: tempo-omslagen als moment
+      T1–2 in Delta, Telemetry en op de kaart
+- [x] **Tempo-omslagen** (2026-10-20, `reports.pace_changes`, moment `pace`): een driver die binnen
+      een stint ineens ≥ 0,7 s/lap sneller of trager rijdt, tegen het veld per lap, met de eigen
+      degradatie eruit (lijn met sprong tegen een lijn), en de auto waar hij op vastliep of van
+      loskwam. In Report, als automatische markering (tag `pace`) en als melding op het bord (pas
+      na de vijfde lap op het nieuwe tempo). 0–10 per race over 2025–2026; Austin 2025: ANT L14
+      +1,3 achter HAD, HAD L51 −1,0 vrij van GAS. Getest in replay (race board, toast op L19)
+- [x] **Automatische markeringen live** (2026-10-20): `/report` live hooguit elke 20 s opnieuw (niet
+      bij elke omzetting), id's als hash zodat een markering dezelfde blijft. Getest met de
+      simulator (Austin 2025 R)
 
 ## Later / backlog
 
@@ -638,7 +647,7 @@ Af op 2026-10-19 (alle vier).
 
 ## Ideeën (later, misschien)
 
-- Automatische analyses verder: tempo-omslagen (een driver die ineens sneller of trager wordt)
-  als moment, en de markeringen ook live (Report rekent nu per omzetting)
+- Tempo-omslagen ook in Practice (long runs: een run die omslaat) en in de Forecast (een auto die
+  zijn stintfit verlaat)
 
 

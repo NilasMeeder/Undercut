@@ -673,7 +673,16 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   zonder brandstofcorrectie. Degradatie: de stintfits van Race pace (≥ 8 laps). Clipping: alleen
   2026. Race-momenten: start (≥ 3 plaatsen), snelste/traagste stop (groen, < 60 s), undercuts (achter
   binnen 3 s, eerst gestopt, de ander ≤ 4 laps later, na beider stops ervoor; op gaps, niet posities),
-  SC/VSC/rood.
+  SC/VSC/rood, en **tempo-omslagen** (`pace_changes`, `pace`, fase 14): per stint de schone laps min
+  de mediaan van het veld op die lap (≥ 5 schone laps; brandstof, baan en weer vallen weg), uitschieters
+  (> 1 s van de mediaan van de vijf eromheen) eruit, dan een lijn met een sprong tegen een gewone lijn
+  (de eigen degradatie blijft in de helling): de beste breuk met ≥ 5 laps aan elke kant, sprong ≥ 0,7
+  s/lap en ≥ 3× de ruis, en de mediaan van de vijf laps ervoor en erna even ver in dezelfde richting
+  (`value`, negatief = sneller). Eerst geprobeerd: alleen de medianen voor en na, zonder fit: 20–30 per
+  race, vooral hellingen en de jojo van overtake mode (2026). `other`: de auto die hij inhaalde en
+  binnen 1,2 s bleef (trager, "behind") of die hem ophield tot de breuk (sneller, "free of"), uit de
+  gaps. `known` = de lijn na de vijfde lap op het nieuwe tempo (dan pas zichtbaar; Meldingen). 0–10
+  per race over 2025–2026; Austin 2025: ANT L14 +1,3 achter HAD, HAD L51 −1,0 vrij van GAS.
 
 ## Straight mode (fase 11)
 
@@ -874,7 +883,8 @@ keer, als de klok erlangs loopt (afspelen of live); elke 250 ms wordt gekeken. E
 terug, of verder dan snelheid × 2 + 3 s) toont niets: dan geldt precies alles vóór de nieuwe tijd als
 gezien. Live komt data een paar seconden na het moment binnen, dus tot 30 s (`LOOKBACK`) achter de
 klok telt nog. Sleutels zijn stabiel over live-verversingen (driver + lap, of de tijd van het bericht).
-Snelste lap: in races vanaf lap 3, verwijderde laps niet. Gat < 1 s: op de lijn, van ≥ 1 s de lap
+Snelste lap: in races vanaf lap 3, verwijderde laps niet. Tempo-omslag (`pace`, uit `/report`): op
+`known`, de lijn na de vijfde lap op het nieuwe tempo, niet op het begin van de omslag. Gat < 1 s: op de lijn, van ≥ 1 s de lap
 ervoor naar < 1 s tegen dezelfde auto, niet op pit-laps. Deleted laps, gaten, OT en passes standaard
 alleen voor de drivers in de link-groepen. 9 s per toast, max 4, klik = weg.
 
@@ -922,7 +932,9 @@ kaart, Track line, Readout en Markers gebruiken `useAllMarkers`; een automatisch
 afstandsmarkering alleen als zijn lap in de groep gekozen is (`distanceMarks`), anders zou elke
 chart er tien vage hebben. Op de klokbalk gestippeld; dubbelklik of het potlood opent hem als
 nieuwe markering (zonder `auto`) om te bewaren. AUTO in Markers en in de palette zet ze aan/uit.
-Niet tijdens een live sessie (dan zou de report bij elke omzetting opnieuw rekenen).
+Ook live: `useLiveSession` maakt `/report` hooguit elke 20 s ongeldig (`SLOW`, onder de `LOOKBACK`
+van Meldingen), niet bij elke omzetting. De id's zijn een hash van waar ze over gaan (soort, driver,
+tijd; bocht, lap), zodat een markering zijn id houdt als de report opnieuw komt.
 
 **Kaart op afstand:** de outline van de kaart komt los van elke lap (MultiViewer, in decimeters, begint
 ergens op de baan). `analysis.outline_distance` koppelt elk outline-punt aan een lapafstand via de

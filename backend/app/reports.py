@@ -48,6 +48,24 @@ GARAGE = 60.0
 
 CLIPPING_SHOWN = 3
 
+PACE_WINDOW = 5
+"""Clean laps on either side of a pace change, in the same stint."""
+
+PACE_STEP = 0.7
+"""Seconds a lap, against the field, from which a driver's pace changed."""
+
+PACE_SIGNIFICANCE = 3.0
+"""The step in standard deviations of the laps around the fit: smaller is the usual noise."""
+
+PACE_OUTLIER = 1.0
+"""A lap further than this (s) from the median of the five around it (traffic, a mistake)."""
+
+FIELD_LAPS = 5
+"""Clean laps of a lap number needed for the field's median (the reference of a pace change)."""
+
+CLOSE = 1.2
+"""Seconds behind the car ahead at which it holds you up."""
+
 
 def _ref(driver: str, lap: int) -> str:
     return f"{driver}:{lap}"
@@ -227,6 +245,117 @@ def flags(status: list[StatusPeriod], leader_line: list[float]) -> list[ReportMo
     return merged
 
 
+def _sse(columns: list[np.ndarray], y: np.ndarray) -> tuple[np.ndarray, float]:
+    coef, *_ = np.linalg.lstsq(np.column_stack(columns), y, rcond=None)
+    residual = y - np.column_stack(columns) @ coef
+    return coef, float(residual @ residual)
+
+
+def pace_step(laps: list[int], rel: list[float]) -> tuple[int, float] | None:
+    """Where a stint's lap times (against the field) step to another level, and by how much.
+
+    A line with a step in it against the stint's own trend (its degradation stays in the slope):
+    the break with the smallest residual, if the step is at least PACE_STEP, PACE_SIGNIFICANCE
+    times the noise around the fit, and the PACE_WINDOW laps before and after it (medians) differ
+    as much in the same direction. Returns the first lap at the new pace and the step (s/lap,
+    negative = quicker)."""
+    x, y = np.asarray(laps, float), np.asarray(rel, float)
+    around = np.array([np.median(y[max(0, i - 2) : i + 3]) for i in range(len(y))])
+    keep = np.abs(y - around) <= PACE_OUTLIER
+    x, y = x[keep], y[keep]
+    w = PACE_WINDOW
+    if len(x) < 2 * w:
+        return None
+    base = [np.ones_like(x), x]
+    best: tuple[int, float, float] | None = None
+    for i in range(w, len(x) - w + 1):
+        coef, sse = _sse([*base, (np.arange(len(x)) >= i).astype(float)], y)
+        if best is None or sse < best[1]:
+            best = (i, sse, float(coef[2]))
+    assert best is not None
+    i, sse, step = best
+    noise = np.sqrt(sse / (len(x) - 3))
+    local = float(np.median(y[i : i + w]) - np.median(y[i - w : i]))
+    if abs(step) < PACE_STEP or abs(step) < PACE_SIGNIFICANCE * noise:
+        return None
+    if abs(local) < PACE_STEP or np.sign(local) != np.sign(step):
+        return None
+    return int(x[i]), round(local, 2)
+
+
+def _ahead(history: RaceHistory, me: DriverRace, lap: int) -> tuple[str, float] | None:
+    """The car ahead on the same lap at its end and the interval to it (from the gaps)."""
+    mine = _gap(me, lap)
+    if mine is None:
+        return None
+    ahead = [
+        (d.driver, mine - theirs)
+        for d in history.drivers
+        if d.driver != me.driver and (theirs := _gap(d, lap)) is not None and theirs < mine
+    ]
+    return min(ahead, key=lambda a: a[1], default=None)
+
+
+def _pace_cause(history: RaceHistory, d: DriverRace, lap: int, step: float) -> str | None:
+    """Slower behind a car it caught, or quicker once free of the car that held it up."""
+    if step > 0:
+        held = [_ahead(history, d, n) for n in (lap, lap + 1, lap + 2)]
+        cars = [a[0] for a in held if a is not None and a[1] <= CLOSE]
+        return cars[0] if len(cars) >= 2 and cars.count(cars[0]) >= 2 else None
+    before = _ahead(history, d, lap - 1)
+    if before is None or before[1] > CLOSE:
+        return None
+    after = _ahead(history, d, lap + 1)
+    free = after is None or after[0] != before[0] or after[1] > 2 * CLOSE
+    return before[0] if free else None
+
+
+def pace_changes(history: RaceHistory) -> list[ReportMoment]:
+    """A driver whose pace steps up or down within a stint (pace_step), against the field's
+    median on each lap (fuel, track and weather are the same for everyone). The other car is the
+    one it caught (slower) or got free of (quicker), if any."""
+    on_lap: dict[int, list[float]] = {}
+    for d in history.drivers:
+        for lap, time, clean in zip(d.laps, d.lap_time, d.clean, strict=True):
+            if clean and time is not None:
+                on_lap.setdefault(lap, []).append(time)
+    field = {lap: float(np.median(v)) for lap, v in on_lap.items() if len(v) >= FIELD_LAPS}
+    out = []
+    for d in history.drivers:
+        for stint in d.stints:
+            laps, rel = [], []
+            for lap, time, clean in zip(d.laps, d.lap_time, d.clean, strict=True):
+                if stint.start_lap <= lap <= stint.end_lap and clean and time and lap in field:
+                    laps.append(lap)
+                    rel.append(time - field[lap])
+            found = pace_step(laps, rel)
+            if found is None:
+                continue
+            lap, step = found
+            before = max((n for n in laps if n < lap), default=lap - 1)
+            started = d.line[d.laps.index(lap - 1)] if lap - 1 in d.laps else None
+            if started is None:
+                continue
+            fifth = [n for n in laps if n >= lap][PACE_WINDOW - 1]
+            out.append(
+                ReportMoment(
+                    kind="pace",
+                    t=started,
+                    lap=lap,
+                    driver=d.driver,
+                    other=_pace_cause(history, d, lap, step),
+                    value=step,
+                    status=None,
+                    until_lap=None,
+                    action=_action(
+                        [_ref(d.driver, before), _ref(d.driver, lap)], t=max(started - 3, 0)
+                    ),
+                    known=d.line[d.laps.index(fifth)],
+                )
+            )
+    return out
+
+
 # --- Per session --------------------------------------------------------------------------------
 
 
@@ -383,6 +512,7 @@ def get_report(year: int, round_number: int, code: str) -> SessionReport:
             start_moves(history)
             + stop_extremes(history)
             + undercuts(history)
+            + pace_changes(history)
             + flags(timeline.track_status, history.leader_line),
             key=lambda m: m.t,
         )

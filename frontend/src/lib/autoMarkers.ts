@@ -10,14 +10,26 @@ const MOMENT_TAGS: Record<string, string> = {
   fast_stop: 'pit',
   slow_stop: 'pit',
   undercut: 'undercut',
+  pace: 'pace',
 };
 
 /** An automatic marker: from the session report, never stored (negative id). */
 export const isAuto = (m: Pick<Marker, 'id'>) => m.id < 0;
 
+/** A negative id from what the marker is about (FNV-1a), so it keeps its id when the report
+ * comes again during a live session and finds more. */
+function stableId(what: string, taken: Set<number>): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < what.length; i++) hash = Math.imul(hash ^ what.charCodeAt(i), 0x01000193);
+  let id = -((hash >>> 1) + 1);
+  while (taken.has(id)) id -= 1;
+  taken.add(id);
+  return id;
+}
+
 /**
  * The session report's findings as markers: every race moment (start, quickest and slowest
- * stop, undercuts, safety car, VSC and red flag) on the clock, and for each driver where his
+ * stop, undercuts, pace changes, safety car, VSC and red flag) on the clock, and for each driver where his
  * best lap loses most to the fastest as a range on that lap.
  */
 export function autoMarkers(report: SessionReport, key: SessionKey): Marker[] {
@@ -29,11 +41,12 @@ export function autoMarkers(report: SessionReport, key: SessionKey): Marker[] {
     updated: '1970-01-01T00:00:00Z',
   };
   const out: Marker[] = [];
+  const taken = new Set<number>();
   for (const m of report.moments) {
     const flag = m.kind === 'flag';
     out.push({
       ...base,
-      id: -(out.length + 1),
+      id: stableId(`${m.kind}|${m.driver}|${m.other}|${m.t}`, taken),
       kind: 'time',
       start: m.t,
       end: flag && m.value ? m.t + m.value : null,
@@ -48,7 +61,7 @@ export function autoMarkers(report: SessionReport, key: SessionKey): Marker[] {
     if (!c.action.zoom) continue;
     out.push({
       ...base,
-      id: -(out.length + 1),
+      id: stableId(`corner|${c.driver}|${c.lap}|${c.corner}`, taken),
       kind: 'distance',
       start: Math.max(0, c.action.zoom[0]),
       end: c.action.zoom[1],

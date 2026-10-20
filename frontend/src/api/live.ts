@@ -31,6 +31,11 @@ const EDGE_MARGIN = 2;
 /** Query resources that do not change with new laps. */
 const STABLE = new Set(['markers', 'positions', 'positions-status', '/circuit']);
 
+/** Resources worked out again at most this often (ms): the report compares the best laps of ten
+ * drivers, and its automatic markers do not need every update of the feed. Under the alerts'
+ * LOOKBACK (30 s), so a pace change found in it still alerts. */
+const SLOW = new Map([['/report', 20_000]]);
+
 /**
  * Follows the selected session while it is live: server-sent events with the data horizon and
  * version. The horizon moves the clock's live edge; a new version refetches the session's data.
@@ -57,13 +62,29 @@ export function useLiveSession() {
     const key = keyRef.current;
     if (!live || !path || !key) return;
     let follow = true;
+    const refreshed = new Map<string, number>();
+    /** The slow resources whose turn it is now (once per update: the predicate runs twice). */
+    const slowDue = () => {
+      const now = Date.now();
+      const due = new Set<string>();
+      for (const [resource, every] of SLOW) {
+        if (now - (refreshed.get(resource) ?? 0) < every) continue;
+        refreshed.set(resource, now);
+        due.add(resource);
+      }
+      return due;
+    };
     const source = new EventSource(`/api/live${path.slice('/sessions'.length)}/events`);
     source.addEventListener('status', (event) => {
       const next = JSON.parse((event as MessageEvent<string>).data) as LiveSessionInfo;
       if (version.current != null && next.version !== version.current) {
+        const due = slowDue();
         void client.invalidateQueries({
           queryKey: ['session', key],
-          predicate: (q) => !STABLE.has(String(q.queryKey[2])),
+          predicate: (q) => {
+            const resource = String(q.queryKey[2]);
+            return SLOW.has(resource) ? due.has(resource) : !STABLE.has(resource);
+          },
         });
       }
       version.current = next.version;

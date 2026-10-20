@@ -6,6 +6,7 @@ import {
   useOvertake,
   usePasses,
   useRaceHistory,
+  useReport,
   useSessionDetail,
   useStewarding,
   useStraightMode,
@@ -61,6 +62,7 @@ export function AlertToasts() {
   const passes = usePasses(on && race && kinds.pass).data;
   const lines = useStraightMode(on && race && kinds.ot && (session?.year ?? 0) >= 2026).data;
   const overtake = useOvertake(on && race && kinds.ot && lines?.overtake != null).data;
+  const report = useReport(on && race && kinds.pace).data;
   const groupLaps = useGroups((s) => s.laps);
 
   const alerts = useMemo(() => {
@@ -75,6 +77,7 @@ export function AlertToasts() {
       passes,
       overtake,
       straightMode: lines,
+      report,
     }).filter(
       (a) =>
         kinds[a.kind] && (!PER_CAR.has(a.kind) || allCars || a.drivers.some((d) => watched.has(d)))
@@ -89,6 +92,7 @@ export function AlertToasts() {
     passes,
     overtake,
     lines,
+    report,
     kinds,
     allCars,
     groupLaps,

@@ -75,6 +75,12 @@ export function momentLine(m: ReportMoment): string {
       return `Slowest stop: ${m.driver}, ${m.value?.toFixed(1)} s in the pit lane.`;
     case 'undercut':
       return `${m.driver} undercuts ${m.other}: stopped first and came out ahead.`;
+    case 'pace': {
+      const step = m.value ?? 0;
+      const quicker = step < 0;
+      const cause = m.other ? (quicker ? `, free of ${m.other}` : `, behind ${m.other}`) : '';
+      return `${m.driver} ${Math.abs(step).toFixed(1)} s a lap ${quicker ? 'quicker' : 'slower'} from lap ${m.lap}${cause}.`;
+    }
     case 'flag': {
       const laps = m.until_lap != null && m.until_lap !== m.lap ? `–${m.until_lap}` : '';
       return `${FLAG_NAMES[m.status ?? ''] ?? 'Flag'} on lap ${m.lap}${laps} (${formatClock(m.value ?? 0)}).`;

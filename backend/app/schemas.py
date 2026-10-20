@@ -1306,7 +1306,7 @@ class ReportClipping(BaseModel):
     action: ReportAction
 
 
-ReportMomentKind = Literal["fast_stop", "slow_stop", "start", "undercut", "flag"]
+ReportMomentKind = Literal["fast_stop", "slow_stop", "start", "undercut", "flag", "pace"]
 
 
 class ReportMoment(BaseModel):
@@ -1317,13 +1317,17 @@ class ReportMoment(BaseModel):
     lap: int | None
     driver: str | None
     other: str | None
-    """The other car (undercut: the one that was passed)."""
+    """The other car (undercut: the one that was passed; pace: the car it caught or got free of)."""
     value: float | None
-    """Pit lane seconds (stops), places gained or lost (start)."""
+    """Pit lane seconds (stops), places gained or lost (start), s/lap against the field (pace,
+    negative = quicker)."""
     status: TrackStatus | None
     """Flags: sc, vsc or red."""
     until_lap: int | None
     action: ReportAction
+    known: float | None = None
+    """Session time (s) from which the data shows it, if later than t (pace: the line after the
+    fifth lap at the new pace)."""
 
 
 class SessionReport(BaseModel):

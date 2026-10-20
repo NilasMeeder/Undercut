@@ -79,3 +79,33 @@ def test_long_runs_in_practice():
     # The click compares LEC's typical lap with the quickest run's (VER).
     assert lec_run.action.laps[0].startswith("VER:")
     assert lec_run.action.laps[1].startswith("LEC:")
+
+
+NOISE = [0.05, -0.1, 0.0, 0.1, -0.05, 0.08, -0.08, 0.02, -0.02, 0.06, -0.06, 0.04]
+
+
+def test_pace_step_quicker_and_not_a_ramp():
+    laps = list(range(10, 22))
+    step = [(0.6 if n < 16 else -0.4) + e for n, e in zip(laps, NOISE, strict=True)]
+    assert reports.pace_step(laps, step) == (16, pytest.approx(-1.0, abs=0.1))
+    # Degradation of 0.1 s a lap is the stint's own trend, not a step.
+    ramp = [0.1 * (n - 10) + e for n, e in zip(laps, NOISE, strict=True)]
+    assert reports.pace_step(laps, ramp) is None
+    # A single slow lap (traffic) is left out, not a change.
+    one = [e + (3.0 if n == 15 else 0.0) for n, e in zip(laps, NOISE, strict=True)]
+    assert reports.pace_step(laps, one) is None
+
+
+def test_pace_change_behind_a_slower_car():
+    # NOR catches SLO (20 s ahead after lap 1, 2 s a lap slower) and is held up from lap 11.
+    field = [driver_race(d, [81.0] * 16) for d in ("ALB", "SAI", "OCO", "GAS")]
+    slo = driver_race("SLO", [60.0] + [82.0] * 15)
+    nor = driver_race("NOR", [80.0] * 10 + [81.0] + [82.0] * 5)
+    laps = [lap for own in [*field, slo, nor] for lap in own]
+    history = strategy.history(laps, "race", 16, {}, GREEN)
+    [moment] = reports.pace_changes(history)
+    assert (moment.kind, moment.driver, moment.other) == ("pace", "NOR", "SLO")
+    assert moment.lap in (11, 12) and moment.value == pytest.approx(2.0, abs=0.1)
+    assert moment.action.laps[0].startswith("NOR:") and moment.action.t < moment.t
+    [own] = [d for d in history.drivers if d.driver == "NOR"]
+    assert moment.known == own.line[own.laps.index(moment.lap + 4)]  # the fifth lap's line
