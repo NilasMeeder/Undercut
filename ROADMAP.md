@@ -662,6 +662,25 @@ Af op 2026-10-19 (alle vier).
       vergeleken laps blijft als instelling. Getest in headless Chrome (Monza 2025 Q en R L22,
       Analyse-preset Qualifying)
 
+## Fase 15 — Update 3: geen sessie meer missen
+
+Op 2026-10-20 gekozen (Nilas: "Ja prima" op het advies): eerst zorgen dat Austin (vr 23 okt) en
+elke sessie daarna opgenomen wordt, want TracingInsights werkt niet meer bij; daarna drie dingen
+voor het bord.
+
+- [x] **Automatisch opnemen** (2026-10-20): REC → "Record every session automatically" (REC AUTO):
+      wachten, opnemen, de volgende, tot Stop; de backend start hem weer als hij niet draait (na
+      een herstart van de Mac, binnen een minuut); de Mac blijft wakker tijdens een opname en vanaf
+      2 uur ervoor (caffeinate). Getest met een nep-recorder (gekild → na 29 s weer gestart) en de
+      echte `--always` in de wachtstand
+- [ ] **Live-gezondheid in REC**: laatste bericht, aantal keer opnieuw verbonden, hoe lang de
+      F1 TV-login nog geldig is, achterstand van de feed
+- [ ] **Archief via het F1 TV-token** (was backlog): sessies die niet in TracingInsights staan en
+      niet opgenomen zijn alsnog van livetiming.formula1.com (token alleen naar die host)
+- [ ] **Kampioenschap "as it stands"**: de stand als de race nu zou eindigen
+- [ ] **Pitstop-tijden**: de stilstand per stop uit de feed (PitStopSeries), alleen in opnames
+- [ ] **Team radio als tekst**: lokaal transcriberen (Whisper), doorzoekbaar, tekst bij de clip
+
 ## Later / backlog
 
 - [ ] **F1 TV-token als optionele bron** (Nilas heeft F1 TV Pro). Login via `uv run python -m fastf1 auth f1tv --authenticate`
@@ -674,6 +693,12 @@ Af op 2026-10-19 (alle vier).
 
 ## Ideeën (later, misschien)
 
-- (leeg)
+Uit de lijst voor update 3 (2026-10-20), niet gekozen:
+- Treinen: groepen auto's binnen 1 s, wie zit vast en hoe lang
+- Regen- en crossover-wacht: neerslag, baantemperatuur, wanneer inters sneller zijn dan slicks
+- Ghost car op de kaart: de beste lap rijdt mee met de lap die bezig is
+- Verkeer in kwalificatie: per lap waar een langzamere auto tijd kostte (DriverAhead)
+- Track limits per bocht op de kaart
+- Report exporteren als afbeelding of PDF
 
 

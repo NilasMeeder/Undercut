@@ -12,14 +12,14 @@ export function useRecorder() {
   });
 }
 
-/** Start (now, or `wait` for the next session) or stop the recorder. */
+/** Start the recorder (`now`, `wait` for the next session, or `always`: every session) or stop it. */
 export function useRecorderAction() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (action: 'start' | 'wait' | 'stop') =>
+    mutationFn: (action: 'now' | 'wait' | 'always' | 'stop') =>
       action === 'stop'
         ? apiSend<RecorderStatus>('DELETE', '/live/recorder')
-        : apiSend<RecorderStatus>('POST', `/live/recorder${action === 'wait' ? '?wait=true' : ''}`),
+        : apiSend<RecorderStatus>('POST', `/live/recorder?mode=${action}`),
     onSuccess: (status) => {
       client.setQueryData(RECORDER_KEY, status);
       void client.invalidateQueries({ queryKey: ['live'] });

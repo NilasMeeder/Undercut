@@ -25,7 +25,7 @@ import numpy as np
 
 from app import generations, replays, schedule, sessions
 from app.config import LIVE_DIR
-from app.live import convert, feed, recordings, telemetry
+from app.live import convert, feed, recorder, recordings, telemetry
 from app.live.telemetry import Samples
 from app.live.tower import FeedTower
 from app.live.track import LiveTrack, Outline
@@ -41,6 +41,8 @@ POLL_EVERY = 0.5
 BUILD_EVERY = 3.0
 """Seconds between two conversions while data comes in (one takes ~0.2-1 s for a race)."""
 SCAN_EVERY = 5.0
+RESUME_EVERY = 60.0
+"""Seconds between checks that the automatic recorder still runs (recorder.resume)."""
 
 ARCHIVE_SESSIONS = (
     "Qualifying",
@@ -353,6 +355,7 @@ class Service:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._scanned = 0.0
+        self._resumed = -RESUME_EVERY
 
     def start(self) -> None:
         if self._thread is None:
@@ -374,6 +377,9 @@ class Service:
             self._stop.wait(POLL_EVERY)
 
     def step(self) -> None:
+        if time.monotonic() - self._resumed > RESUME_EVERY:
+            self._resumed = time.monotonic()
+            recorder.resume()
         if time.monotonic() - self._scanned > SCAN_EVERY:
             self._scanned = time.monotonic()
             self.scan()

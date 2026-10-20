@@ -105,7 +105,7 @@ MAX_COMPARED_LAPS = 8
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     schedule.init_cache()
-    live.service.start()
+    live.service.start()  # also resumes the automatic recorder
     yield
     live.service.stop()
 
@@ -753,6 +753,8 @@ def recorder_status() -> RecorderStatus:
     state = recorder.running()
     return RecorderStatus(
         running=state is not None,
+        mode=state.get("mode", "wait" if state.get("wait") else "now") if state else None,
+        automatic=recorder.automatic(),
         since=datetime.fromisoformat(state["started"]) if state else None,
         signed_in=record.signed_in(),
         current=_scheduled(current),
@@ -762,11 +764,12 @@ def recorder_status() -> RecorderStatus:
 
 
 @app.post("/api/live/recorder")
-def recorder_start(wait: bool = False) -> RecorderStatus:
-    """Start recording the session on now; `wait`: or wait for the next one. The recorder is its
-    own process: it goes on when the backend restarts."""
+def recorder_start(mode: recorder.Mode = "now") -> RecorderStatus:
+    """Start recording the session on now (`now`), or wait for the next one (`wait`), or record
+    every session from now on (`always`). The recorder is its own process: it goes on when the
+    backend restarts, and `always` is started again after the Mac restarts."""
     try:
-        recorder.start(wait)
+        recorder.start(mode)
     except recorder.RecorderBusy as error:
         raise HTTPException(409, str(error)) from error
     except recorder.NotSignedIn as error:
@@ -778,7 +781,7 @@ def recorder_start(wait: bool = False) -> RecorderStatus:
 
 @app.delete("/api/live/recorder")
 def recorder_stop() -> RecorderStatus:
-    """Stop the recorder (it closes the recording first)."""
+    """Stop the recorder (it closes the recording first), and the automatic recording."""
     recorder.stop()
     return recorder_status()
 

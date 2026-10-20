@@ -817,13 +817,14 @@ export interface paths {
         put?: never;
         /**
          * Recorder Start
-         * @description Start recording the session on now; `wait`: or wait for the next one. The recorder is its
-         *     own process: it goes on when the backend restarts.
+         * @description Start recording the session on now (`now`), or wait for the next one (`wait`), or record
+         *     every session from now on (`always`). The recorder is its own process: it goes on when the
+         *     backend restarts, and `always` is started again after the Mac restarts.
          */
         post: operations["recorder_start_api_live_recorder_post"];
         /**
          * Recorder Stop
-         * @description Stop the recorder (it closes the recording first).
+         * @description Stop the recorder (it closes the recording first), and the automatic recording.
          */
         delete: operations["recorder_stop_api_live_recorder_delete"];
         options?: never;
@@ -2106,6 +2107,10 @@ export interface components {
         RecorderStatus: {
             /** Running */
             running: boolean;
+            /** Mode */
+            mode: ("now" | "wait" | "always") | null;
+            /** Automatic */
+            automatic: boolean;
             /** Since */
             since: string | null;
             /** Signed In */
@@ -4603,7 +4608,7 @@ export interface operations {
     recorder_start_api_live_recorder_post: {
         parameters: {
             query?: {
-                wait?: boolean;
+                mode?: "now" | "wait" | "always";
             };
             header?: never;
             path?: never;

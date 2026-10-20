@@ -2,6 +2,7 @@
 
     uv run python -m app.live.record                # the session on now, or within the hour
     uv run python -m app.live.record --wait         # that, or wait for the next one
+    uv run python -m app.live.record --always       # every session, one after the other
     uv run python -m app.live.record 2026 18 FP1
 
 Uses FastF1's live client with its F1 TV sign-in, made once with
@@ -9,13 +10,15 @@ Uses FastF1's live client with its F1 TV sign-in, made once with
 livetiming.formula1.com only; f1dash reads it only to see whether it has expired. Start before
 the session: the feed sends changes, so a recording that starts halfway misses the laps before
 it. Appends, so a restart continues the same recording. The backend picks the recording up by
-itself (app/live/service.py).
+itself (app/live/service.py). On a Mac it keeps the computer awake while it records, and from
+AWAKE_BEFORE before a session it waits for (caffeinate).
 """
 
 import argparse
 import logging
 import os
 import signal
+import subprocess
 import sys
 import time
 from datetime import UTC, datetime, timedelta
@@ -35,6 +38,12 @@ SILENCE = 300
 RETRY_AFTER = 10
 WAIT_STEP = 600
 """Longest sleep while waiting for a session (seconds)."""
+AWAKE_BEFORE = timedelta(hours=2)
+"""Keep the Mac awake from this long before a session it waits for: asleep, it would miss it."""
+RETRY_WAITING = 60
+"""--always: seconds before trying again when waiting failed (no network after a wake)."""
+NO_CALENDAR = 6 * 3600
+"""--always: seconds before looking again when the calendar has no sessions left."""
 
 log = logging.getLogger("record")
 
@@ -82,17 +91,53 @@ def next_session(now: datetime) -> str:
     return f"next: {event.name} {session.name} at {start:%a %d %b %H:%M} UTC"
 
 
-def wait_for_session() -> tuple[int, int, str, datetime]:
-    """Sleep until the next session is close enough to record (EARLY before its start)."""
+class Awake:
+    """Keeps the Mac from sleeping (caffeinate, ends with this process) until released. Elsewhere
+    it does nothing. A closed MacBook on battery sleeps anyway."""
+
+    def __init__(self) -> None:
+        self._process: subprocess.Popen | None = None
+
+    def hold(self) -> None:
+        if self._process is not None and self._process.poll() is None:
+            return
+        try:
+            self._process = subprocess.Popen(  # noqa: S603, S607 (fixed command)
+                ["caffeinate", "-i", "-s", "-w", str(os.getpid())],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            log.info("Keeping the Mac awake")
+        except OSError:
+            self._process = None
+
+    def release(self) -> None:
+        if self._process is not None:
+            self._process.terminate()
+            self._process = None
+
+
+def wait_for_session(awake: Awake, forever: bool = False) -> tuple[int, int, str, datetime]:
+    """Sleep until the next session is close enough to record (EARLY before its start).
+    `forever`: with no sessions left, look again later (next year's calendar) instead of exiting."""
     while True:
         now = datetime.now(UTC)
         if (found := current_session(now)) is not None:
             return found
         upcoming = upcoming_session(now)
         if upcoming is None:
-            sys.exit("No more sessions to wait for")
+            if not forever:
+                sys.exit("No more sessions to wait for")
+            log.info("No sessions left in the calendar: looking again in %d h", NO_CALENDAR // 3600)
+            awake.release()
+            time.sleep(NO_CALENDAR)
+            continue
         # In steps, so a laptop that slept does not oversleep.
         wake = upcoming[3] - EARLY
+        if wake - now <= AWAKE_BEFORE:
+            awake.hold()
+        else:
+            awake.release()
         log.info("Waiting until %s UTC (%s)", f"{wake:%a %d %b %H:%M}", next_session(now))
         time.sleep(min(max((wake - now).total_seconds(), 1.0), WAIT_STEP))
 
@@ -129,7 +174,12 @@ def main() -> None:
     parser.add_argument(
         "--wait", action="store_true", help="No session on now: wait for the next one"
     )
+    parser.add_argument(
+        "--always", action="store_true", help="Record every session, waiting for each next one"
+    )
     args = parser.parse_args()
+    # Started in the background SIGINT is ignored, and stopping (the top bar) sends SIGINT.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     schedule.init_cache()
 
@@ -138,7 +188,7 @@ def main() -> None:
         year, round_number, code = args.year, args.round, args.session
         _, info = schedule.resolve_session(year, round_number, code)
         start = info.start_utc.to_pydatetime() if info.start_utc is not None else now
-    elif (found := current_session(now)) is None and not args.wait:
+    elif (found := current_session(now)) is None and not (args.wait or args.always):
         sys.exit(f"No session on now ({next_session(now)}). Name one: 2026 18 FP1")
 
     other = recorder.running()
@@ -149,24 +199,69 @@ def main() -> None:
             "Not signed in to F1 TV, or the sign-in expired. Run: "
             "uv run python -m fastf1 auth f1tv --authenticate"
         )
+    awake = Awake()
+    if args.always and not args.session:
+        record_always(awake, args.no_auth)
+        return
     if not args.session:
         try:
-            found = found or wait_for_session()
+            found = found or wait_for_session(awake)
         except KeyboardInterrupt:
             log.info("Stopped waiting")
             return
         year, round_number, code, start = found
+    record_session(year, round_number, code, start, args.no_auth, awake)
 
+
+def record_always(awake: Awake, no_auth: bool) -> None:
+    """Every session: wait for it, record it, wait for the next. Waiting can fail (no network
+    right after the Mac wakes): then it tries again; a recorder that exits misses the weekend."""
+    while True:
+        try:
+            year, round_number, code, start = wait_for_session(awake, forever=True)
+        except KeyboardInterrupt:
+            log.info("Stopped waiting")
+            return
+        except Exception:
+            log.exception("Waiting failed, trying again in %d s", RETRY_WAITING)
+            try:
+                time.sleep(RETRY_WAITING)
+            except KeyboardInterrupt:
+                return
+            continue
+        if not signed_in() and not no_auth:
+            # Without a valid sign-in FastF1 would wait for a browser login nobody sees.
+            log.error(
+                "The F1 TV sign-in expired. Run: uv run python -m fastf1 auth f1tv --authenticate"
+            )
+            return
+        try:
+            if record_session(year, round_number, code, start, no_auth, awake):
+                return
+        except Exception:
+            log.exception("Recording failed")
+            time.sleep(RETRY_AFTER)
+
+
+def record_session(
+    year: int, round_number: int, code: str, start: datetime, no_auth: bool, awake: Awake
+) -> bool:
+    """Record one session until its end; True if stopped (SIGINT) before that."""
     event, session = schedule.resolve_session(year, round_number, code)
     folder = recordings.write_meta(year, round_number, code, event.name, session.name)
     path = folder / recordings.RECORDING
     until = start + LENGTH.get(code, DEFAULT_LENGTH)
     name = f"{event.name} {session.name}"
     log.info("Recording %s into %s until %s UTC", name, path, f"{until:%H:%M}")
-    record(str(path), until, args.no_auth)
+    awake.hold()
+    try:
+        return record(str(path), until, no_auth)
+    finally:
+        awake.release()
 
 
-def record(path: str, until: datetime, no_auth: bool) -> None:
+def record(path: str, until: datetime, no_auth: bool) -> bool:
+    """Record into `path` until `until`; True if stopped (SIGINT) before that."""
     from fastf1.livetiming.client import SignalRClient
 
     stopping = False
@@ -176,7 +271,7 @@ def record(path: str, until: datetime, no_auth: bool) -> None:
         stopping = True
         raise KeyboardInterrupt
 
-    signal.signal(signal.SIGINT, stop)
+    previous = signal.signal(signal.SIGINT, stop)
     while not stopping and datetime.now(UTC) < until:
         try:
             # Append: a reconnect continues the recording (F1 resends its state first).
@@ -187,8 +282,13 @@ def record(path: str, until: datetime, no_auth: bool) -> None:
             log.exception("The live client stopped")
         if not stopping and datetime.now(UTC) < until:
             log.info("Reconnecting in %d s", RETRY_AFTER)
-            time.sleep(RETRY_AFTER)
+            try:
+                time.sleep(RETRY_AFTER)
+            except KeyboardInterrupt:
+                break
+    signal.signal(signal.SIGINT, previous)
     log.info("Stopped recording")
+    return stopping
 
 
 if __name__ == "__main__":

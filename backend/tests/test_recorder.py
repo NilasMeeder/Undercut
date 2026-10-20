@@ -1,8 +1,10 @@
 """Starting and stopping the recorder from the API, with a stand-in that only sleeps."""
 
+import os
+import signal
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -27,7 +29,7 @@ time.sleep(30)
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> TestClient:
     monkeypatch.setattr(config, "LIVE_DIR", tmp_path)
-    monkeypatch.setattr(recorder, "command", lambda wait: [sys.executable, "-c", STAND_IN])
+    monkeypatch.setattr(recorder, "command", lambda mode: [sys.executable, "-c", STAND_IN])
     monkeypatch.setattr(record, "signed_in", lambda: True)
     start = datetime(2026, 10, 23, 17, 30, tzinfo=UTC)
     monkeypatch.setattr(record, "current_session", lambda now: (2026, 19, "FP1", start))
@@ -65,6 +67,33 @@ def test_start_and_stop_the_recorder(client: TestClient) -> None:
     wait_for(lambda: not client.get("/api/live/recorder").json()["running"])
     assert "Stopped recording" in " ".join(client.get("/api/live/recorder").json()["log"])
     assert stopped["signed_in"] is True
+
+
+def test_record_every_session(client: TestClient) -> None:
+    started = client.post("/api/live/recorder?mode=always").json()
+    assert started["mode"] == "always" and started["automatic"] is True
+    assert not recorder.resume()  # it runs
+
+    # The Mac restarted: no recorder, but still automatic. The backend starts it again.
+    pid = recorder.running()["pid"]
+    os.kill(pid, signal.SIGKILL)
+    wait_for(lambda: recorder.running() is None)
+    assert client.get("/api/live/recorder").json()["automatic"] is True
+    assert recorder.resume()
+    assert recorder.running()["pid"] != pid
+
+    # Stopped from the top bar: no longer automatic, nothing to resume.
+    stopped = client.delete("/api/live/recorder").json()
+    assert stopped["automatic"] is False
+    wait_for(lambda: recorder.running() is None)
+    assert not recorder.resume()
+
+
+def test_resume_waits_for_a_sign_in(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    (config.LIVE_DIR / recorder.AUTO).write_text("{}")
+    monkeypatch.setattr(record, "signed_in", lambda: False)
+    assert not recorder.resume()
+    assert recorder.automatic()  # resumes once signed in again
 
 
 def test_the_recorder_needs_a_sign_in_and_a_session(
@@ -108,3 +137,63 @@ def test_only_a_recorder_counts_as_one() -> None:
 def test_the_log_tail_hides_a_token(client: TestClient) -> None:
     (config.LIVE_DIR / recorder.LOG).write_text("auth function result eyJhbGc.eyJleHAi.c2ln-_x\n")
     assert recorder.log_tail() == ["auth function result <token>"]
+
+
+class FakeAwake:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def hold(self) -> None:
+        self.calls.append("hold")
+
+    def release(self) -> None:
+        self.calls.append("release")
+
+
+def test_waiting_keeps_the_mac_awake_only_close_to_a_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = datetime.now(UTC)
+    starts = iter([now + timedelta(hours=8), now + timedelta(hours=2, minutes=30)])
+    session = (2026, 19, "FP1", now + timedelta(hours=1))
+    checks = iter([None, None, session])
+    monkeypatch.setattr(record, "current_session", lambda now: next(checks))
+    monkeypatch.setattr(record, "upcoming_session", lambda now: (2026, 19, "FP1", next(starts)))
+    monkeypatch.setattr(record, "next_session", lambda now: "next")
+    monkeypatch.setattr(record.time, "sleep", lambda seconds: None)
+    awake = FakeAwake()
+    assert record.wait_for_session(awake) == session  # type: ignore[arg-type]
+    assert awake.calls == ["release", "hold"]  # 7 h before: may sleep; 1.5 h before: awake
+
+
+def test_always_records_one_session_after_the_other(monkeypatch: pytest.MonkeyPatch) -> None:
+    start = datetime(2026, 10, 23, 17, 30, tzinfo=UTC)
+    waits = iter([OSError("no network"), (2026, 19, "FP1", start), (2026, 19, "SQ", start)])
+
+    def wait(awake, forever):
+        assert forever
+        found = next(waits)
+        if isinstance(found, Exception):
+            raise found
+        return found
+
+    recorded: list[str] = []
+
+    def record_session(year, round_number, code, start, no_auth, awake):
+        recorded.append(code)
+        return code == "SQ"  # stopped during SQ
+
+    monkeypatch.setattr(record, "wait_for_session", wait)
+    monkeypatch.setattr(record, "record_session", record_session)
+    monkeypatch.setattr(record, "signed_in", lambda: True)
+    monkeypatch.setattr(record.time, "sleep", lambda seconds: None)
+    record.record_always(FakeAwake(), no_auth=False)  # type: ignore[arg-type]
+    assert recorded == ["FP1", "SQ"]
+
+
+def test_always_gives_up_on_an_expired_sign_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    start = datetime(2026, 10, 23, 17, 30, tzinfo=UTC)
+    monkeypatch.setattr(record, "wait_for_session", lambda awake, forever: (2026, 19, "FP1", start))
+    monkeypatch.setattr(record, "signed_in", lambda: False)
+    monkeypatch.setattr(record, "record_session", lambda *args: pytest.fail("recorded"))
+    record.record_always(FakeAwake(), no_auth=False)  # type: ignore[arg-type]

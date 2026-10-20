@@ -1222,6 +1222,11 @@ class RecorderStatus(BaseModel):
 
     running: bool
     """Started from here and still going: recording, or waiting for `upcoming`."""
+    mode: Literal["now", "wait", "always"] | None
+    """How it was started: the session on now, that or the next, or every session."""
+    automatic: bool
+    """Set to record every session: the backend starts the recorder again when it is not running
+    (after a restart of the Mac), until it is stopped from the top bar."""
     since: datetime | None
     signed_in: bool
     """Signed in to F1 TV (FastF1's login); without it the feed has no data."""

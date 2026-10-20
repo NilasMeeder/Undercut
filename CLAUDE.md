@@ -321,6 +321,17 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   in `<LIVE_DIR>/recorder.json`, uitvoer in `recorder.log`, stoppen = SIGINT. Starten weigert zonder
   F1 TV-login (403, met het commando). Test de knop nooit echt (dat verbindt met F1): de API-test
   gebruikt een slapend proces als recorder.
+- **Automatisch** (fase 15, `--always`, `?mode=always`, knop "Record every session automatically"):
+  wachten, opnemen, wachten op de volgende, tot Stop. `<LIVE_DIR>/auto.json` onthoudt het; de
+  live-service (`recorder.resume`, elke minuut) start de recorder weer als hij niet draait (na een
+  herstart van de Mac zodra de backend draait, of als hij stierf); afgemeld of een recorder in een
+  terminal: niets. Wachten dat faalt (geen netwerk na wakker worden) probeert het na 60 s opnieuw;
+  een verlopen login stopt hem. `record.Awake`: `caffeinate -i -s -w <pid>` tijdens een opname en
+  vanaf 2 uur vóór een sessie waarop hij wacht (een dichte MacBook op batterij slaapt toch).
+  `main()` zet de SIGINT-handler zelf: op de achtergrond gestart is SIGINT anders genegeerd.
+  `tests/conftest.py` zet `config.LIVE_DIR` op een tijdelijke map (anders start een test-backend
+  met lifespan de echte recorder). Handmatig testen: een backend met een nep-`recorder.command`
+  (een slapend proces), zoals de API-test.
 - **Opslag**: `backend/data/live/<jaar>/<event>/<sessie>/` met `live.txt` (de feed zoals FastF1 hem
   schrijft), `meta.json` (jaar, ronde, code) en `converted/` (de archiefbestanden, plus `live.json` met
   het geplande aantal laps, `<DRV>/<lap>_tel.json.gz` en `track-v1.npz`). Niet in `.cache`: na afloop

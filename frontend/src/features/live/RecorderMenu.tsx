@@ -18,8 +18,9 @@ const name = (s: ScheduledSession) =>
 const action =
   'w-full border border-line-strong px-2 py-1 text-left hover:bg-raised disabled:opacity-40';
 
-/** REC in the top bar: start the live recorder for the session on now (or the next one), or stop
- * it. The recorder is its own process, so a backend restart does not stop a recording. */
+/** REC in the top bar: start the live recorder for the session on now (or the next one, or every
+ * session from now on), or stop it. The recorder is its own process, so a backend restart does not
+ * stop a recording; an automatic one is started again after the Mac restarts. */
 export function RecorderMenu() {
   const status = useRecorder();
   const act = useRecorderAction();
@@ -27,18 +28,29 @@ export function RecorderMenu() {
   if (!s) return null;
   const recording = s.running && s.current != null;
   const waiting = s.running && s.current == null;
+  const always = s.running && s.mode === 'always';
+  // Automatic, but the backend cannot start it (signed out, or one runs in a terminal).
+  const stalled = s.automatic && !s.running;
   const target = s.current ?? s.upcoming;
 
   const label = recording
     ? `REC ${s.current!.code}`
-    : waiting && s.upcoming
-      ? `REC ${hourMinute.format(new Date(s.upcoming.start_utc))}`
-      : 'REC';
+    : always
+      ? 'REC AUTO'
+      : waiting && s.upcoming
+        ? `REC ${hourMinute.format(new Date(s.upcoming.start_utc))}`
+        : stalled
+          ? 'REC !'
+          : 'REC';
   const title = recording
-    ? `Recording ${name(s.current!)}`
-    : waiting && s.upcoming
-      ? `Waiting to record ${name(s.upcoming)}`
-      : 'Live recorder: not recording';
+    ? `Recording ${name(s.current!)}${always ? ', then every next session' : ''}`
+    : always && s.upcoming
+      ? `Recording every session: next ${name(s.upcoming)}`
+      : waiting && s.upcoming
+        ? `Waiting to record ${name(s.upcoming)}`
+        : stalled
+          ? 'Automatic recording is on, but the recorder is not running'
+          : 'Live recorder: not recording';
 
   return (
     <HeaderMenu
@@ -46,7 +58,11 @@ export function RecorderMenu() {
       width="w-80"
       buttonClassName={cn(
         'flex h-5 shrink-0 items-center gap-1 border px-1.5 text-[11px] font-semibold',
-        recording ? 'border-pit text-pit' : 'border-line-strong text-faint hover:text-text'
+        recording
+          ? 'border-pit text-pit'
+          : stalled
+            ? 'border-pit text-text'
+            : 'border-line-strong text-faint hover:text-text'
       )}
       icon={
         <>
@@ -65,11 +81,15 @@ export function RecorderMenu() {
           <div className="text-[10px] font-semibold tracking-wider text-dim">LIVE RECORDER</div>
           <p className="leading-snug text-text">
             {recording
-              ? `Recording ${name(s.current!)} since ${hourMinute.format(new Date(s.since!))}.`
+              ? `Recording ${name(s.current!)} since ${hourMinute.format(new Date(s.since!))}.` +
+                (always ? ' Then it waits for the next session.' : '')
               : waiting && s.upcoming
-                ? `Waiting for ${name(s.upcoming)}, ${when.format(new Date(s.upcoming.start_utc))}. ` +
-                  'Recording starts an hour before.'
-                : 'Not recording.'}
+                ? `${always ? 'Recording every session. Next: ' : 'Waiting for '}${name(s.upcoming)}, ` +
+                  `${when.format(new Date(s.upcoming.start_utc))}. Recording starts an hour before.`
+                : stalled
+                  ? 'Automatic recording is on, but the recorder is not running. It starts again ' +
+                    'by itself once it can.'
+                  : 'Not recording.'}
           </p>
           {!s.signed_in ? (
             <p className="leading-snug text-dim">
@@ -80,7 +100,7 @@ export function RecorderMenu() {
               </span>
             </p>
           ) : null}
-          {s.running ? (
+          {s.running || stalled ? (
             <button
               type="button"
               className={action}
@@ -88,19 +108,30 @@ export function RecorderMenu() {
               onClick={() => act.mutate('stop')}
               title="Stops the recorder; what is recorded so far stays"
             >
-              Stop
+              {s.automatic ? 'Stop (and stop recording automatically)' : 'Stop'}
             </button>
           ) : target ? (
-            <button
-              type="button"
-              className={action}
-              disabled={act.isPending || !s.signed_in}
-              onClick={() => act.mutate(s.current ? 'start' : 'wait')}
-            >
-              {s.current
-                ? `Record ${name(target)} now`
-                : `Record ${name(target)} when it starts (${when.format(new Date(target.start_utc))})`}
-            </button>
+            <>
+              <button
+                type="button"
+                className={action}
+                disabled={act.isPending || !s.signed_in}
+                onClick={() => act.mutate('always')}
+                title="Waits for each session and records it, until you stop it here. Starts again after the Mac restarts (once the backend runs)."
+              >
+                Record every session automatically
+              </button>
+              <button
+                type="button"
+                className={action}
+                disabled={act.isPending || !s.signed_in}
+                onClick={() => act.mutate(s.current ? 'now' : 'wait')}
+              >
+                {s.current
+                  ? `Only ${name(target)}, now`
+                  : `Only ${name(target)} (${when.format(new Date(target.start_utc))})`}
+              </button>
+            </>
           ) : (
             <p className="text-dim">No sessions left in the calendar.</p>
           )}
@@ -111,8 +142,9 @@ export function RecorderMenu() {
             </pre>
           ) : null}
           <p className="text-[10px] leading-snug text-faint">
-            The recorder runs on its own: restarting the backend does not stop it. In a terminal:{' '}
-            <span className="font-mono">make live</span>.
+            The recorder runs on its own: restarting the backend does not stop it. The Mac stays
+            awake while it records and from 2 h before a session it waits for; a closed MacBook on
+            battery sleeps anyway. In a terminal: <span className="font-mono">make live</span>.
           </p>
         </div>
       )}
