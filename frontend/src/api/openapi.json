@@ -6246,6 +6246,28 @@
           "open": {
             "type": "boolean",
             "title": "Open"
+          },
+          "step_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Lap"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
           }
         },
         "type": "object",
@@ -6266,7 +6288,9 @@
           "gap",
           "times",
           "typical",
-          "open"
+          "open",
+          "step_lap",
+          "step"
         ],
         "title": "LongRun",
         "description": "A long run in practice: at least 5 laps at pace on one set (a race simulation)."
@@ -7910,6 +7934,28 @@
             ],
             "title": "Slope"
           },
+          "step_lap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Lap"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
           "action": {
             "$ref": "#/components/schemas/ReportAction"
           }
@@ -7923,6 +7969,8 @@
           "median",
           "best",
           "slope",
+          "step_lap",
+          "step",
           "action"
         ],
         "title": "ReportRun",

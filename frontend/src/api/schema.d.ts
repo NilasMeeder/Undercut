@@ -1738,6 +1738,10 @@ export interface components {
             typical: number;
             /** Open */
             open: boolean;
+            /** Step Lap */
+            step_lap: number | null;
+            /** Step */
+            step: number | null;
         };
         /** LongRuns */
         LongRuns: {
@@ -2263,6 +2267,10 @@ export interface components {
             best: number;
             /** Slope */
             slope: number | null;
+            /** Step Lap */
+            step_lap: number | null;
+            /** Step */
+            step: number | null;
             action: components["schemas"]["ReportAction"];
         };
         /**

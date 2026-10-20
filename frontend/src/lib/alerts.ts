@@ -21,7 +21,7 @@ export const ALERT_KINDS = [
   { id: 'gap', label: 'Gap to the car ahead under 1 s (races)' },
   { id: 'ot', label: 'Overtake mode (2026 races)' },
   { id: 'pass', label: 'Passes (races)' },
-  { id: 'pace', label: 'Pace changes (races)' },
+  { id: 'pace', label: 'Pace changes (races and long runs)' },
 ] as const;
 
 export type AlertKind = (typeof ALERT_KINDS)[number]['id'];
@@ -69,7 +69,7 @@ export function buildAlerts(s: AlertSources): Alert[] {
   if (s.race && s.history) out.push(...pitAlerts(s.history), ...gapAlerts(s.history));
   if (s.race && s.passes) out.push(...passAlerts(s.passes));
   if (s.race && s.overtake) out.push(...overtakeAlerts(s.overtake, s.straightMode));
-  if (s.race && s.report) out.push(...paceAlerts(s.report));
+  if (s.report && (s.race || s.report.kind === 'practice')) out.push(...paceAlerts(s.report));
   return out.sort((a, b) => a.time - b.time);
 }
 
@@ -314,9 +314,10 @@ function overtakeAlerts(data: OvertakeChecks, lines: StraightMode | undefined): 
     }));
 }
 
-/** A driver whose pace stepped up or down (the report's pace changes), once the data shows it:
- * after the fifth lap at the new pace. */
+/** A driver whose pace stepped up or down (the report's pace changes; in practice within a long
+ * run), once the data shows it: after the fifth lap at the new pace (practice: the fourth). */
 function paceAlerts(report: SessionReport): Alert[] {
+  const run = report.kind === 'practice' ? 'Long run, since' : 'Since';
   return report.moments
     .filter((m) => m.kind === 'pace' && m.driver != null && m.value != null)
     .map((m) => {
@@ -329,7 +330,7 @@ function paceAlerts(report: SessionReport): Alert[] {
         time: m.known ?? m.t,
         drivers: m.other ? [m.driver!, m.other] : [m.driver!],
         title: `${quicker ? 'QUICKER' : 'SLOWER'} ${Math.abs(step).toFixed(1)} S/LAP`,
-        text: `Since L${m.lap}${cause}`,
+        text: `${run} L${m.lap}${cause}`,
         tone: 'plain' as const,
       };
     });

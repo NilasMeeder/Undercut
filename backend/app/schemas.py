@@ -1274,6 +1274,9 @@ class ReportRun(BaseModel):
     best: float
     slope: float | None
     """Seconds per lap the run got slower (fuel burn and tyres together); null under 5 laps."""
+    step_lap: int | None
+    """Where the run's pace stepped (see LongRun)."""
+    step: float | None
     action: ReportAction
 
 
@@ -1310,7 +1313,7 @@ ReportMomentKind = Literal["fast_stop", "slow_stop", "start", "undercut", "flag"
 
 
 class ReportMoment(BaseModel):
-    """Something that happened in a race, at a moment on the clock."""
+    """Something that happened in a race (or a long run in practice), at a moment on the clock."""
 
     kind: ReportMomentKind
     t: float
@@ -1320,14 +1323,14 @@ class ReportMoment(BaseModel):
     """The other car (undercut: the one that was passed; pace: the car it caught or got free of)."""
     value: float | None
     """Pit lane seconds (stops), places gained or lost (start), s/lap against the field (pace,
-    negative = quicker)."""
+    negative = quicker; practice: against the run's own trend)."""
     status: TrackStatus | None
     """Flags: sc, vsc or red."""
     until_lap: int | None
     action: ReportAction
     known: float | None = None
     """Session time (s) from which the data shows it, if later than t (pace: the line after the
-    fifth lap at the new pace)."""
+    fifth lap at the new pace; in a practice run the fourth)."""
 
 
 class SessionReport(BaseModel):
@@ -1344,7 +1347,7 @@ class SessionReport(BaseModel):
     clipping: list[ReportClipping]
     """2026 on; most cost first."""
     moments: list[ReportMoment]
-    """Races only, in time order."""
+    """In time order. Races; in practice the long runs whose pace steps (kind pace)."""
 
 
 class TyreUse(BaseModel):
@@ -1486,6 +1489,11 @@ class LongRun(BaseModel):
     """The lap nearest the median, to compare."""
     open: bool
     """The set is still on the car at the cutoff (no in-lap yet): the run may go on."""
+    step_lap: int | None
+    """The run's pace stepped from this lap on (see pace.py: against the run's own trend, so
+    not the tyres wearing or the fuel burning off gradually); null if it did not."""
+    step: float | None
+    """Seconds a lap of that step (medians of the laps either side, negative = quicker)."""
 
 
 class LongRuns(BaseModel):

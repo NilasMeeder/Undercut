@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from app import schedule, sessions, strategy
+from app import pace, schedule, sessions, strategy
 from app.generations import session_cache
 from app.schemas import Lap, LongRun, LongRuns
 
@@ -21,6 +21,10 @@ BREAK = 2
 
 DENSITY = 0.6
 """Share of a run's laps that must be at pace: push, cool, push, cool is a qualifying run."""
+
+STEP_WINDOW = 4
+"""Laps at pace on either side of a pace change within a run (pace.step; a race uses 5, but
+practice runs are short)."""
 
 
 def blocks(stint_laps: list[Lap], at_pace: set[int]) -> list[list[Lap]]:
@@ -86,8 +90,9 @@ def _run(
     median = float(np.median(times))
     slope = float(np.polyfit(numbers, times, 1)[0]) if np.ptp(numbers) > 0 else None
     first, last = at_pace[0].lap, at_pace[-1].lap
-    pace = {lap.lap: lap.lap_time for lap in at_pace}
+    by_lap = {lap.lap: lap.lap_time for lap in at_pace}
     life = stint_laps[0].tyre_life
+    step = pace.step([lap.lap for lap in at_pace], list(times), STEP_WINDOW)
     return LongRun(
         session=session,
         driver=driver,
@@ -103,9 +108,11 @@ def _run(
         slope=None if slope is None else round(slope, 3),
         deg=None if slope is None else round(slope + burn, 3),
         gap=0.0,
-        times=[pace.get(n) for n in range(first, last + 1)],
+        times=[by_lap.get(n) for n in range(first, last + 1)],
         typical=at_pace[int(np.argmin(np.abs(times - median)))].lap,
         open=not any(lap.pit_in for lap in stint_laps),
+        step_lap=None if step is None else step[0],
+        step=None if step is None else step[1],
     )
 
 

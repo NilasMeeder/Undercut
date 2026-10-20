@@ -634,6 +634,16 @@ Af op 2026-10-19 (alle vier).
 - [x] **Automatische markeringen live** (2026-10-20): `/report` live hooguit elke 20 s opnieuw (niet
       bij elke omzetting), id's als hash zodat een markering dezelfde blijft. Getest met de
       simulator (Austin 2025 R)
+- [x] **Tempo-omslagen in long runs** (2026-10-20, `pace.py`, `LongRun.step_lap`/`step`,
+      `reports.run_pace_changes`): een long run in de training die ≥ 0,7 s/lap omslaat tegen zijn
+      eigen lijn, 4 laps aan elke kant. In Long runs (streepje + "+2.0 L16"), Report, als
+      automatische markering en als melding ("Long run, since L16"). Zeldzaam: 6 van 760 runs in
+      2025–2026 (RUS China FP1 L16 +2,0, VER Qatar FP1 L16 −1,2). Getest in headless Chrome
+      (Long runs, Report, toast in Pitwall-replay van China FP1)
+- [x] ~~**Tempo-omslagen in de Forecast**~~ (2026-10-20, verworpen): een auto die zijn stintfit
+      verlaat op het nieuwe niveau voorspellen maakt de Forecast niet beter (alle races 2025–2026:
+      plaatsen ernaast gelijk, het gat aan de vlag van die auto's slechter, mediaan 8,3 → 10,8 s).
+      Zie CLAUDE.md "Strategie", Forecast
 
 ## Later / backlog
 
@@ -647,7 +657,6 @@ Af op 2026-10-19 (alle vier).
 
 ## Ideeën (later, misschien)
 
-- Tempo-omslagen ook in Practice (long runs: een run die omslaat) en in de Forecast (een auto die
-  zijn stintfit verlaat)
+- (leeg)
 
 

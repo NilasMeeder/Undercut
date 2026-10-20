@@ -58,3 +58,13 @@ def test_two_slow_laps_in_a_row_end_a_run():
     times = [92.0, 82.5, 82.6, 100.0, 100.0] + [84.0] * 6
     [run] = longruns.find_runs(driver_race("HAM", times), "FP2")
     assert (run.start_lap, run.laps) == (6, 6)
+
+
+def test_a_run_whose_pace_steps():
+    # RUS (China 2025 FP1): four laps at 95.6, then 97.6 from lap 6 on; VER steady degradation.
+    noise = [0.05, -0.1, 0.0, 0.1, -0.05, 0.08, -0.08, 0.02, -0.02]
+    rus = driver_race("RUS", [100.0] + [95.6 + 2.0 * (i >= 4) + e for i, e in enumerate(noise)])
+    ver = driver_race("VER", [100.0] + [95.0 + 0.1 * i + e for i, e in enumerate(noise)])
+    runs = {r.driver: r for r in longruns.find_runs(rus + ver, "FP1")}
+    assert runs["RUS"].step_lap == 6 and runs["RUS"].step == pytest.approx(2.0, abs=0.15)
+    assert runs["VER"].step_lap is None and runs["VER"].step is None

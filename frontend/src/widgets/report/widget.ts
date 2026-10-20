@@ -16,7 +16,9 @@ export const reportWidget = defineWidget<ReportConfig>({
       'Where the time is: the best lap of the ten quickest drivers against the fastest lap, and ' +
         'the corner where each loses most (laps with broken telemetry are left out).',
       'Long runs (practice): five or more laps at pace on one set, per compound, by the median ' +
-        'lap; the trend is per lap, fuel burn and tyres together (the fuel load is unknown).',
+        'lap; the trend is per lap, fuel burn and tyres together (the fuel load is unknown). A ' +
+        'run whose pace steps (0.7 s a lap or more, four laps either side, against the run’s ' +
+        'own trend) says from which lap: a set that went off, a change of fuel or engine mode.',
       'Degradation: the field per compound and the stints that stand out, fuel-corrected (see ' +
         'Race pace).',
       'Clipping (2026): who loses most to the battery running out on the straights, against the ' +

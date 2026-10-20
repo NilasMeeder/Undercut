@@ -34,8 +34,8 @@ preset Debrief (zie "Werkplekken"). Fase 10 (2026-10-18): Q-cut en voorspelde la
 Qualifying-presets (Analyse en Pitwall), Mini-sectors, Tyre sets, Speed map, Teammates, Battles,
 Weekend en Release (zie ROADMAP.md fase 10 en de secties hieronder). Fase 11: de straight-mode-zones
 van de FIA (2026) op de kaart en in Telemetry/Delta (zie "Straight mode"). Fase 14 (2026-10-19): Starts naast de
-tabel in een laag paneel en bij herstarts na rood, analyse-presets naar schermgrootte en
-automatische markeringen uit Report (zie ROADMAP.md fase 14).
+tabel in een laag paneel en bij herstarts na rood, analyse-presets naar schermgrootte,
+automatische markeringen uit Report en tempo-omslagen (races en long runs; zie ROADMAP.md fase 14).
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
@@ -162,6 +162,7 @@ backend/app/evolution.py   baanevolutie in Q (fit per push-lap: driver + band + 
 backend/app/stewards.py    race control → deleted laps, zwart-wit, incidenten en straffen (zie "Stewards")
 backend/app/reports.py     sessieverslag (/report): waar de tijd zit, long runs, degradatie, clipping, race-momenten;
                            pure functies (long_runs, start_moves, stop_extremes, undercuts, flags) getest
+backend/app/pace.py        tempo-omslagen (puur): `step` (lijn met sprong), `changes` (per stint tegen het veld)
 backend/app/strategy.py    pure strategie-logica: history (gaps, posities, stints, stops), degradatie-fits,
                            pit window (rejoin, undercut/overcut); strategies.py: per sessie + lru_cache
 backend/app/live/          live (fase 7): feed.py (opnameformaat, tail), record.py (recorder), simulate.py (archief →
@@ -673,7 +674,7 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   zonder brandstofcorrectie. Degradatie: de stintfits van Race pace (≥ 8 laps). Clipping: alleen
   2026. Race-momenten: start (≥ 3 plaatsen), snelste/traagste stop (groen, < 60 s), undercuts (achter
   binnen 3 s, eerst gestopt, de ander ≤ 4 laps later, na beider stops ervoor; op gaps, niet posities),
-  SC/VSC/rood, en **tempo-omslagen** (`pace_changes`, `pace`, fase 14): per stint de schone laps min
+  SC/VSC/rood, en **tempo-omslagen** (`pace.changes`/`pace.step`, moment `pace`, fase 14): per stint de schone laps min
   de mediaan van het veld op die lap (≥ 5 schone laps; brandstof, baan en weer vallen weg), uitschieters
   (> 1 s van de mediaan van de vijf eromheen) eruit, dan een lijn met een sprong tegen een gewone lijn
   (de eigen degradatie blijft in de helling): de beste breuk met ≥ 5 laps aan elke kant, sprong ≥ 0,7
@@ -683,6 +684,11 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   binnen 1,2 s bleef (trager, "behind") of die hem ophield tot de breuk (sneller, "free of"), uit de
   gaps. `known` = de lijn na de vijfde lap op het nieuwe tempo (dan pas zichtbaar; Meldingen). 0–10
   per race over 2025–2026; Austin 2025: ANT L14 +1,3 achter HAD, HAD L51 −1,0 vrij van GAS.
+  **In de trainingen** (`run_pace_changes`): een long run waarvan het tempo omslaat (zie "Long
+  runs") is ook een moment `pace` (zonder `other`, `known` na de vierde lap), zodat Meldingen en de
+  automatische markeringen hem hebben; Report toont dan geen sectie "Race" maar zet het achter de
+  run ("2.0 s a lap slower from lap 16"). Niet in de Forecast: getoetst en verworpen (zie
+  "Strategie", Forecast).
 
 ## Straight mode (fase 11)
 
@@ -788,6 +794,12 @@ Klik: een run van deze sessie zet zijn typische lap (dichtst bij de mediaan) in 
 een eerdere sessie de beste lap van die driver hier (lap-refs zijn per sessie). Monza 2025 FP2:
 de baan wordt sneller, dus veel runs hebben een negatieve DEG. `reports.long_runs` (Report,
 Weekend) gebruikt `find_runs`.
+**Tempo-omslag** (fase 14, `step_lap`, `step`): `pace.step` op de ruwe laptijden van de laps at
+pace (brandstof en baan zitten in de helling), met `STEP_WINDOW` 4 laps aan elke kant (een race
+gebruikt 5, maar runs zijn kort). Sweep 2025–2026 (alle FP die TracingInsights heeft, 760 runs):
+venster 5 vond er 3 (74 runs lang genoeg), 4 vond er 6 (206), 3 vond er 25 (vooral push-cool-
+jojo). Echt: RUS China 2025 FP1 L16 +1,97, VER Qatar FP1 L16 −1,24, GAS Mexico FP2 L22 +0,85.
+Widget: een streepje in het lijntje en "+2.0 L16" erachter.
 
 ## Baanevolutie (fase 13)
 
@@ -884,7 +896,8 @@ terug, of verder dan snelheid × 2 + 3 s) toont niets: dan geldt precies alles v
 gezien. Live komt data een paar seconden na het moment binnen, dus tot 30 s (`LOOKBACK`) achter de
 klok telt nog. Sleutels zijn stabiel over live-verversingen (driver + lap, of de tijd van het bericht).
 Snelste lap: in races vanaf lap 3, verwijderde laps niet. Tempo-omslag (`pace`, uit `/report`): op
-`known`, de lijn na de vijfde lap op het nieuwe tempo, niet op het begin van de omslag. Gat < 1 s: op de lijn, van ≥ 1 s de lap
+`known`, de lijn na de vijfde lap op het nieuwe tempo, niet op het begin van de omslag; in de
+trainingen ook (een long run die omslaat, "Long run, since L16", na de vierde lap). Gat < 1 s: op de lijn, van ≥ 1 s de lap
 ervoor naar < 1 s tegen dezelfde auto, niet op pit-laps. Deleted laps, gaten, OT en passes standaard
 alleen voor de drivers in de link-groepen. 9 s per toast, max 4, klik = weg.
 
@@ -926,7 +939,8 @@ erbinnen), dubbelklik op de klokbalk, of het potlood in het Markers-paneel. Tags
 **Automatische markeringen** (fase 14, `lib/autoMarkers.ts`, `useAllMarkers` in `api/markers.ts`,
 `store/autoMarkers.ts`, localStorage `f1dash-auto-markers`, standaard aan): wat `/report` vindt
 als markeringen, niet opgeslagen (negatieve id, tag `auto`): elk race-moment (start, snelste en
-traagste stop, undercut, SC/VSC/rood als periode) op de klok, en per driver de bocht waar zijn
+traagste stop, undercut, tempo-omslag, SC/VSC/rood als periode; in de trainingen de long runs die
+omslaan) op de klok, en per driver de bocht waar zijn
 beste lap het meest verliest als bereik op die lap (het zoombereik van Report). Klokbalk, charts,
 kaart, Track line, Readout en Markers gebruiken `useAllMarkers`; een automatische
 afstandsmarkering alleen als zijn lap in de groep gekozen is (`distanceMarks`), anders zou elke
@@ -1017,6 +1031,13 @@ Modelkeuzes (in de (i)-uitleg van de widgets ook):
   het veld op hard is vroeg in de race de achterhoede). Volgorde op laps bij de vlag en lijntijd;
   PASSES = auto's die nu voor staan en eindigen erachter, met de lap vanaf waar hij blijvend
   voor ligt (de UI zegt "(stop)" als dat de aangenomen stop van de ander is).
+  **Tempo-omslagen volgen** (fase 14, geprobeerd en verworpen): de huidige set met een sprong in
+  de fit (helling over de hele stint, niveau na de omslag; trager achter een auto niet, want hier
+  houdt niemand iemand op). Over alle races van 2025–2026 op 40/60/80% van de race: gemiddeld
+  2,81/2,00/1,31 plaatsen ernaast, met omslagen 2,81/2,03/1,31; alleen snellere of alleen tragere
+  hetzelfde. Het gat aan de vlag van de 40 auto's met een gevolgde omslag: mediaan 8,3 s ernaast
+  zonder, 10,8 s met (sneller 8,0 → 15,5, trager 8,9 → 7,1). Een omslag houdt dus niet stand tot
+  de vlag (verkeer, banden, een stop die het tempo terugzet).
 - **Safety car** (`strategy.pit_calculator`, `/pit-calculator?until=&status=sc|vsc|green`, widget
   `safetycar`): per rijdende auto `_rejoin` op de gaps bij de cutoff + het pitverlies van die
   status (`strategies.pit_losses`), `owes_stop`, `in_pit` (laatste lap een in-lap: geen rejoin).

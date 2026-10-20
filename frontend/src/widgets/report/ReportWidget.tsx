@@ -125,7 +125,7 @@ function Report({ group, data }: { group: GroupId; data: SessionReport }) {
   if (empty) return <PanelMessage>Nothing stands out in this session’s data.</PanelMessage>;
   return (
     <div className="text-[11px] leading-snug">
-      {data.moments.length > 0 ? (
+      {data.moments.length > 0 && data.kind === 'race' ? (
         <Section title="Race">
           {data.moments.map((m, i) => (
             <Line

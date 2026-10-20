@@ -53,6 +53,7 @@ type Toast = { alert: Alert; id: number };
 export function AlertToasts() {
   const session = useSessionKey();
   const race = session?.session === 'R' || session?.session === 'S';
+  const practice = session?.session.startsWith('FP') ?? false;
   const { on, kinds, allCars } = useAlerts();
   const laps = useLaps().data;
   const history = useRaceHistory().data;
@@ -62,7 +63,7 @@ export function AlertToasts() {
   const passes = usePasses(on && race && kinds.pass).data;
   const lines = useStraightMode(on && race && kinds.ot && (session?.year ?? 0) >= 2026).data;
   const overtake = useOvertake(on && race && kinds.ot && lines?.overtake != null).data;
-  const report = useReport(on && race && kinds.pace).data;
+  const report = useReport(on && (race || practice) && kinds.pace).data;
   const groupLaps = useGroups((s) => s.laps);
 
   const alerts = useMemo(() => {

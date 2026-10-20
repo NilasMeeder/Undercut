@@ -25,6 +25,10 @@ export const longRunsWidget = defineWidget<LongRunsConfig>({
         'a new set.',
       'A gap in the little line is a lap not at pace (traffic, a cool lap) in the middle of the ' +
         'run; it stays out of the median.',
+      'A tick in the little line and +1.9 L16 after it: the pace stepped from that lap on, by ' +
+        'that much a lap (medians of the four laps either side), against the run’s own trend, ' +
+        'so not the tyres wearing or the fuel burning off gradually. A set that went off, a ' +
+        'change of fuel or engine mode. DEG then mixes both levels.',
       'The runs count up to the session clock, so in a replay or live they grow lap by lap; a ' +
         'run still on its set has a dot after its laps.',
     ],

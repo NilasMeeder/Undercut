@@ -81,21 +81,6 @@ def test_long_runs_in_practice():
     assert lec_run.action.laps[1].startswith("LEC:")
 
 
-NOISE = [0.05, -0.1, 0.0, 0.1, -0.05, 0.08, -0.08, 0.02, -0.02, 0.06, -0.06, 0.04]
-
-
-def test_pace_step_quicker_and_not_a_ramp():
-    laps = list(range(10, 22))
-    step = [(0.6 if n < 16 else -0.4) + e for n, e in zip(laps, NOISE, strict=True)]
-    assert reports.pace_step(laps, step) == (16, pytest.approx(-1.0, abs=0.1))
-    # Degradation of 0.1 s a lap is the stint's own trend, not a step.
-    ramp = [0.1 * (n - 10) + e for n, e in zip(laps, NOISE, strict=True)]
-    assert reports.pace_step(laps, ramp) is None
-    # A single slow lap (traffic) is left out, not a change.
-    one = [e + (3.0 if n == 15 else 0.0) for n, e in zip(laps, NOISE, strict=True)]
-    assert reports.pace_step(laps, one) is None
-
-
 def test_pace_change_behind_a_slower_car():
     # NOR catches SLO (20 s ahead after lap 1, 2 s a lap slower) and is held up from lap 11.
     field = [driver_race(d, [81.0] * 16) for d in ("ALB", "SAI", "OCO", "GAS")]
@@ -109,3 +94,13 @@ def test_pace_change_behind_a_slower_car():
     assert moment.action.laps[0].startswith("NOR:") and moment.action.t < moment.t
     [own] = [d for d in history.drivers if d.driver == "NOR"]
     assert moment.known == own.line[own.laps.index(moment.lap + 4)]  # the fifth lap's line
+
+
+def test_a_practice_run_whose_pace_steps_is_a_moment():
+    noise = [0.05, -0.1, 0.0, 0.1, -0.05, 0.08, -0.08, 0.02, -0.02]
+    rus = driver_race("RUS", [100.0] + [95.6 + 2.0 * (i >= 4) + e for i, e in enumerate(noise)])
+    [moment] = reports.run_pace_changes(rus)
+    assert (moment.kind, moment.driver, moment.lap, moment.other) == ("pace", "RUS", 6, None)
+    assert moment.value == pytest.approx(2.0, abs=0.15)
+    assert moment.t == rus[5].start_time and moment.known == rus[8].end_time  # 4th lap after
+    assert moment.action.laps == ["RUS:5", "RUS:6"]

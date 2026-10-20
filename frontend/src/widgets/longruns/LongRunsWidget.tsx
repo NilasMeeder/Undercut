@@ -187,7 +187,18 @@ export function LongRunsWidget({ group, config }: WidgetProps<LongRunsConfig>) {
                         : ''}
                   </td>
                   <td className="px-1.5 py-[1px]">
-                    <Spark run={r} low={floor.get(r.compound)!} burn={burn} drivers={drivers} />
+                    <span className="inline-flex items-center gap-1">
+                      <Spark run={r} low={floor.get(r.compound)!} burn={burn} drivers={drivers} />
+                      {r.step != null && r.step_lap != null ? (
+                        <span
+                          className="text-[10px] text-dim"
+                          title={`Pace ${r.step < 0 ? 'quicker' : 'slower'} by ${Math.abs(r.step).toFixed(2)} s a lap from lap ${r.step_lap}`}
+                        >
+                          {r.step >= 0 ? '+' : '−'}
+                          {Math.abs(r.step).toFixed(1)} L{r.step_lap}
+                        </span>
+                      ) : null}
+                    </span>
                   </td>
                 </tr>
               );
@@ -253,8 +264,13 @@ function Spark({
     pen = true;
   });
   const color = drivers.find((dr) => dr.code === run.driver)?.color ?? COLORS.textDim;
+  // Where the pace stepped: between the last lap before and the first at the new pace.
+  const tick = run.step_lap != null ? x(run.step_lap - run.start_lap - 0.5) : null;
   return (
     <svg width={SPARK_W} height={SPARK_H} className="block">
+      {tick != null ? (
+        <line x1={tick} x2={tick} y1={0} y2={SPARK_H} stroke={COLORS.textDim} strokeWidth={1} />
+      ) : null}
       <path d={d} fill="none" stroke={color} strokeWidth={1.2} strokeLinejoin="round" />
     </svg>
   );

@@ -29,8 +29,9 @@ function stableId(what: string, taken: Set<number>): number {
 
 /**
  * The session report's findings as markers: every race moment (start, quickest and slowest
- * stop, undercuts, pace changes, safety car, VSC and red flag) on the clock, and for each driver where his
- * best lap loses most to the fastest as a range on that lap.
+ * stop, undercuts, pace changes, safety car, VSC and red flag) and in practice every long run
+ * whose pace steps on the clock, and for each driver where his best lap loses most to the
+ * fastest as a range on that lap.
  */
 export function autoMarkers(report: SessionReport, key: SessionKey): Marker[] {
   const base = {

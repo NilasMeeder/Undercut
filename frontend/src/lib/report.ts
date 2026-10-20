@@ -38,11 +38,17 @@ export function cornerLine(c: ReportCorner): string {
 
 const slope = (s: number) => `${s >= 0 ? '+' : '−'}${Math.abs(s).toFixed(3)} s/lap`;
 
+/** "1.3 s a lap slower from lap 14": a pace change (race moment or long run). */
+export const stepPhrase = (step: number, lap: number) =>
+  `${Math.abs(step).toFixed(1)} s a lap ${step < 0 ? 'quicker' : 'slower'} from lap ${lap}`;
+
 export function runLine(run: ReportRun, quickest: ReportRun): string {
   const diff = run.median - quickest.median;
   const pace = run === quickest ? formatLapTime(run.median) : `+${diff.toFixed(3)}`;
   const trend = run.slope == null ? '' : `, ${slope(run.slope)}`;
-  return `${run.driver} ${pace} over ${run.laps} laps (best ${formatLapTime(run.best)}${trend})`;
+  const step =
+    run.step != null && run.step_lap != null ? `; ${stepPhrase(run.step, run.step_lap)}` : '';
+  return `${run.driver} ${pace} over ${run.laps} laps (best ${formatLapTime(run.best)}${trend}${step})`;
 }
 
 export function stintLine(s: ReportStint): string {
@@ -77,9 +83,8 @@ export function momentLine(m: ReportMoment): string {
       return `${m.driver} undercuts ${m.other}: stopped first and came out ahead.`;
     case 'pace': {
       const step = m.value ?? 0;
-      const quicker = step < 0;
-      const cause = m.other ? (quicker ? `, free of ${m.other}` : `, behind ${m.other}`) : '';
-      return `${m.driver} ${Math.abs(step).toFixed(1)} s a lap ${quicker ? 'quicker' : 'slower'} from lap ${m.lap}${cause}.`;
+      const cause = m.other ? (step < 0 ? `, free of ${m.other}` : `, behind ${m.other}`) : '';
+      return `${m.driver} ${stepPhrase(step, m.lap ?? 0)}${cause}.`;
     }
     case 'flag': {
       const laps = m.until_lap != null && m.until_lap !== m.lap ? `–${m.until_lap}` : '';
