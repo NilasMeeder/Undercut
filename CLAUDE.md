@@ -451,7 +451,7 @@ Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessiek
   op de timinglijnen en dan stond het getal stil (Nilas); de volgorde blijft uit de tower, en
   gelapt, in de pit of zonder spoor geldt het interval van de tower. Q/FP: verschil in beste lap. Grijs = geen auto ervoor (P1) of erachter. De SVG heeft de pixelmaat van
   het paneel en `livedelta/arrange.ts` kiest de indeling naar de vorm (Nilas: "een soort blok"):
-  `stack` (gaps boven en onder, driver naast de delta), `tall` (alles onder elkaar), `row` (≥ 3,2×
+  `stack` (gaps boven en onder, driver naast de delta), `tall` (alles onder elkaar), `row` (≥ 4×
   zo breed als hoog: voor | delta | achter) of `mini` (alleen de delta); lettergroottes passen op
   het aantal tekens. De lap-logica (2 s vooruit, afgeronde lap 3 s
   vasthouden) zit in `widgets/livelap/useLiveLap.ts`, gedeeld met Live lap.

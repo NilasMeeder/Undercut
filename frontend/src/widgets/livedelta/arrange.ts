@@ -37,12 +37,12 @@ export function arrange(w: number, h: number): Arrangement {
   const pad = Math.max(4, Math.round(Math.min(w, h) * 0.04));
   const inner = w - 2 * pad;
 
-  if (w < 170 || (h < 90 && w < 300)) {
+  if (w < 140 || h < 56) {
     const size = fit(inner, DELTA_CHARS, h * 0.8);
     return { kind: 'mini', delta: { x: w / 2, y: h / 2 + size * 0.36, size, anchor: 'middle' } };
   }
 
-  if (w >= 3.2 * h) {
+  if (w >= 4 * h) {
     // Three columns: the gaps on the outside, the delta in the middle.
     const side = w * 0.24;
     const gapSize = fit(side, GAP_CHARS, h * 0.42);
