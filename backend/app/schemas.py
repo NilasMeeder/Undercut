@@ -1217,6 +1217,22 @@ class ScheduledSession(BaseModel):
     start_utc: datetime
 
 
+class RecordingHealth(BaseModel):
+    """How the recording of the session on now is doing (whoever records it)."""
+
+    session: str
+    last_write: datetime
+    """When the recording last grew. F1 sends heartbeats, so even a quiet feed grows."""
+    feed_utc: datetime | None
+    """The newest time stamp F1 put in it: `last_write` minus this is how far the feed lags."""
+    size: int
+    """Bytes."""
+    reconnects: int
+    """Times the recorder reconnected since it started on this session (from its log)."""
+    error: str | None
+    """Converting the recording failed (the backend keeps trying)."""
+
+
 class RecorderStatus(BaseModel):
     """The live recorder (app/live/record.py), started from the top bar or with `make live`."""
 
@@ -1230,12 +1246,16 @@ class RecorderStatus(BaseModel):
     since: datetime | None
     signed_in: bool
     """Signed in to F1 TV (FastF1's login); without it the feed has no data."""
+    sign_in_expires: datetime | None
+    """When the F1 TV sign-in runs out (then sign in again)."""
     current: ScheduledSession | None
     """The session to record now: from an hour before its start until its end."""
     upcoming: ScheduledSession | None
     """The next session after that."""
     log: list[str]
     """The last lines of the recorder's output."""
+    health: RecordingHealth | None
+    """The recording of `current`, once there is one."""
 
 
 class ReportAction(BaseModel):

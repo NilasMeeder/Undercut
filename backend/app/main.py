@@ -36,7 +36,7 @@ from app import (
     weekend,
     zones,
 )
-from app.live import record, recorder
+from app.live import record, recorder, recordings
 from app.live import service as live
 from app.local_only import LocalOnly
 from app.schemas import (
@@ -67,6 +67,7 @@ from app.schemas import (
     RaceControlMessage,
     RaceHistory,
     RecorderStatus,
+    RecordingHealth,
     ReplayPositions,
     ReplayStatus,
     ScheduledSession,
@@ -752,6 +753,8 @@ def recorder_status() -> RecorderStatus:
     after = current[3] + timedelta(minutes=1) if current is not None else now
     state = recorder.running()
     return RecorderStatus(
+        health=_recording_health(current),
+        sign_in_expires=record.sign_in_expires(),
         running=state is not None,
         mode=state.get("mode", "wait" if state.get("wait") else "now") if state else None,
         automatic=recorder.automatic(),
@@ -760,6 +763,22 @@ def recorder_status() -> RecorderStatus:
         current=_scheduled(current),
         upcoming=_scheduled(record.upcoming_session(after)),
         log=recorder.log_tail(),
+    )
+
+
+def _recording_health(current: tuple[int, int, str, datetime] | None) -> RecordingHealth | None:
+    if current is None:
+        return None
+    year, round_number, code, _ = current
+    event, info = schedule.resolve_session(year, round_number, code)
+    found = recorder.recording_health(recordings.recording_path(year, event.name, info.name))
+    if found is None:
+        return None
+    session = live.service.get((year, round_number, code))
+    return RecordingHealth(
+        session=f"{event.name} {info.name}",
+        error=session.error if session is not None else None,
+        **found,
     )
 
 

@@ -332,6 +332,13 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
   `tests/conftest.py` zet `config.LIVE_DIR` op een tijdelijke map (anders start een test-backend
   met lifespan de echte recorder). Handmatig testen: een backend met een nep-`recorder.command`
   (een slapend proces), zoals de API-test.
+- **Gezondheid** (fase 15, `RecorderStatus.health`, `recorder.recording_health`): van de opname van
+  de sessie die nu bezig is (wie hem ook opneemt): wanneer `live.txt` het laatst groeide (F1 stuurt
+  heartbeats, dus > 60 s stil = vast: REC wordt rood gevuld), de nieuwste tijd die F1 erin zette
+  (geschreven − die = vertraging van de feed), grootte, `Reconnecting in` in `recorder.log` sinds
+  de regel `Recording … into <pad> until`, en een fout bij het omzetten. `sign_in_expires`: de `exp`
+  van het F1 TV-token (alleen lokaal gelezen); geel als hij binnen 3 dagen of vóór het einde van de
+  volgende sessie verloopt. Test met de simulator: de vertraging is dan maanden (oude tijden).
 - **Opslag**: `backend/data/live/<jaar>/<event>/<sessie>/` met `live.txt` (de feed zoals FastF1 hem
   schrijft), `meta.json` (jaar, ronde, code) en `converted/` (de archiefbestanden, plus `live.json` met
   het geplande aantal laps, `<DRV>/<lap>_tel.json.gz` en `track-v1.npz`). Niet in `.cache`: na afloop

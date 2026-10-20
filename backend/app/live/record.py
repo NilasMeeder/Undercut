@@ -142,25 +142,45 @@ def wait_for_session(awake: Awake, forever: bool = False) -> tuple[int, int, str
         time.sleep(min(max((wake - now).total_seconds(), 1.0), WAIT_STEP))
 
 
-def signed_in(now: datetime | None = None) -> bool:
-    """A sign-in that has not expired. An expired one would make FastF1 wait for a new sign-in in
-    the browser, and a recorder started from the top bar would hang there unseen."""
+def _token() -> str:
     from fastf1.internals.f1auth import AUTH_DATA_FILE
 
     try:
-        token = AUTH_DATA_FILE.read_text().strip()
+        return AUTH_DATA_FILE.read_text().strip()
     except OSError:
-        return False
+        return ""
+
+
+def signed_in(now: datetime | None = None) -> bool:
+    """A sign-in that has not expired. An expired one would make FastF1 wait for a new sign-in in
+    the browser, and a recorder started from the top bar would hang there unseen."""
+    token = _token()
     return token != "" and not token_expired(token, now or datetime.now(UTC))
 
 
-def token_expired(token: str, now: datetime) -> bool:
-    """Whether the token's `exp` has passed. Only read locally (FastF1 checks the signature)."""
+def sign_in_expires() -> datetime | None:
+    """When the F1 TV sign-in expires (None: not signed in, or no expiry in the token)."""
+    token = _token()
+    return token_expiry(token) if token else None
+
+
+def token_expiry(token: str) -> datetime | None:
+    """The token's `exp`. Only read locally (FastF1 checks the signature)."""
     try:
         expires = jwt.decode(token, options={"verify_signature": False}).get("exp")
     except jwt.PyJWTError:
+        return None
+    return datetime.fromtimestamp(expires, UTC) if isinstance(expires, int | float) else None
+
+
+def token_expired(token: str, now: datetime) -> bool:
+    """Whether the token's `exp` has passed; an unreadable token counts as expired."""
+    try:
+        jwt.decode(token, options={"verify_signature": False})
+    except jwt.PyJWTError:
         return True
-    return isinstance(expires, int | float) and expires <= now.timestamp()
+    expires = token_expiry(token)
+    return expires is not None and expires <= now
 
 
 def main() -> None:

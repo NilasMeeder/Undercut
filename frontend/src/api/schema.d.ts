@@ -2115,10 +2115,34 @@ export interface components {
             since: string | null;
             /** Signed In */
             signed_in: boolean;
+            /** Sign In Expires */
+            sign_in_expires: string | null;
             current: components["schemas"]["ScheduledSession"] | null;
             upcoming: components["schemas"]["ScheduledSession"] | null;
             /** Log */
             log: string[];
+            health: components["schemas"]["RecordingHealth"] | null;
+        };
+        /**
+         * RecordingHealth
+         * @description How the recording of the session on now is doing (whoever records it).
+         */
+        RecordingHealth: {
+            /** Session */
+            session: string;
+            /**
+             * Last Write
+             * Format: date-time
+             */
+            last_write: string;
+            /** Feed Utc */
+            feed_utc: string | null;
+            /** Size */
+            size: number;
+            /** Reconnects */
+            reconnects: number;
+            /** Error */
+            error: string | null;
         };
         /**
          * Rejoin

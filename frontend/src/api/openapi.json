@@ -7456,6 +7456,18 @@
             "type": "boolean",
             "title": "Signed In"
           },
+          "sign_in_expires": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sign In Expires"
+          },
           "current": {
             "anyOf": [
               {
@@ -7482,6 +7494,16 @@
             },
             "type": "array",
             "title": "Log"
+          },
+          "health": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecordingHealth"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7491,12 +7513,69 @@
           "automatic",
           "since",
           "signed_in",
+          "sign_in_expires",
           "current",
           "upcoming",
-          "log"
+          "log",
+          "health"
         ],
         "title": "RecorderStatus",
         "description": "The live recorder (app/live/record.py), started from the top bar or with `make live`."
+      },
+      "RecordingHealth": {
+        "properties": {
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "last_write": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Write"
+          },
+          "feed_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feed Utc"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "reconnects": {
+            "type": "integer",
+            "title": "Reconnects"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session",
+          "last_write",
+          "feed_utc",
+          "size",
+          "reconnects",
+          "error"
+        ],
+        "title": "RecordingHealth",
+        "description": "How the recording of the session on now is doing (whoever records it)."
       },
       "Rejoin": {
         "properties": {

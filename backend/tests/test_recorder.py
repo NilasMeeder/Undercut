@@ -31,6 +31,7 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> TestClient:
     monkeypatch.setattr(config, "LIVE_DIR", tmp_path)
     monkeypatch.setattr(recorder, "command", lambda mode: [sys.executable, "-c", STAND_IN])
     monkeypatch.setattr(record, "signed_in", lambda: True)
+    monkeypatch.setattr(record, "sign_in_expires", lambda: None)
     start = datetime(2026, 10, 23, 17, 30, tzinfo=UTC)
     monkeypatch.setattr(record, "current_session", lambda now: (2026, 19, "FP1", start))
     monkeypatch.setattr(record, "upcoming_session", lambda now: None)
@@ -197,3 +198,41 @@ def test_always_gives_up_on_an_expired_sign_in(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(record, "signed_in", lambda: False)
     monkeypatch.setattr(record, "record_session", lambda *args: pytest.fail("recorded"))
     record.record_always(FakeAwake(), no_auth=False)  # type: ignore[arg-type]
+
+
+def test_the_health_of_the_recording(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.live import feed, recordings
+
+    monkeypatch.setattr(recordings, "LIVE_DIR", config.LIVE_DIR)
+    assert client.get("/api/live/recorder").json()["health"] is None  # nothing recorded yet
+
+    folder = recordings.write_meta(2026, 19, "FP1", "United States Grand Prix", "Practice 1")
+    path = folder / recordings.RECORDING
+    stamp = datetime(2026, 10, 23, 17, 31, 2, 500000, tzinfo=UTC)
+    path.write_text(
+        feed.state_line("SessionInfo", {"Name": "Practice 1"})
+        + "\n"
+        + feed.update_line("Heartbeat", {"Utc": "x"}, stamp)
+        + "\n['CarData.z', 'half a li"
+    )
+    (config.LIVE_DIR / recorder.LOG).write_text(
+        "Reconnecting in 10 s\n"  # an earlier session
+        f"INFO Recording United States Grand Prix Practice 1 into {path} until 19:30 UTC\n"
+        "ERROR The live client stopped\nINFO Reconnecting in 10 s\n"
+        "INFO Reconnecting in 10 s\n"
+    )
+    health = client.get("/api/live/recorder").json()["health"]
+    assert health["session"] == "United States Grand Prix Practice 1"
+    assert health["feed_utc"] == "2026-10-23T17:31:02.500000Z"
+    assert health["reconnects"] == 2
+    assert health["size"] == path.stat().st_size and health["error"] is None
+
+
+def test_when_the_sign_in_runs_out() -> None:
+    import base64
+    import json
+
+    part = base64.urlsafe_b64encode(json.dumps({"exp": 1793000000}).encode()).rstrip(b"=")
+    token = f"eyJhbGciOiJub25lIn0.{part.decode()}.c2ln"
+    assert record.token_expiry(token) == datetime.fromtimestamp(1793000000, UTC)
+    assert record.token_expiry("not a token") is None

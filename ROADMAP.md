@@ -673,8 +673,10 @@ voor het bord.
       een herstart van de Mac, binnen een minuut); de Mac blijft wakker tijdens een opname en vanaf
       2 uur ervoor (caffeinate). Getest met een nep-recorder (gekild → na 29 s weer gestart) en de
       echte `--always` in de wachtstand
-- [ ] **Live-gezondheid in REC**: laatste bericht, aantal keer opnieuw verbonden, hoe lang de
-      F1 TV-login nog geldig is, achterstand van de feed
+- [x] **Live-gezondheid in REC** (2026-10-20): laatste data (> 60 s stil: REC rood gevuld),
+      vertraging van de feed, aantal reconnects, grootte, omzetfout; tot wanneer de F1 TV-login
+      geldig is (geel als hij binnen 3 dagen of vóór de volgende sessie verloopt). Getest met de
+      simulator (Monza R als live) en daarna stil (71 s → rood)
 - [ ] **Archief via het F1 TV-token** (was backlog): sessies die niet in TracingInsights staan en
       niet opgenomen zijn alsnog van livetiming.formula1.com (token alleen naar die host)
 - [ ] **Kampioenschap "as it stands"**: de stand als de race nu zou eindigen

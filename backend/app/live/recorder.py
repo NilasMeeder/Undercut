@@ -21,11 +21,15 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app import config
-from app.live import record
+from app.live import feed, record
 
 STATE = "recorder.json"
 LOG = "recorder.log"
 AUTO = "auto.json"
+TAIL_BYTES = 65536
+"""Bytes at the end of a recording to read for its newest time stamp (CarData.z lines are long)."""
+LOG_BYTES = 262144
+"""How much of the log to read to count reconnects (one session is a few hundred lines)."""
 LOG_LINES = 8
 RECORDER_PROCESS = re.compile(r"[-]m app\.live\.record( |$)", re.MULTILINE)
 """A recorder's command line; not `app/live/recorder.py` open in an editor (pgrep takes a regex)."""
@@ -169,6 +173,50 @@ def resume() -> bool:
         return False
     log.info("Resumed the automatic recorder")
     return True
+
+
+def recording_health(path: Path) -> dict[str, Any] | None:
+    """How a recording is doing: when it last grew, the newest time stamp F1 put in it (written
+    minus that = how far the feed runs behind), its size, and how often the recorder reconnected
+    since it started on this session."""
+    try:
+        size = path.stat().st_size
+        modified = path.stat().st_mtime
+        with path.open("rb") as f:
+            f.seek(max(0, size - TAIL_BYTES))
+            tail = f.read().decode("utf-8", errors="replace")
+    except OSError:
+        return None
+    feed_utc = None
+    for line in reversed(tail.splitlines()):
+        message = feed.parse_line(line)
+        if message is not None and message.utc is not None:
+            feed_utc = message.utc
+            break
+    return {
+        "last_write": datetime.fromtimestamp(modified, UTC),
+        "feed_utc": feed_utc,
+        "size": size,
+        "reconnects": reconnects(str(path)),
+    }
+
+
+def reconnects(recording: str) -> int:
+    """'Reconnecting' in the log since the recorder last started on this recording."""
+    try:
+        with _log_path().open("rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - LOG_BYTES))
+            lines = f.read().decode("utf-8", errors="replace").splitlines()
+    except OSError:
+        return 0
+    count = 0
+    for line in reversed(lines):
+        if f" into {recording} until " in line:
+            break
+        if "Reconnecting in" in line:
+            count += 1
+    return count
 
 
 def log_tail(lines: int = LOG_LINES) -> list[str]:
