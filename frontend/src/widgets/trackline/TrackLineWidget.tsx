@@ -7,6 +7,7 @@ import {
   type PositionTrack,
 } from '@/api/queries';
 import { useDistanceMarks } from '@/api/markers';
+import { isAuto } from '@/lib/autoMarkers';
 import { COLORS } from '@/lib/colors';
 import { carAt, ghostKinds, pitGhost, type GhostKind } from '@/lib/replay';
 import { useGroupLaps, type GroupId } from '@/store/groups';
@@ -68,10 +69,12 @@ function TrackLine({
   const mid = Math.round(height / 2);
   const length = Math.max(width - 2 * PAD, 1);
   const marks = useDistanceMarks(group);
-  // Labels that would overlap go a row down (~5 px per character at 9 px).
+  // Labels that would overlap go a row down (~5 px per character at 9 px). An automatic one is
+  // only its band (its note on hover), as on the map with all cars.
   const markRows = useMemo(() => {
     const ends = [-Infinity, -Infinity, -Infinity];
     return (showMarks ? marks : []).map((mark) => {
+      if (isAuto(mark)) return { mark, row: null };
       const x = PAD + (mark.start / track.lapLength) * length;
       const free = ends.findIndex((end) => end < x);
       const row = free < 0 ? 0 : free;
@@ -150,9 +153,11 @@ function TrackLine({
                   strokeDasharray="3 3"
                 />
               ))}
-              <text x={x0 + 3} y={10 + row * 11} fill={COLORS.textDim} fontSize={9}>
-                {m.label.length > 24 ? `${m.label.slice(0, 23)}…` : m.label}
-              </text>
+              {row == null ? null : (
+                <text x={x0 + 3} y={10 + row * 11} fill={COLORS.textDim} fontSize={9}>
+                  {m.label.length > 24 ? `${m.label.slice(0, 23)}…` : m.label}
+                </text>
+              )}
             </g>
           );
         })}

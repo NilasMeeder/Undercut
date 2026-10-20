@@ -644,6 +644,10 @@ Af op 2026-10-19 (alle vier).
       verlaat op het nieuwe niveau voorspellen maakt de Forecast niet beter (alle races 2025–2026:
       plaatsen ernaast gelijk, het gat aan de vlag van die auto's slechter, mediaan 8,3 → 10,8 s).
       Zie CLAUDE.md "Strategie", Forecast
+- [x] **Verliesbocht in Pitwall zonder tekst** (2026-10-20, keuze Nilas): op de kaart met alle auto's
+      en in de Track line is een automatische markering alleen zijn band (notitie bij hover); de
+      tekst stond over de auto's (Austin T12). In de analyse ongewijzigd. Getest in headless Chrome
+      (race board, Austin 2025 R L29)
 
 ## Later / backlog
 

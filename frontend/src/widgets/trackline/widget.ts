@@ -23,7 +23,8 @@ export const trackLineWidget = defineWidget<TrackLineConfig>({
         'he would rejoin in. Cars just ahead of the ghost are the traffic he would come out in.',
     ],
     controls:
-      'Drivers selected in this link group are drawn in white. Distance markers are grey bands.',
+      'Drivers selected in this link group are drawn in white. Distance markers are grey bands ' +
+      '(an automatic one without its note: hover for it).',
   },
   defaults: { corners: true, markers: true, ghosts: true },
   settings: [

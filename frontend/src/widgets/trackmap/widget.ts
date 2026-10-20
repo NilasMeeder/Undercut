@@ -40,7 +40,8 @@ export const trackMapWidget = defineWidget<TrackMapConfig>({
         'on a straight in Energy, the first lap’s stretch is purple where it probably deployed ' +
         '(it gains more than the engine alone could), faint amber where it clipped and amber ' +
         'where it lost speed at full throttle (superclipping): an estimate.',
-      'Distance markers (Shift + drag in a chart, or m) are drawn as a grey band with their note.',
+      'Distance markers (Shift + drag in a chart, or m) are drawn as a grey band with their note ' +
+        '(an automatic one with “Cars: all” without it: hover for the note).',
       'With “Cars: all” the map shows every car at the session clock instead (replay). The first ' +
         'time, the telemetry of every lap is downloaded once (about 10 s for a race).',
       'DRS zones (off by default, until 2025): a purple stripe along the outside of the track ' +

@@ -22,6 +22,7 @@ import {
   type PositionTrack,
 } from '@/api/queries';
 import { useDistanceMarks } from '@/api/markers';
+import { isAuto } from '@/lib/autoMarkers';
 import { PanelMessage } from '@/components/data/bits';
 import { COLORS } from '@/lib/colors';
 import type { DistanceMark } from '@/lib/markers';
@@ -582,6 +583,7 @@ function TrackMap({
         ) : null}
         {markShapes.map((m) => (
           <g key={m.id} opacity={m.dim ? 0.45 : 1}>
+            <title>{m.label}</title>
             {m.path ? (
               <path
                 d={m.path}
@@ -602,15 +604,18 @@ function TrackMap({
                 strokeWidth={u * 0.4}
               />
             )}
-            <text
-              x={m.at[0]}
-              y={m.at[1] - u * 3.2}
-              fill={COLORS.textDim}
-              fontSize={u * 2.4}
-              textAnchor="middle"
-            >
-              {m.label.length > 28 ? `${m.label.slice(0, 27)}…` : m.label}
-            </text>
+            {/* With all cars an automatic one is only its band (note on hover): text would sit over the cars. */}
+            {cars && isAuto(m) ? null : (
+              <text
+                x={m.at[0]}
+                y={m.at[1] - u * 3.2}
+                fill={COLORS.textDim}
+                fontSize={u * 2.4}
+                textAnchor="middle"
+              >
+                {m.label.length > 28 ? `${m.label.slice(0, 27)}…` : m.label}
+              </text>
+            )}
           </g>
         ))}
         {cars ? <SectorFlags along={geometry.along} unit={u} /> : null}

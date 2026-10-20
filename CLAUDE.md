@@ -944,7 +944,8 @@ omslaan) op de klok, en per driver de bocht waar zijn
 beste lap het meest verliest als bereik op die lap (het zoombereik van Report). Klokbalk, charts,
 kaart, Track line, Readout en Markers gebruiken `useAllMarkers`; een automatische
 afstandsmarkering alleen als zijn lap in de groep gekozen is (`distanceMarks`), anders zou elke
-chart er tien vage hebben. Op de klokbalk gestippeld; dubbelklik of het potlood opent hem als
+chart er tien vage hebben. Op de kaart met alle auto's en in de Track line alleen de band, zonder
+tekst (die stond over de auto's; de notitie bij hover). Op de klokbalk gestippeld; dubbelklik of het potlood opent hem als
 nieuwe markering (zonder `auto`) om te bewaren. AUTO in Markers en in de palette zet ze aan/uit.
 Ook live: `useLiveSession` maakt `/report` hooguit elke 20 s ongeldig (`SLOW`, onder de `LOOKBACK`
 van Meldingen), niet bij elke omzetting. De id's zijn een hash van waar ze over gaan (soort, driver,
