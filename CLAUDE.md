@@ -468,6 +468,20 @@ tower op de klok (uitgevallen = 0), snelste lap uit de laps op de klok, gelijke 
 Volgorde op de baan, dus zonder tijdstraffen. Controle Monza 2025 R aan de finish: PIA 324, NOR 293,
 VER 230 (na ronde 15: 309, 275, 205).
 
+## Pitstop-tijden (fase 15)
+
+Widget Pit stops (`pitstops`, in de Strategy-preset van Analyse naast Starts; FASTEST / LATEST,
+alleen stops waarvan de pit-exit op de klok voorbij is): hoe lang een auto stilstond.
+`app/pitstops.py`, `GET .../pit-stops`: per stop uit `strategies.get_history` (lane ≤ 120 s)
+F1's eigen tijd uit `converted/pit_stops.json` (`convert.pit_stop_columns` uit PitStopSeries, per
+auto een lijst of dict per index met `PitStop: {RacingNumber, PitStopTime, PitLaneTime, Lap}`; de
+vorm komt van andere clients, nog niet uit een eigen opname; F1's Lap = in- of out-lap), anders
+gemeten in de telemetrie van in- en out-lap: eerste tot laatste sample ≤ 1,5 km/h tussen pit-in en
+pit-out, elk eind halverwege naar het sample ervoor/erna (`≈` in de widget). De recorder abonneert
+nu ook op PitStopSeries, PitLaneTimeCollection en ChampionshipPrediction (`record.EXTRA_TOPICS`);
+de simulator stuurt PitStopSeries met de gemeten tijden. Controle Monza 2025 R: NOR L46 ≈5,9 (de
+bekende trage stop), TSU ≈1,7 de snelste, OCO ≈8,6 (5 s straf).
+
 ## Live lap en Follow
 
 Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessieklok:

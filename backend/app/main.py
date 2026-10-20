@@ -18,6 +18,7 @@ from app import (
     longruns,
     overtake,
     passes,
+    pitstops,
     progress,
     radio,
     replays,
@@ -65,6 +66,7 @@ from app.schemas import (
     OvertakeChecks,
     Pass,
     PitCalculator,
+    PitStopTime,
     PitWindow,
     ProgressReference,
     RaceControlMessage,
@@ -799,6 +801,13 @@ def _archive_download(year: int, round: int, session: SessionCode) -> ArchiveDow
         offered=over and not recorded,
         signed_in=record.signed_in(),
     )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/pit-stops")
+def pit_stops(year: int, round: int, session: SessionCode) -> list[PitStopTime]:
+    """Races: how long each car stood in its pit box. F1's own time where the feed has it (live
+    and F1-archive sessions), otherwise measured in the in-lap and out-lap telemetry."""
+    return _guard(lambda: pitstops.get_pit_stops(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/championship")

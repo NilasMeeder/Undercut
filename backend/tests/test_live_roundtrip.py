@@ -171,6 +171,8 @@ def archive(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setattr(ti, "READ_LIVE", False)
     monkeypatch.setattr(schedule, "resolve_session", lambda y, r, c: (EVENT, EVENT.sessions[0]))
     monkeypatch.setattr(replays, "starting_grid", lambda y, r, c: {"VER": 1, "NOR": 2})
+    # No telemetry in the fake archive to measure pit stops in (it would try to download it).
+    monkeypatch.setattr(simulate.Simulation, "_pit_stops", lambda self: [])
     monkeypatch.setattr(fastf1, "get_session", lambda y, r, c: event.get_session("Race"))
     caches = (sessions.folders, sessions.get_t0, sessions.get_detail, sessions.get_laps)
     for cached in (*caches, replays.get_timeline):

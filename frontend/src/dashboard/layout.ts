@@ -473,6 +473,7 @@ function strategy(api: DockviewApi) {
   const pace = addWidget(api, 'pace', 'blue', { referencePanel: gaps, direction: 'right' });
   addWidget(api, 'battles', 'blue', { referencePanel: pace, direction: 'within' });
   addWidget(api, 'starts', 'blue', { referencePanel: pace, direction: 'within' });
+  addWidget(api, 'pitstops', 'blue', { referencePanel: pace, direction: 'within' });
   pace.api.setActive();
   map.group.api.setSize({ width: 470, height: 330 });
   stints.group.api.setSize({ height: 380 });
@@ -567,6 +568,7 @@ function strategyWide(api: DockviewApi) {
     direction: 'below',
   });
   addWidget(api, 'starts', 'blue', { referencePanel: battles, direction: 'within' });
+  addWidget(api, 'pitstops', 'blue', { referencePanel: battles, direction: 'within' });
   battles.api.setActive();
   const height = window.innerHeight - 60;
   // Every column from the left; the last one gets the rest.

@@ -3256,6 +3256,78 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/pit-stops": {
+      "get": {
+        "summary": "Pit Stops",
+        "description": "Races: how long each car stood in its pit box. F1's own time where the feed has it (live\nand F1-archive sessions), otherwise measured in the in-lap and out-lap telemetry.",
+        "operationId": "pit_stops_api_sessions__year___round___session__pit_stops_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PitStopTime"
+                  },
+                  "title": "Response Pit Stops Api Sessions  Year   Round   Session  Pit Stops Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/championship": {
       "get": {
         "summary": "Championship",
@@ -7346,6 +7418,77 @@
           "status"
         ],
         "title": "PitStop"
+      },
+      "PitStopTime": {
+        "properties": {
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          },
+          "lap": {
+            "type": "integer",
+            "title": "Lap"
+          },
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "lane": {
+            "type": "number",
+            "title": "Lane"
+          },
+          "stationary": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stationary"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "f1",
+                  "telemetry"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "sc",
+              "vsc",
+              "vsc_ending",
+              "red",
+              "chequered"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver",
+          "lap",
+          "t",
+          "lane",
+          "stationary",
+          "source",
+          "status"
+        ],
+        "title": "PitStopTime",
+        "description": "How long a car stood in its pit box (app/pitstops.py)."
       },
       "PitWindow": {
         "properties": {

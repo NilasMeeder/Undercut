@@ -686,7 +686,10 @@ voor het bord.
       constructeurs) met de stand vóór de sessie (Jolpica + sprint) en de punten van de volgorde op
       de klok, ▲▼ tegen vóór de sessie; in de Strategy-preset van Analyse. Getest op Monza 2025 R
       (finish: PIA 324, NOR 293, VER 230) en Austin 2025 R (vóór: na ronde 18 en de sprint)
-- [ ] **Pitstop-tijden**: de stilstand per stop uit de feed (PitStopSeries), alleen in opnames
+- [x] **Pitstop-tijden** (2026-10-20): widget Pit stops met de stilstand per stop: F1's tijd
+      uit PitStopSeries (de recorder abonneert er nu op; ook in F1-archief-downloads), anders
+      gemeten in de telemetrie (≈, voor elke race). Monza 2025 R: NOR ≈5,9, TSU ≈1,7. Getest in
+      headless Chrome en met de simulator (19 stops, bron F1)
 - [ ] **Team radio als tekst**: lokaal transcriberen (Whisper), doorzoekbaar, tekst bij de clip
 
 ## Later / backlog

@@ -106,6 +106,7 @@ export type LiveSessionInfo = Schemas['LiveSessionInfo'];
 export type RecorderStatus = Schemas['RecorderStatus'];
 export type ArchiveDownload = Schemas['ArchiveDownload'];
 export type Championship = Schemas['Championship'];
+export type PitStopTime = Schemas['PitStopTime'];
 export type ScheduledSession = Schemas['ScheduledSession'];
 export type LapProgress = Schemas['LapProgress'];
 export type LapPrediction = Schemas['LapPrediction'];

@@ -390,6 +390,45 @@ def clock_columns(messages: list[Message], origin: datetime) -> dict[str, list]:
 STATIC = "https://livetiming.formula1.com/static/"
 
 
+def _number(value: object) -> float | None:
+    try:
+        return float(str(value))
+    except ValueError:
+        return None
+
+
+def pit_stop_columns(messages: list[Message], numbers: dict[str, str]) -> dict[str, list]:
+    """pit_stops.json (only recordings have it) from F1's PitStopSeries: per car a list of stops
+    (updates: a dict by index), each {Timestamp, PitStop: {RacingNumber, PitStopTime (stood
+    still, s), PitLaneTime (s), Lap}}. Read leniently: the shape is known from other clients,
+    not yet from a recording of ours."""
+    stops: dict[tuple[str, str], dict] = {}
+    for message in messages:
+        if message.topic != "PitStopSeries" or not isinstance(message.data, dict):
+            continue
+        for number, found in (message.data.get("PitTimes") or {}).items():
+            items = enumerate(found) if isinstance(found, list) else (found or {}).items()
+            for key, entry in items:
+                if isinstance(entry, dict):
+                    stop = entry.get("PitStop", entry)
+                    if isinstance(stop, dict):
+                        merged = stops.get((str(number), str(key)), {}) | stop
+                        stops[(str(number), str(key))] = merged
+    columns: dict[str, list] = {"drv": [], "lap": [], "stationary": [], "lane": []}
+    for (number, _), stop in sorted(
+        stops.items(), key=lambda item: (item[0][0], int(item[0][1]) if item[0][1].isdigit() else 0)
+    ):
+        driver = numbers.get(str(stop.get("RacingNumber", number)))
+        lap = _number(stop.get("Lap"))
+        if not driver or lap is None:
+            continue
+        columns["drv"].append(driver)
+        columns["lap"].append(int(lap))
+        columns["stationary"].append(_number(stop.get("PitStopTime")))
+        columns["lane"].append(_number(stop.get("PitLaneTime")))
+    return columns
+
+
 def team_radio_columns(messages: list[Message], numbers: dict[str, str]) -> dict[str, list]:
     """team_radio.json columns (as the archive has them) from F1's TeamRadio topic: the state is
     a list of captures, updates a dict by index; each has Utc, RacingNumber and Path (relative

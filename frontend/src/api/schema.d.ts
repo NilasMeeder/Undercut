@@ -832,6 +832,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/pit-stops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pit Stops
+         * @description Races: how long each car stood in its pit box. F1's own time where the feed has it (live
+         *     and F1-archive sessions), otherwise measured in the in-lap and out-lap telemetry.
+         */
+        get: operations["pit_stops_api_sessions__year___round___session__pit_stops_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/championship": {
         parameters: {
             query?: never;
@@ -2082,6 +2103,29 @@ export interface components {
             lane: number;
             /** Loss */
             loss: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "green" | "yellow" | "sc" | "vsc" | "vsc_ending" | "red" | "chequered";
+        };
+        /**
+         * PitStopTime
+         * @description How long a car stood in its pit box (app/pitstops.py).
+         */
+        PitStopTime: {
+            /** Driver */
+            driver: string;
+            /** Lap */
+            lap: number;
+            /** T */
+            t: number;
+            /** Lane */
+            lane: number;
+            /** Stationary */
+            stationary: number | null;
+            /** Source */
+            source: ("f1" | "telemetry") | null;
             /**
              * Status
              * @enum {string}
@@ -4772,6 +4816,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecorderStatus"];
+                };
+            };
+        };
+    };
+    pit_stops_api_sessions__year___round___session__pit_stops_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PitStopTime"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

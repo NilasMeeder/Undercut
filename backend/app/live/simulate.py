@@ -164,6 +164,7 @@ class Simulation:
         out += self._track_status()
         out += self._race_control()
         out += self._team_radio()
+        out += self._pit_stops()
         out += self._weather()
         out += self._lap_count()
         out += self._clock()
@@ -414,6 +415,33 @@ class Simulation:
             }
             at = (utc - self.t0).total_seconds()
             out.append(Update(max(at, self.begin), "TeamRadio", {"Captures": {str(i): capture}}))
+        return out
+
+    def _pit_stops(self) -> list[Update]:
+        """PitStopSeries as other clients describe it, at pit exit: the time stood still is the
+        one measured in the archive's telemetry (the archive does not have F1's). Races only."""
+        if self.timeline.kind != "race":
+            return []
+        from app.pitstops import get_pit_stops
+
+        out = []
+        count: dict[str, int] = {}
+        for stop in get_pit_stops(*self.key):
+            number = self.number.get(stop.driver)
+            if number is None or stop.stationary is None:
+                continue
+            index = count[number] = count.get(number, -1) + 1
+            at = stop.t + stop.lane
+            entry = {
+                "Timestamp": feed.format_utc(self.utc(at)),
+                "PitStop": {
+                    "RacingNumber": number,
+                    "PitStopTime": f"{stop.stationary:.1f}",
+                    "PitLaneTime": f"{stop.lane:.1f}",
+                    "Lap": str(stop.lap),
+                },
+            }
+            out.append(Update(at, "PitStopSeries", {"PitTimes": {number: {str(index): entry}}}))
         return out
 
     def _weather(self) -> list[Update]:

@@ -987,6 +987,25 @@ class PitStop(BaseModel):
     """Track status at pit entry: a stop under SC or VSC costs less."""
 
 
+class PitStopTime(BaseModel):
+    """How long a car stood in its pit box (app/pitstops.py)."""
+
+    driver: str
+    lap: int
+    """The in-lap."""
+    t: float
+    """Session time (s) of pit entry."""
+    lane: float
+    """Seconds from pit entry to exit."""
+    stationary: float | None
+    """Seconds stood still; null for a drive-through, or without data."""
+    source: Literal["f1", "telemetry"] | None
+    """F1's own time (PitStopSeries, live and F1-archive sessions) or measured in the telemetry
+    (a tenth or two out either way)."""
+    status: TrackStatus
+    """Track status at pit entry."""
+
+
 class DriverRace(BaseModel):
     """One driver's race lap by lap, columnar: index i is lap laps[i]."""
 

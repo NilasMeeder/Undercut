@@ -33,6 +33,9 @@ EARLY = timedelta(hours=1)
 LENGTH = {"R": timedelta(hours=4), "S": timedelta(hours=2)}
 """How long to keep recording after the scheduled start (red flags, the podium); default 2 h."""
 DEFAULT_LENGTH = timedelta(hours=2)
+EXTRA_TOPICS = ["PitStopSeries", "PitLaneTimeCollection", "ChampionshipPrediction"]
+"""Topics FastF1's client does not subscribe to: pit stop times (stood still), and F1's own
+championship prediction. F1 ignores a topic it does not have."""
 SILENCE = 300
 """Seconds without any message (not even a heartbeat) before the client reconnects."""
 RETRY_AFTER = 10
@@ -295,7 +298,9 @@ def record(path: str, until: datetime, no_auth: bool) -> bool:
     while not stopping and datetime.now(UTC) < until:
         try:
             # Append: a reconnect continues the recording (F1 resends its state first).
-            SignalRClient(path, filemode="a", timeout=SILENCE, no_auth=no_auth).start()
+            client = SignalRClient(path, filemode="a", timeout=SILENCE, no_auth=no_auth)
+            client.topics = [*client.topics, *EXTRA_TOPICS]
+            client.start()
         except KeyboardInterrupt:
             break
         except Exception:

@@ -9,6 +9,7 @@ import {
   apiPost,
   type Championship,
   type Circuit,
+  type PitStopTime,
   type Comparison,
   type Degradation,
   type EnergyComparison,
@@ -76,6 +77,9 @@ export const useWeather = () => useSessionQuery<Weather>('/weather');
 /** Races and sprints: the standings before this session and the points per place. */
 export const useChampionship = (enabled: boolean) =>
   useSessionQuery<Championship>('/championship', enabled);
+/** Races: how long each car stood in its pit box (F1's time, or measured in the telemetry). */
+export const usePitStops = (enabled: boolean) =>
+  useSessionQuery<PitStopTime[]>('/pit-stops', enabled);
 
 export type CompareOptions = {
   /** Grid spacing in metres. */

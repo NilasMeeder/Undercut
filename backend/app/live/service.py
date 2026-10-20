@@ -327,6 +327,7 @@ class LiveSession:
                 files[name] = make(session)
         numbers = {row["dn"]: row["driver"] for row in files["drivers.json"]}
         files["team_radio.json"] = convert.team_radio_columns(self.timing, numbers)
+        files["pit_stops.json"] = convert.pit_stop_columns(self.timing, numbers)
         if not (self.out / "corners.json.gz").exists() and (corners := self._borrow_corners()):
             files["corners.json"] = corners
         for name, value in files.items():
