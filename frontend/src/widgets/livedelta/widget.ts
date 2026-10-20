@@ -12,8 +12,9 @@ export const liveDeltaWidget = defineWidget<LiveDeltaConfig>({
     summary:
       'The delta of the lap the driver of this group (the first selected lap) is on, at the ' +
       'session clock, as one big number: the same as in the Live lap panel. Above it the gap to ' +
-      'the car ahead in the timing tower, under it the gap to the car behind. The numbers grow ' +
-      'with the panel.',
+      'the car ahead in the timing tower, under it the gap to the car behind. The layout follows ' +
+      'the panel: side by side in a wide, low panel, under each other in a tall one, only the ' +
+      'delta in a small one.',
     watch: [
       'Green: quicker than the reference lap so far; yellow: slower. Auto compares with the ' +
         'previous lap in a race and the best lap so far in qualifying and practice.',

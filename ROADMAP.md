@@ -653,6 +653,9 @@ Af op 2026-10-19 (alle vier).
       lap groot in het midden, de lokale tijd vooraan, Pit window zonder tabs, geen Starts en geen
       passes op de kaart; Strategy in Pitwall (`strategyBoard`) met Live delta en de klok rechtsboven
       en Safety car naast Stints; Analyse houdt de oude Strategy. Getest op 1512×982 en 2560×1400
+- [x] **Live delta past zich aan het paneel aan** (2026-10-20, Nilas: "een soort blok"): geen
+      vast blok meer dat meeschaalt, maar een indeling per vorm (stapel, hoog, rij, klein) die het
+      paneel vult. Getest in headless Chrome op 640×270, 420×700, 1500×190, 250×140 (Monza 2025 R L22)
 
 ## Later / backlog
 

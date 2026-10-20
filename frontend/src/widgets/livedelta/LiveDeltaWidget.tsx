@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import type { TowerRow } from '@/api/client';
 import { useReplayPositions, useSessionDetail, useTimingState } from '@/api/queries';
 import { NoLapsMessage, PanelMessage } from '@/components/data/bits';
@@ -8,16 +8,13 @@ import { describeCheck } from '@/lib/overtake';
 import { timeGap } from '@/lib/replay';
 import { useClockTime } from '@/store/clock';
 import { useGroupLaps } from '@/store/groups';
-import { useClockDraw } from '../hooks';
+import { useClockDraw, useElementSize } from '../hooks';
 import { progressAt, useLiveLap } from '../livelap/useLiveLap';
 import type { WidgetProps } from '../types';
 import { useOvertakeMode } from '../useOvertakeMode';
+import { arrange, type Spot } from './arrange';
 import type { LiveDeltaConfig } from './widget';
 
-// One SVG scaled to fit the panel, so the numbers grow with it (like the Clock).
-const W = 320;
-const H = 160;
-const RIGHT = W - 4;
 /** Shown where there is no number. */
 const NONE = '—';
 
@@ -67,27 +64,39 @@ function neighbours(rows: TowerRow[], driver: string) {
 
 function GapRow({
   gap,
-  y,
+  spots,
   title,
   side,
   drawn,
   overtake,
 }: {
   gap: Gap | undefined;
-  y: number;
+  spots: { label: Spot; gap: Spot };
   title: string;
   side: 'ahead' | 'behind';
   /** The number is written every frame (races, from the position track). */
   drawn: boolean;
   overtake: boolean;
 }) {
+  const { label, gap: number } = spots;
   return (
     <g>
       <title>{title}</title>
-      <text x={4} y={y} fontSize={17} fill={gap?.real ? COLORS.textDim : COLORS.textFaint}>
+      <text
+        x={label.x}
+        y={label.y}
+        fontSize={label.size}
+        textAnchor={label.anchor}
+        fill={gap?.real ? COLORS.textDim : COLORS.textFaint}
+      >
         {gap?.label ?? ''}
         {overtake ? (
-          <tspan dx={8} fontSize={13} fontWeight={600} fill={COLORS.ers}>
+          <tspan
+            dx={label.size * 0.45}
+            fontSize={label.size * 0.8}
+            fontWeight={600}
+            fill={COLORS.ers}
+          >
             OT
           </tspan>
         ) : null}
@@ -95,10 +104,10 @@ function GapRow({
       <text
         key={drawn ? 'drawn' : 'tower'}
         data-gap={drawn ? side : undefined}
-        x={RIGHT}
-        y={y}
-        fontSize={30}
-        textAnchor="end"
+        x={number.x}
+        y={number.y}
+        fontSize={number.size}
+        textAnchor={number.anchor}
         fill={gap?.real ? COLORS.text : COLORS.textFaint}
       >
         {drawn ? null : (gap?.text ?? NONE)}
@@ -117,9 +126,13 @@ function gapTitle(race: boolean, side: 'ahead' | 'behind'): string {
 
 /**
  * The live delta of the group's driver as one big number (the same as Live lap), with the gap to
- * the car ahead above it and the gap to the car behind under it.
+ * the car ahead and the car behind. The SVG is the panel's size in px and `arrange` lays it out
+ * for the panel's shape, so it fills any panel.
  */
 export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const { width, height } = useElementSize(boxRef);
+  const spots = useMemo(() => arrange(width, height), [width, height]);
   const laps = useGroupLaps(group);
   const driver = laps[0]?.driver;
   const progress = useLiveLap(driver, config.reference);
@@ -158,6 +171,7 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
   useClockDraw(drawGaps);
 
   const deltaRef = useRef<SVGTextElement>(null);
+  const deltaSize = spots.delta.size;
   const draw = useMemo(() => {
     if (!data) return null;
     return (now: number) => {
@@ -166,80 +180,134 @@ export function LiveDeltaWidget({ group, config }: WidgetProps<LiveDeltaConfig>)
       const { gap } = progressAt(data, now);
       const text = gap == null ? NONE : formatGap(gap);
       el.textContent = text;
-      // −12.345 would run into the driver's name.
-      el.setAttribute('font-size', text.length > 6 ? '50' : '64');
+      // Sized for −0.125: −12.345 shrinks to the same width.
+      el.setAttribute('font-size', String(deltaSize * Math.min(1, 6 / text.length)));
       el.setAttribute(
         'fill',
         gap == null ? COLORS.textFaint : Math.round(gap * 1000) < 0 ? COLORS.pb : COLORS.slow
       );
     };
-  }, [data]);
+  }, [data, deltaSize]);
   useClockDraw(draw);
 
-  if (!driver) return <NoLapsMessage group={group} />;
-  if (progress.error && !data) return <PanelMessage>{progress.error.message}</PanelMessage>;
-
-  const sub = [
-    around ? `P${around.position}` : null,
-    data ? (data.out_lap ? 'OUT LAP' : `L${data.lap}`) : null,
-  ]
-    .filter(Boolean)
-    .join('  ');
-  const reference = data?.reference ? `vs L${data.reference.lap}` : '';
-  return (
-    <div className="flex h-full items-center justify-center p-1">
+  // The box always renders: useElementSize measures it once, on mount.
+  let content: ReactNode;
+  if (!driver) content = <NoLapsMessage group={group} />;
+  else if (progress.error && !data) content = <PanelMessage>{progress.error.message}</PanelMessage>;
+  else if (width > 0 && height > 0) {
+    const sub = [
+      around ? `P${around.position}` : null,
+      data ? (data.out_lap ? 'OUT LAP' : `L${data.lap}`) : null,
+    ]
+      .filter(Boolean)
+      .join('  ');
+    const reference = data?.reference ? `vs L${data.reference.lap}` : '';
+    const { driver: name, sub: subSpot, reference: referenceSpot, delta } = spots;
+    content = (
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${W} ${H}`}
-        className="h-full w-full"
-        preserveAspectRatio="xMidYMid meet"
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
+        className="block"
         style={{ fontVariantNumeric: 'tabular-nums' }}
         role="img"
         aria-label={`Live delta of ${driver}`}
       >
-        <GapRow
-          gap={around?.ahead}
-          y={30}
-          title={`${gapTitle(race, 'ahead')}${overtake ? `\n${describeCheck(overtake)}` : ''}`}
-          side="ahead"
-          drawn={onTrack && around != null}
-          overtake={overtake != null}
-        />
-        <rect x={4} y={66} width={3} height={22} fill={color} />
-        <text x={12} y={85} fontSize={22} fontWeight={600} fill={COLORS.text}>
-          {driver}
-        </text>
-        <text x={4} y={104} fontSize={12} fill={COLORS.textDim}>
-          {sub}
-        </text>
-        <text x={4} y={119} fontSize={11} fill={COLORS.textFaint}>
-          {reference}
-        </text>
+        {spots.ahead ? (
+          <GapRow
+            gap={around?.ahead}
+            spots={spots.ahead}
+            title={`${gapTitle(race, 'ahead')}${overtake ? `\n${describeCheck(overtake)}` : ''}`}
+            side="ahead"
+            drawn={onTrack && around != null}
+            overtake={overtake != null}
+          />
+        ) : null}
+        {name ? (
+          <>
+            <rect
+              x={name.x}
+              y={name.y - name.size * 0.78}
+              width={Math.max(2, name.size * 0.14)}
+              height={name.size * 0.8}
+              fill={color}
+            />
+            <text
+              x={name.x + name.size * 0.4}
+              y={name.y}
+              fontSize={name.size}
+              fontWeight={600}
+              fill={COLORS.text}
+            >
+              {driver}
+              {spots.kind === 'row' && reference ? (
+                <tspan
+                  dx={name.size * 0.5}
+                  fontSize={name.size * 0.7}
+                  fontWeight={400}
+                  fill={COLORS.textFaint}
+                >
+                  {reference}
+                </tspan>
+              ) : null}
+            </text>
+          </>
+        ) : null}
+        {subSpot ? (
+          <text
+            x={spots.kind === 'row' ? subSpot.x + subSpot.size * 4.5 : subSpot.x}
+            y={subSpot.y}
+            fontSize={subSpot.size}
+            textAnchor={subSpot.anchor}
+            fill={COLORS.textDim}
+          >
+            {spots.kind === 'row' ? '' : sub}
+          </text>
+        ) : null}
+        {referenceSpot ? (
+          <text
+            x={referenceSpot.x}
+            y={referenceSpot.y}
+            fontSize={referenceSpot.size}
+            textAnchor={referenceSpot.anchor}
+            fill={COLORS.textFaint}
+          >
+            {reference}
+          </text>
+        ) : null}
         <g>
           <title>Time behind the reference lap at the car's position</title>
           {/* Written every frame (useClockDraw), so React leaves its text and colour alone. */}
           <text
             key={data ? 'delta' : 'none'}
             ref={data ? deltaRef : undefined}
-            x={RIGHT}
-            y={110}
-            fontSize={64}
+            x={delta.x}
+            y={delta.y}
+            fontSize={delta.size}
             fontWeight={600}
-            textAnchor="end"
+            textAnchor={delta.anchor}
             fill={data ? undefined : COLORS.textFaint}
           >
             {data ? null : NONE}
           </text>
         </g>
-        <GapRow
-          gap={around?.behind}
-          y={152}
-          title={gapTitle(race, 'behind')}
-          side="behind"
-          drawn={onTrack && around != null}
-          overtake={false}
-        />
+        {spots.behind ? (
+          <GapRow
+            gap={around?.behind}
+            spots={spots.behind}
+            title={gapTitle(race, 'behind')}
+            side="behind"
+            drawn={onTrack && around != null}
+            overtake={false}
+          />
+        ) : null}
       </svg>
+    );
+  }
+  return (
+    <div ref={boxRef} className="h-full w-full overflow-hidden">
+      {content}
     </div>
   );
 }
