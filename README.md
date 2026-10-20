@@ -156,5 +156,7 @@ and the pitfalls in the data. Both are in Dutch.
 
 ---
 
+MIT licensed, see `LICENSE`. The data comes from its sources under their own terms.
+
 A hobby project, not affiliated with Formula 1, the FIA or any team. F1, Formula 1 and related
 marks are trademarks of Formula One Licensing B.V.
