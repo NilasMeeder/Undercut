@@ -478,7 +478,8 @@ auto een lijst of dict per index met `PitStop: {RacingNumber, PitStopTime, PitLa
 vorm komt van andere clients, nog niet uit een eigen opname; F1's Lap = in- of out-lap), anders
 gemeten in de telemetrie van in- en out-lap: eerste tot laatste sample ≤ 1,5 km/h tussen pit-in en
 pit-out, elk eind halverwege naar het sample ervoor/erna (`≈` in de widget). De recorder abonneert
-nu ook op PitStopSeries, PitLaneTimeCollection en ChampionshipPrediction (`record.EXTRA_TOPICS`);
+nu ook op PitStopSeries, PitLaneTimeCollection en ChampionshipPrediction (`record.EXTRA_TOPICS`;
+stopt de client twee keer binnen 60 s na verbinden, dan gaat hij zonder die topics verder);
 de simulator stuurt PitStopSeries met de gemeten tijden. Controle Monza 2025 R: NOR L46 ≈5,9 (de
 bekende trage stop), TSU ≈1,7 de snelste, OCO ≈8,6 (5 s straf).
 

@@ -35,7 +35,10 @@ LENGTH = {"R": timedelta(hours=4), "S": timedelta(hours=2)}
 DEFAULT_LENGTH = timedelta(hours=2)
 EXTRA_TOPICS = ["PitStopSeries", "PitLaneTimeCollection", "ChampionshipPrediction"]
 """Topics FastF1's client does not subscribe to: pit stop times (stood still), and F1's own
-championship prediction. F1 ignores a topic it does not have."""
+championship prediction. Should F1 refuse them (the client stops right after connecting, twice),
+the recorder goes on without them."""
+QUICK_STOP = 60.0
+"""Seconds: a client that stops sooner than this after starting failed to connect or subscribe."""
 SILENCE = 300
 """Seconds without any message (not even a heartbeat) before the client reconnects."""
 RETRY_AFTER = 10
@@ -295,16 +298,23 @@ def record(path: str, until: datetime, no_auth: bool) -> bool:
         raise KeyboardInterrupt
 
     previous = signal.signal(signal.SIGINT, stop)
+    extra = list(EXTRA_TOPICS)
+    quick = 0
     while not stopping and datetime.now(UTC) < until:
+        began = time.monotonic()
         try:
             # Append: a reconnect continues the recording (F1 resends its state first).
             client = SignalRClient(path, filemode="a", timeout=SILENCE, no_auth=no_auth)
-            client.topics = [*client.topics, *EXTRA_TOPICS]
+            client.topics = [*client.topics, *extra]
             client.start()
         except KeyboardInterrupt:
             break
         except Exception:
             log.exception("The live client stopped")
+        quick = quick + 1 if time.monotonic() - began < QUICK_STOP else 0
+        if extra and quick >= 2:
+            log.warning("Stopped twice right after connecting: going on without %s", extra)
+            extra = []
         if not stopping and datetime.now(UTC) < until:
             log.info("Reconnecting in %d s", RETRY_AFTER)
             try:

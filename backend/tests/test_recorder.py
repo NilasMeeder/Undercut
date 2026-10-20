@@ -236,3 +236,26 @@ def test_when_the_sign_in_runs_out() -> None:
     token = f"eyJhbGciOiJub25lIn0.{part.decode()}.c2ln"
     assert record.token_expiry(token) == datetime.fromtimestamp(1793000000, UTC)
     assert record.token_expiry("not a token") is None
+
+
+def test_the_recorder_drops_extra_topics_f1_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
+    import fastf1.livetiming.client
+
+    subscribed: list[list[str]] = []
+
+    class Client:
+        def __init__(self, *args, **kwargs) -> None:
+            self.topics = ["TimingData"]
+
+        def start(self) -> None:
+            subscribed.append(self.topics)
+            if len(subscribed) == 4:
+                raise KeyboardInterrupt  # stopped from the top bar
+            raise RuntimeError("connection closed")
+
+    monkeypatch.setattr(fastf1.livetiming.client, "SignalRClient", Client)
+    monkeypatch.setattr(record.time, "sleep", lambda s: None)
+    until = datetime.now(UTC) + timedelta(hours=1)
+    record.record("/dev/null", until, no_auth=True)
+    extra = ["TimingData", *record.EXTRA_TOPICS]
+    assert subscribed == [extra, extra, ["TimingData"], ["TimingData"]]
