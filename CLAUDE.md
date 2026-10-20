@@ -654,8 +654,18 @@ anders die van de laatst actieve tab; `merge` in de persist zet oude opslag om).
   hem, < 0,8 s voor hem. Balk = de komende 2:30 (groen vrij, amber niet). Ook in replay een
   voorspelling; auto's in de garage weet hij niet. Monza 2025 Q3 (16:59:11): vijf auto's op een
   out-lap, VER nu = 6,4 s achter NOR, vrij.
-- **Mini-sectors** (widget `minisectors`): `/compare`'s `mini_sectors` als tabel, per mini-sector de
-  bochten erin (`circuit.corners` geschaald naar de laplengte), paars de snelste, de rest +gap;
+- **Mini-sectors** (widget `minisectors`, Nilas 2026-10-20: "zoals je overal ziet"): standaard
+  `view: 'field'` (`FieldMiniSectors.tsx`, `lib/miniSectors.ts`): elke driver in de volgorde van de
+  tower met een blokje per mini-sector (elke sector in stukken van ~250 m, `layoutFor` op de
+  sectorgrenzen van `/sectors`). Tijden uit het positiespoor: waar de lap-voortgang elke grens
+  passeert, geïnterpoleerd (`fieldSegments`; sprongen > 0,25 lap per stap tellen niet). Kleur zoals
+  het was toen het blokje af was (één pass over alle blokjes op eindtijd): paars = snelste van
+  iedereen tot dan (≤), groen = eigen snelste, geel = geen van beide; donker = nog niet gereden.
+  `lap: 'current'` = de lap op de klok die zich vult (bij de lijn weer leeg; in de garage de
+  laatste lap, vaag), `'best'` = de beste lap tot t (Analyse-preset Qualifying). Op 4 Hz zijn de
+  tijden een paar honderdsten onzeker (geen F1-timinglussen; live heeft de tower F1's eigen
+  segmenten). Live elke ~2 s nieuwe punten opnieuw doorgerekend. `view: 'laps'`: de oude tabel
+  van `/compare`, per mini-sector de bochten erin (`circuit.corners` geschaald naar de laplengte), paars de snelste, de rest +gap;
   onderaan lap, LOST (tegen de ideale combinatie) en hoe vaak de snelste. Hover = cursor, klik = zoom.
 - **Dashboards per werkplek**: elke werkplek heeft zijn eigen tabs (ook Pitwall: + voor een preset
   of "Duplicate this dashboard", `duplicate` zet de kopie ernaast). Toetsen **1–9** = de n-de tab van

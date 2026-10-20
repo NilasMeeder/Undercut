@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { cursorBus, useZoom } from '@/store/cursor';
 import type { WidgetProps } from '../types';
 import { useGroupComparison } from '../useGroupComparison';
+import { FieldMiniSectors } from './FieldMiniSectors';
 import type { MiniSectorsConfig } from './widget';
 
 /** The corners whose apex lies in [start, end), scaled from the circuit's lap to this one. */
@@ -20,6 +21,18 @@ function cornersIn(corners: Circuit['corners'], scale: number, start: number, en
 }
 
 export function MiniSectorsWidget({ group, config }: WidgetProps<MiniSectorsConfig>) {
+  return config.view === 'field' ? (
+    <FieldMiniSectors config={config} />
+  ) : (
+    <CompareMiniSectors group={group} config={config} />
+  );
+}
+
+/** The group's compared laps per mini-sector, as a table. */
+function CompareMiniSectors({
+  group,
+  config,
+}: Pick<WidgetProps<MiniSectorsConfig>, 'group' | 'config'>) {
   const { laps, data, styles, error, isFetching } = useGroupComparison(group, {
     miniSectors: config.count,
   });

@@ -126,7 +126,14 @@ function qualifying(api: DockviewApi) {
   // After the columns, so it stays in the left one.
   if (wide) addWidget(api, 'timeline', 'blue', { referencePanel: bests, direction: 'below' });
   const map = addWidget(api, 'trackmap', 'blue', { referencePanel: telemetry, direction: 'right' });
-  const mini = addWidget(api, 'minisectors', 'blue', { referencePanel: map, direction: 'below' });
+  // After the session: every driver's best lap, block by block.
+  const mini = addWidget(
+    api,
+    'minisectors',
+    'blue',
+    { referencePanel: map, direction: 'below' },
+    { lap: 'best' }
+  );
   const corners = wide
     ? addWidget(api, 'corners', 'blue', { direction: 'right' })
     : addWidget(api, 'corners', 'blue', { referencePanel: mini, direction: 'within' });

@@ -656,6 +656,11 @@ Af op 2026-10-19 (alle vier).
 - [x] **Live delta past zich aan het paneel aan** (2026-10-20, Nilas: "een soort blok"): geen
       vast blok meer dat meeschaalt, maar een indeling per vorm (stapel, hoog, rij, klein) die het
       paneel vult. Getest in headless Chrome op 640×270, 420×700, 1500×190, 250×140 (Monza 2025 R L22)
+- [x] **Mini-sectoren voor het hele veld** (2026-10-20, Nilas): elke driver met een blokje per
+      mini-sector (~250 m), paars/groen/geel zoals het op dat moment was, de lap op de klok die
+      zich vult of de beste lap; uit het positiespoor, dus in replay en live. De oude tabel van de
+      vergeleken laps blijft als instelling. Getest in headless Chrome (Monza 2025 Q en R L22,
+      Analyse-preset Qualifying)
 
 ## Later / backlog
 
