@@ -458,6 +458,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "fastf1" },
     { name = "numpy" },
+    { name = "pyjwt" },
     { name = "requests" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -475,6 +476,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.143.3" },
     { name = "fastf1", specifier = ">=3.8.3" },
     { name = "numpy", specifier = ">=2.5.4" },
+    { name = "pyjwt", specifier = ">=2.15.1" },
     { name = "requests", specifier = ">=2.34.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
 ]

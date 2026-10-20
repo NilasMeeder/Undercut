@@ -6,9 +6,10 @@
 
 Uses FastF1's live client with its F1 TV sign-in, made once with
 `uv run python -m fastf1 auth f1tv --authenticate`. FastF1 sends the token to
-livetiming.formula1.com only; f1dash never reads it. Start before the session: the feed sends
-changes, so a recording that starts halfway misses the laps before it. Appends, so a restart
-continues the same recording. The backend picks the recording up by itself (app/live/service.py).
+livetiming.formula1.com only; f1dash reads it only to see whether it has expired. Start before
+the session: the feed sends changes, so a recording that starts halfway misses the laps before
+it. Appends, so a restart continues the same recording. The backend picks the recording up by
+itself (app/live/service.py).
 """
 
 import argparse
@@ -18,6 +19,8 @@ import signal
 import sys
 import time
 from datetime import UTC, datetime, timedelta
+
+import jwt
 
 from app import schedule
 from app.live import recorder, recordings
@@ -94,10 +97,25 @@ def wait_for_session() -> tuple[int, int, str, datetime]:
         time.sleep(min(max((wake - now).total_seconds(), 1.0), WAIT_STEP))
 
 
-def signed_in() -> bool:
+def signed_in(now: datetime | None = None) -> bool:
+    """A sign-in that has not expired. An expired one would make FastF1 wait for a new sign-in in
+    the browser, and a recorder started from the top bar would hang there unseen."""
     from fastf1.internals.f1auth import AUTH_DATA_FILE
 
-    return AUTH_DATA_FILE.exists() and AUTH_DATA_FILE.stat().st_size > 0
+    try:
+        token = AUTH_DATA_FILE.read_text().strip()
+    except OSError:
+        return False
+    return token != "" and not token_expired(token, now or datetime.now(UTC))
+
+
+def token_expired(token: str, now: datetime) -> bool:
+    """Whether the token's `exp` has passed. Only read locally (FastF1 checks the signature)."""
+    try:
+        expires = jwt.decode(token, options={"verify_signature": False}).get("exp")
+    except jwt.PyJWTError:
+        return True
+    return isinstance(expires, int | float) and expires <= now.timestamp()
 
 
 def main() -> None:
@@ -128,7 +146,8 @@ def main() -> None:
         sys.exit("The recorder already runs (started from the top bar): stop it there first")
     if not args.no_auth and not signed_in():
         sys.exit(
-            "Not signed in to F1 TV. Run once: uv run python -m fastf1 auth f1tv --authenticate"
+            "Not signed in to F1 TV, or the sign-in expired. Run: "
+            "uv run python -m fastf1 auth f1tv --authenticate"
         )
     if not args.session:
         try:

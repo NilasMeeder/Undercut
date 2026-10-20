@@ -97,6 +97,9 @@ def _download(year: int, event: str, session: str, file: str, path: Path) -> Any
     return data
 
 
+RADIO_URL_PREFIX = "https://livetiming.formula1.com/static/"
+
+
 def fetch_radio(year: int, event: str, session: str, driver: str, file: str, url: str) -> bytes:
     """A team radio clip (mp3), cached as is: from the archive (which keeps the clips beside the
     telemetry), else from where F1 published it (a live recording only knows that)."""
@@ -110,7 +113,9 @@ def fetch_radio(year: int, event: str, session: str, driver: str, file: str, url
             f"{TRACINGINSIGHTS_BASE_URL}/{year}/main/{quote(event)}/{quote(session)}/"
             f"{quote(driver)}/radio/{quote(file)}"
         )
-        for source in (archive, url):
+        # The URL comes from a data file: only F1's own static files, nothing on this network.
+        published = [url] if url.startswith(RADIO_URL_PREFIX) else []
+        for source in (archive, *published):
             response = _http.get(source, timeout=HTTP_TIMEOUT_SECONDS)
             if response.ok and response.content:
                 path.parent.mkdir(parents=True, exist_ok=True)

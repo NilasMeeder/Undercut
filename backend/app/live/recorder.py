@@ -8,6 +8,7 @@ the recording and exits.
 
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -21,6 +22,10 @@ from app.live import record
 STATE = "recorder.json"
 LOG = "recorder.log"
 LOG_LINES = 8
+RECORDER_PROCESS = re.compile(r"[-]m app\.live\.record( |$)", re.MULTILINE)
+"""A recorder's command line; not `app/live/recorder.py` open in an editor (pgrep takes a regex)."""
+TOKEN = re.compile(r"eyJ[\w-]+\.[\w-]+\.[\w-]+")
+"""A JWT (the F1 TV token): never shown in the log tail, should a library log it."""
 
 
 class RecorderBusy(Exception):
@@ -54,8 +59,19 @@ def _alive(pid: int) -> bool:
     try:
         done, _ = os.waitpid(pid, os.WNOHANG)
     except ChildProcessError:
-        return True  # not our child (started by an earlier backend): kill(0) is all we know
+        return _is_recorder(pid)  # not our child: started by an earlier backend
     return done == 0
+
+
+def _is_recorder(pid: int) -> bool:
+    """Whether the process is a recorder: after a reboot its pid can belong to anything else."""
+    try:
+        found = subprocess.run(  # noqa: S603, S607 (fixed command)
+            ["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True, check=False
+        )
+    except OSError:
+        return True  # cannot tell: kill(0) is all we know
+    return RECORDER_PROCESS.search(found.stdout) is not None
 
 
 def running() -> dict[str, Any] | None:
@@ -65,14 +81,17 @@ def running() -> dict[str, Any] | None:
     except (OSError, ValueError):
         return None
     pid = state.get("pid")
-    return state if isinstance(pid, int) and _alive(pid) else None
+    if isinstance(pid, int) and _alive(pid):
+        return state
+    _state_path().unlink(missing_ok=True)
+    return None
 
 
 def _elsewhere() -> bool:
     """A recorder started in a terminal (`make live`): two would write into the same recording."""
     try:
         found = subprocess.run(  # noqa: S603, S607 (fixed command)
-            ["pgrep", "-f", "app.live.record"], capture_output=True, text=True, check=False
+            ["pgrep", "-f", RECORDER_PROCESS.pattern], capture_output=True, text=True, check=False
         )
     except OSError:
         return False
@@ -87,7 +106,7 @@ def start(wait: bool) -> dict[str, Any]:
         raise RecorderBusy("A recorder already runs in a terminal (make live)")
     if not record.signed_in():
         raise NotSignedIn(
-            "Not signed in to F1 TV. Once, in backend/: "
+            "Not signed in to F1 TV, or the sign-in expired. In backend/: "
             "uv run python -m fastf1 auth f1tv --authenticate"
         )
     if not wait and record.current_session(datetime.now(UTC)) is None:
@@ -101,6 +120,8 @@ def start(wait: bool) -> dict[str, Any]:
             stdout=log,
             stderr=subprocess.STDOUT,
             start_new_session=True,
+            # FastF1 prints its sign-in prompt: unbuffered, so it shows in the log tail.
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
         )
     state = {"pid": process.pid, "started": datetime.now(UTC).isoformat(), "wait": wait}
     _state_path().write_text(json.dumps(state))
@@ -122,4 +143,4 @@ def log_tail(lines: int = LOG_LINES) -> list[str]:
             text = f.read().decode("utf-8", errors="replace")
     except OSError:
         return []
-    return [line for line in text.splitlines() if line.strip()][-lines:]
+    return [TOKEN.sub("<token>", line) for line in text.splitlines() if line.strip()][-lines:]

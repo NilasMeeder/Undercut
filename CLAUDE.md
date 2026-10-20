@@ -99,7 +99,9 @@ frontend/   Vite + React + TypeScript        → SPA op :5173, praat met /api (p
 - **Backend** doet al het zware werk: FastF1 laden, cachen, telemetrie resamplen, delta's en
   mini-sectoren berekenen. De frontend rekent zo min mogelijk.
 - **Frontend** is een puur client-side dashboard. Geen SSR nodig (canvas-charts, localStorage-layouts).
-- Geen auth, geen databaseserver. Opslag is embedded: bronbestanden gzipped in `backend/.cache/`
+- Geen auth, geen databaseserver. De API luistert op 127.0.0.1 en neemt alleen verzoeken van pagina's
+  op localhost aan (`app/local_only.py`: Host tegen DNS-rebinding, Origin tegen blinde POSTs van
+  andere sites); tests gebruiken daarom `TestClient(app, base_url="http://localhost")`. Opslag is embedded: bronbestanden gzipped in `backend/.cache/`
   (weggooibaar), gebruikersdata (markeringen, views) in SQLite in `backend/data/f1dash.db` (niet
   weggooien, niet in git; `F1DASH_DB` wijst een ander bestand aan).
 - **Draait als gewone processen op macOS (uv + npm), zonder Docker of containers.** Een Dockerfile voor
@@ -307,7 +309,8 @@ TracingInsights is sinds 13 okt 2026 niet meer bijgewerkt (Singapore 2026 is de 
 
 - **Opnemen** (`app/live/record.py`, `make live`): FastF1's `SignalRClient` (signalrcore), met FastF1's
   eigen F1 TV-login (`uv run python -m fastf1 auth f1tv --authenticate`, één keer; het token gaat alleen
-  naar livetiming.formula1.com en f1dash leest het nooit). Zonder argumenten de sessie die nu bezig is
+  naar livetiming.formula1.com, f1dash leest alleen lokaal of het verlopen is: dan weigert starten,
+  anders bleef de recorder onzichtbaar hangen op FastF1's browser-login). Zonder argumenten de sessie die nu bezig is
   of binnen het uur begint; neemt op tot start + 2 uur (race 4 uur), verbindt opnieuw na 5 minuten
   stilte en voegt toe (`a`), dus herstarten gaat door in dezelfde opname. **Start vóór de sessie**: de
   feed stuurt alleen wat verandert, een opname die halverwege begint mist de laps ervoor (zie "Late
