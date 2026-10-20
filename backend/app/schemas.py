@@ -1636,6 +1636,20 @@ class TeamRadio(BaseModel):
     utc: datetime
     t: float | None
     """Session time (s); null while the session has no lap timing yet."""
+    text: str | None = None
+    """What is said, once transcribed (app/transcribe.py); '' when nothing was understood."""
+
+
+class Transcription(BaseModel):
+    """Transcribing a session's team radio on this computer (Whisper)."""
+
+    engine: Literal["mlx", "faster-whisper"] | None
+    """None: not set up (in backend/: uv sync --group transcribe)."""
+    model: str | None
+    state: Literal["idle", "running", "done", "error"]
+    done: int
+    total: int
+    error: str | None
 
 
 class QualiDuel(BaseModel):

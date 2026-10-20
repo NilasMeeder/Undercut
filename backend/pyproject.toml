@@ -20,6 +20,14 @@ dev = [
     "ruff>=0.17.1",
 ]
 
+# Team radio as text (app/transcribe.py), optional: `uv sync --group transcribe` (make install
+# does). MLX on Apple silicon, faster-whisper elsewhere; PyAV decodes the mp3s (no ffmpeg needed).
+transcribe = [
+    "av>=14.0.0",
+    "mlx-whisper>=0.4.2; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "faster-whisper>=1.1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
+]
+
 [tool.uv]
 package = false
 

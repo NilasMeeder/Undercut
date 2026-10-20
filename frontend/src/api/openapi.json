@@ -2642,7 +2642,7 @@
     "/api/sessions/{year}/{round}/{session}/team-radio": {
       "get": {
         "summary": "Team Radio",
-        "description": "The session's team radio clips in time order (none when the archive has none).",
+        "description": "The session's team radio clips in time order (none when the archive has none), with the\ntext of those transcribed.",
         "operationId": "team_radio_api_sessions__year___round___session__team_radio_get",
         "parameters": [
           {
@@ -2694,6 +2694,140 @@
                     "$ref": "#/components/schemas/TeamRadio"
                   },
                   "title": "Response Team Radio Api Sessions  Year   Round   Session  Team Radio Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{year}/{round}/{session}/team-radio/transcription": {
+      "get": {
+        "summary": "Transcription Status",
+        "description": "Transcribing the team radio on this computer: set up or not, and how far.",
+        "operationId": "transcription_status_api_sessions__year___round___session__team_radio_transcription_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Transcription"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Transcription Start",
+        "description": "Transcribe every clip without text (Whisper, on this computer); live, also the new ones.",
+        "operationId": "transcription_start_api_sessions__year___round___session__team_radio_transcription_post",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Transcription"
                 }
               }
             }
@@ -9769,6 +9903,17 @@
               }
             ],
             "title": "T"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           }
         },
         "type": "object",
@@ -10571,6 +10716,76 @@
           "zones"
         ],
         "title": "TrackZones"
+      },
+      "Transcription": {
+        "properties": {
+          "engine": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "mlx",
+                  "faster-whisper"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "running",
+              "done",
+              "error"
+            ],
+            "title": "State"
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "model",
+          "state",
+          "done",
+          "total",
+          "error"
+        ],
+        "title": "Transcription",
+        "description": "Transcribing a session's team radio on this computer (Whisper)."
       },
       "TyreSet": {
         "properties": {

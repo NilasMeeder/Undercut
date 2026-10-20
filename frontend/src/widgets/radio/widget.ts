@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { defineWidget } from '../types';
 
-export type RadioConfig = { drivers: 'all' | 'group' };
+export type RadioConfig = { drivers: 'all' | 'group'; text: boolean };
 
 export const radioWidget = defineWidget<RadioConfig>({
   id: 'radio',
@@ -19,10 +19,14 @@ export const radioWidget = defineWidget<RadioConfig>({
       'F1 publishes a selection, not every message, and live a clip comes a little after it ' +
         'was said.',
       'The audio is fetched once and kept (from the archive, or from F1 for a live session).',
+      'TRANSCRIBE writes out what is said in every clip, on this computer (Whisper, about a ' +
+        'second a clip; nothing leaves it). Live it keeps going as new clips come in. Then the ' +
+        'box searches what is said (or type a driver code). Whisper can mishear names and leaves ' +
+        'out what it is unsure of: “(not understood)”.',
     ],
     controls: 'Click a row to play or stop. AUTO OFF / GROUP / ALL applies to the whole app.',
   },
-  defaults: { drivers: 'all' },
+  defaults: { drivers: 'all', text: true },
   settings: [
     {
       key: 'drivers',
@@ -33,6 +37,7 @@ export const radioWidget = defineWidget<RadioConfig>({
         { value: 'group', label: 'The drivers in this link group' },
       ],
     },
+    { key: 'text', label: 'Show what is said', kind: 'toggle' },
   ],
   followsClock: true,
   component: lazy(() => import('./RadioWidget').then((m) => ({ default: m.RadioWidget }))),

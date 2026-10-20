@@ -23,7 +23,7 @@ import fastf1
 import fastf1.exceptions
 import numpy as np
 
-from app import generations, replays, schedule, sessions
+from app import generations, replays, schedule, sessions, transcribe
 from app.config import LIVE_DIR
 from app.live import convert, feed, recorder, recordings, telemetry
 from app.live.telemetry import Samples
@@ -384,6 +384,12 @@ class Service:
         if time.monotonic() - self._scanned > SCAN_EVERY:
             self._scanned = time.monotonic()
             self.scan()
+            for key, live in list(self.sessions.items()):
+                if not live.finished and live.version > 0:
+                    try:
+                        transcribe.auto(*key)
+                    except Exception:
+                        log.exception("Transcribing the radio of %s failed to start", key)
         for key, live in list(self.sessions.items()):
             if live.finished:
                 if live.grows_again():

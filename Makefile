@@ -1,7 +1,7 @@
 .PHONY: install dev api web test lint check gen-api live
 
 install:
-	cd backend && uv sync
+	cd backend && uv sync --group transcribe
 	cd frontend && npm install
 
 # Runs API (:8000) and web (:5173) together; Ctrl+C stops both.

@@ -136,6 +136,9 @@ make dev        # API on :8000, dashboard on http://localhost:5173
 
 The first time you open a session it is downloaded once. After that it comes from the cache.
 
+`make install` also installs Whisper for team radio as text (MLX on Apple silicon). The first
+TRANSCRIBE downloads the model once (~1.6 GB). Without it: `cd backend && uv sync`.
+
 ### Recording live
 
 ```bash

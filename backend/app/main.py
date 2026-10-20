@@ -33,6 +33,7 @@ from app import (
     straight_mode,
     strategies,
     strategy,
+    transcribe,
     tyres,
     weekend,
     zones,
@@ -94,6 +95,7 @@ from app.schemas import (
     TrackEvolution,
     TrackSectors,
     TrackZones,
+    Transcription,
     TyreWeekend,
     View,
     ViewIn,
@@ -653,8 +655,39 @@ def race_start(year: int, round: int, session: SessionCode) -> list[Starts]:
 
 @app.get("/api/sessions/{year}/{round}/{session}/team-radio")
 def team_radio(year: int, round: int, session: SessionCode) -> list[TeamRadio]:
-    """The session's team radio clips in time order (none when the archive has none)."""
-    return _guard(lambda: radio.get_team_radio(year, round, session))
+    """The session's team radio clips in time order (none when the archive has none), with the
+    text of those transcribed."""
+    clips = _guard(lambda: radio.get_team_radio(year, round, session))
+    return _guard(lambda: transcribe.with_text(year, round, session, clips))
+
+
+def _transcription(year: int, round: int, session: SessionCode) -> Transcription:
+    kind = transcribe.engine()
+    job = transcribe.status(year, round, session)
+    return Transcription(
+        engine=kind,
+        model=transcribe.model_name(kind) if kind else None,
+        state=job.state,
+        done=job.done,
+        total=job.total,
+        error=job.error,
+    )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/team-radio/transcription")
+def transcription_status(year: int, round: int, session: SessionCode) -> Transcription:
+    """Transcribing the team radio on this computer: set up or not, and how far."""
+    return _guard(lambda: _transcription(year, round, session))
+
+
+@app.post("/api/sessions/{year}/{round}/{session}/team-radio/transcription")
+def transcription_start(year: int, round: int, session: SessionCode) -> Transcription:
+    """Transcribe every clip without text (Whisper, on this computer); live, also the new ones."""
+    try:
+        transcribe.start(year, round, session)
+    except RuntimeError as error:
+        raise HTTPException(409, str(error)) from error
+    return _guard(lambda: _transcription(year, round, session))
 
 
 @app.get(

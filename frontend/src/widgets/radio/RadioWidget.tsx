@@ -1,6 +1,8 @@
 import { Pause, Play } from 'lucide-react';
-import { radioUrl } from '@/api/client';
+import { useState } from 'react';
+import { radioUrl, type Transcription } from '@/api/client';
 import { useSessionDetail, useTeamRadio, useTimeline } from '@/api/queries';
+import { useTranscription } from '@/api/transcription';
 import { DriverCell, PanelMessage } from '@/components/data/bits';
 import { momentLabel } from '@/lib/replay';
 import { td } from '@/lib/table';
@@ -33,14 +35,22 @@ export function RadioWidget({ group, config }: WidgetProps<RadioConfig>) {
   const selected = useGroupDrivers(group);
   const t = useClockTime(500);
   const { playing, autoplay, play, stop, setAutoplay } = useRadio();
+  const transcription = useTranscription(clips.data != null && clips.data.length > 0);
+  const [search, setSearch] = useState('');
 
   if (clips.error) return <PanelMessage>{clips.error.message}</PanelMessage>;
   if (!clips.data || !drivers || !key) return <PanelMessage>Loading team radio…</PanelMessage>;
   const race = key.session === 'R' || key.session === 'S';
+  const words = search.trim().toLowerCase();
   const shown = clips.data
     .filter((c) => c.t != null && c.t <= t)
     .filter((c) => config.drivers === 'all' || selected.includes(c.driver))
+    .filter(
+      (c) =>
+        !words || (c.text ?? '').toLowerCase().includes(words) || c.driver === words.toUpperCase()
+    )
     .reverse();
+  const texts = config.text && clips.data.some((c) => c.text);
 
   return (
     <div className="flex h-full flex-col">
@@ -57,15 +67,33 @@ export function RadioWidget({ group, config }: WidgetProps<RadioConfig>) {
             {a.label}
           </button>
         ))}
+        <TranscribeButton
+          status={transcription.status.data}
+          pending={transcription.start.isPending}
+          onStart={() => transcription.start.mutate()}
+        />
+        {clips.data.some((c) => c.text) ? (
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search what is said"
+            className="h-4 w-36 border border-line bg-bg px-1 text-[10px] text-text placeholder:text-faint"
+          />
+        ) : null}
         <span className="ml-auto">
           {shown.length} of {clips.data.length} clips
         </span>
       </div>
+      {transcription.start.error ? (
+        <p className="px-1.5 text-[10px] text-pit">{transcription.start.error.message}</p>
+      ) : null}
       {shown.length === 0 ? (
         <PanelMessage>
           {clips.data.length === 0
             ? 'No team radio for this session.'
-            : 'No team radio yet at the session clock.'}
+            : words
+              ? 'Nothing found at the session clock.'
+              : 'No team radio yet at the session clock.'}
         </PanelMessage>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
@@ -90,6 +118,16 @@ export function RadioWidget({ group, config }: WidgetProps<RadioConfig>) {
                     <DriverCell code={c.driver} drivers={drivers} />
                     <td className={cn(td, 'text-dim')}>{momentLabel(c.t!, timeline, race)}</td>
                     <td className={cn(td, 'text-faint')}>{timeOfDay.format(new Date(c.utc))}</td>
+                    {texts ? (
+                      <td
+                        className={cn(
+                          'w-full whitespace-normal px-1.5 py-[1px] text-left leading-snug',
+                          c.text ? 'text-text' : 'text-faint'
+                        )}
+                      >
+                        {c.text == null ? '' : c.text || '(not understood)'}
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}
@@ -98,5 +136,43 @@ export function RadioWidget({ group, config }: WidgetProps<RadioConfig>) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Transcribe the session's radio on this computer, or how far that is. */
+function TranscribeButton({
+  status,
+  pending,
+  onStart,
+}: {
+  status: Transcription | undefined;
+  pending: boolean;
+  onStart: () => void;
+}) {
+  if (!status || status.total === 0) return null;
+  if (status.state === 'running') {
+    return (
+      <span className="text-dim" title={`Whisper (${status.model}) on this computer`}>
+        TEXT {status.done}/{status.total}
+      </span>
+    );
+  }
+  if (status.state === 'done' && status.done === status.total) return null;
+  const ready = status.engine != null;
+  return (
+    <button
+      type="button"
+      disabled={!ready || pending}
+      onClick={onStart}
+      className="font-semibold hover:text-text disabled:opacity-40"
+      title={
+        ready
+          ? `Write out what is said in every clip, on this computer (Whisper, ${status.model}). ` +
+            `About a second per clip${status.error ? `. Last time: ${status.error}` : ''}.`
+          : 'Needs Whisper: in backend/, uv sync --group transcribe (make install does)'
+      }
+    >
+      {status.state === 'error' ? 'TEXT: RETRY' : 'TRANSCRIBE'}
+    </button>
   );
 }

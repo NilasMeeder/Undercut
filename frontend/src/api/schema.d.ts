@@ -650,11 +650,36 @@ export interface paths {
         };
         /**
          * Team Radio
-         * @description The session's team radio clips in time order (none when the archive has none).
+         * @description The session's team radio clips in time order (none when the archive has none), with the
+         *     text of those transcribed.
          */
         get: operations["team_radio_api_sessions__year___round___session__team_radio_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{year}/{round}/{session}/team-radio/transcription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Transcription Status
+         * @description Transcribing the team radio on this computer: set up or not, and how far.
+         */
+        get: operations["transcription_status_api_sessions__year___round___session__team_radio_transcription_get"];
+        put?: never;
+        /**
+         * Transcription Start
+         * @description Transcribe every clip without text (Whisper, on this computer); live, also the new ones.
+         */
+        post: operations["transcription_start_api_sessions__year___round___session__team_radio_transcription_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2844,6 +2869,8 @@ export interface components {
             utc: string;
             /** T */
             t: number | null;
+            /** Text */
+            text?: string | null;
         };
         /** TeammateCorner */
         TeammateCorner: {
@@ -3080,6 +3107,27 @@ export interface components {
             source?: string | null;
             /** Zones */
             zones: components["schemas"]["TrackZone"][];
+        };
+        /**
+         * Transcription
+         * @description Transcribing a session's team radio on this computer (Whisper).
+         */
+        Transcription: {
+            /** Engine */
+            engine: ("mlx" | "faster-whisper") | null;
+            /** Model */
+            model: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "idle" | "running" | "done" | "error";
+            /** Done */
+            done: number;
+            /** Total */
+            total: number;
+            /** Error */
+            error: string | null;
         };
         /**
          * TyreSet
@@ -4512,6 +4560,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeamRadio"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transcription_status_api_sessions__year___round___session__team_radio_transcription_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transcription"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transcription_start_api_sessions__year___round___session__team_radio_transcription_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transcription"];
                 };
             };
             /** @description Validation Error */

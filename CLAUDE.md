@@ -483,6 +483,24 @@ stopt de client twee keer binnen 60 s na verbinden, dan gaat hij zonder die topi
 de simulator stuurt PitStopSeries met de gemeten tijden. Controle Monza 2025 R: NOR L46 ≈5,9 (de
 bekende trage stop), TSU ≈1,7 de snelste, OCO ≈8,6 (5 s straf).
 
+## Team radio als tekst (fase 15)
+
+`app/transcribe.py`: elke clip lokaal met Whisper (geen audio de deur uit). Optionele dependency-group
+`transcribe` (`make install` doet `uv sync --group transcribe`; CI niet): MLX-Whisper op Apple
+silicon, faster-whisper elders, PyAV decodeert de mp3's (geen ffmpeg nodig). Model
+`mlx-community/whisper-large-v3-turbo` (~1,6 GB in `~/.cache/huggingface`, eenmalig),
+`F1DASH_WHISPER_MODEL` kiest een ander. Taal `en`, prompt met F1-woorden en de namen van de drivers,
+`condition_on_previous_text=False`. F1's clips zijn zacht (piek 0,06–0,3) en dan herhaalt Whisper
+zichzelf: eerst naar piek 0,9 schalen; segmenten weg bij no-speech ≥ 0,6, logprob < −1,
+compression > 2,4 of een bekende verzinsel-zin ("Copyright …", "Thanks for watching"). Tekst per
+sessie in `.cache/radio/<jaar>/<event>/<sessie>/transcripts.json`, op bestandsnaam (live kunnen de
+nummers verschuiven); één model in het geheugen, één clip tegelijk. Job per sessie
+(`GET/POST .../team-radio/transcription`, TRANSCRIBE in Team radio, "TEXT 12/32"); live blijft hij
+elke 15 s naar nieuwe clips kijken en de live-service start hem zelf (`transcribe.auto`) zodra er
+clips zijn. `TeamRadio.text` (`''` = niet verstaan). Team radio: tekst naast de clip (instelling
+"Show what is said"), zoekveld op wat er gezegd wordt of een drivercode. Monza 2025 R: 32 clips in
+31 s op een M5 (~0,5–0,9 s per clip), de McLaren-teamorders woord voor woord.
+
 ## Live lap en Follow
 
 Twee manieren om live (en in replay) telemetrie te volgen, allebei op de sessieklok:

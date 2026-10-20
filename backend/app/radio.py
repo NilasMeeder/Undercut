@@ -40,6 +40,18 @@ def get_team_radio(year: int, round_number: int, code: str) -> list[TeamRadio]:
     return clips(_columns(year, round_number, code), sessions.get_t0(year, round_number, code))
 
 
+def clip_files(year: int, round_number: int, code: str) -> dict[int, str]:
+    """Clip id -> its file name (what a transcript is kept by)."""
+    columns = _columns(year, round_number, code)
+    return {
+        i: str(file).rsplit("/", 1)[-1]
+        for i, (driver, file) in enumerate(
+            zip(columns.get("drv", []), columns.get("file", []), strict=False)
+        )
+        if driver and file
+    }
+
+
 def get_audio(year: int, round_number: int, code: str, clip: int) -> bytes:
     columns = _columns(year, round_number, code)
     files = columns.get("file", [])

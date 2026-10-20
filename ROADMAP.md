@@ -690,7 +690,10 @@ voor het bord.
       uit PitStopSeries (de recorder abonneert er nu op; ook in F1-archief-downloads), anders
       gemeten in de telemetrie (≈, voor elke race). Monza 2025 R: NOR ≈5,9, TSU ≈1,7. Getest in
       headless Chrome en met de simulator (19 stops, bron F1)
-- [ ] **Team radio als tekst**: lokaal transcriberen (Whisper), doorzoekbaar, tekst bij de clip
+- [x] **Team radio als tekst** (2026-10-20): TRANSCRIBE in Team radio: elke clip lokaal met
+      Whisper large-v3-turbo (MLX, ~0,7 s per clip op de M5), tekst naast de clip en een zoekveld;
+      live start het vanzelf en loopt mee met nieuwe clips. Verzinsels (stille clips) eruit
+      gefilterd. Getest op Monza 2025 R (32 clips in 31 s) en live met de simulator
 
 ## Later / backlog
 
