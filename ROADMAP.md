@@ -40,6 +40,11 @@ volgende fase voordat de vorige echt werkt.
 - Fase 1 grotendeels af (2026-10-17): sessie-, laps-, telemetrie-, circuit-, compare-, race-control- en
   weer-endpoints op TracingInsights-data. Nog open: de OpenF1-fallback en team radio.
 
+- Fase 15 af (2026-10-20, update 3): automatisch opnemen (REC AUTO, Mac blijft wakker, start na
+  een herstart weer), live-gezondheid en login-verloop in REC, sessies uit F1's eigen archief met
+  het F1 TV-token (NO DATA → Download from F1), Championship "as it stands", Pit stops (stilstand:
+  F1's tijd of gemeten), team radio als tekst (Whisper lokaal, doorzoekbaar, live vanzelf).
+
 ## Visie
 
 Een analysetool in pitwall-stijl (referentie: Red Bull RaceX, zie CLAUDE.md "Stijl"), met **veel features
@@ -663,6 +668,9 @@ Af op 2026-10-19 (alle vier).
       Analyse-preset Qualifying)
 
 ## Fase 15 — Update 3: geen sessie meer missen
+
+Af op 2026-10-20 (alle zes). Nog open: het F1-archief is alleen getest met de simulator als
+archief (niet ingelogd), en de extra topics en PitStopSeries zien we pas bij de eerste echte opname.
 
 Op 2026-10-20 gekozen (Nilas: "Ja prima" op het advies): eerst zorgen dat Austin (vr 23 okt) en
 elke sessie daarna opgenomen wordt, want TracingInsights werkt niet meer bij; daarna drie dingen

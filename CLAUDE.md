@@ -36,6 +36,9 @@ Weekend en Release (zie ROADMAP.md fase 10 en de secties hieronder). Fase 11: de
 van de FIA (2026) op de kaart en in Telemetry/Delta (zie "Straight mode"). Fase 14 (2026-10-19): Starts naast de
 tabel in een laag paneel en bij herstarts na rood, analyse-presets naar schermgrootte,
 automatische markeringen uit Report en tempo-omslagen (races en long runs; zie ROADMAP.md fase 14).
+Fase 15 (2026-10-20, update 3): REC AUTO (elke sessie, Mac wakker), gezondheid en login-verloop in
+REC, F1's archief met het F1 TV-token, Championship, Pit stops en team radio als tekst (zie de
+secties "Live", "F1's archief", "Kampioenschap", "Pitstop-tijden" en "Team radio als tekst").
 
 **Visueel testen:** draai voor een test een eigen backend met een wegwerp-database, zodat je geen
 markeringen of views in Nilas' echte `backend/data/f1dash.db` zet:
