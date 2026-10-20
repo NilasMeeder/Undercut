@@ -205,8 +205,9 @@ frontend/src/features/     topbalk: session/ (SessionPicker, GroupBar, useDefaul
                            (laps van volgende groepen meeschuiven)
 ```
 
-Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 6. `openapi-typescript` ondersteunt
-TS 6 nog niet als peer, daarom draait `gen:api` het via `npx` in plaats van als devDependency.
+Tooling-notities: frontend gebruikt oxlint (niet ESLint) en TypeScript 7 (sinds Dependabot #6,
+2026-10-20). `openapi-typescript` heeft TS 6/7 niet als peer, daarom draait `gen:api` het via `npx`
+in plaats van als devDependency.
 
 ## Databronnen (getest 2026-10-17)
 

@@ -2222,7 +2222,7 @@ export interface components {
         };
         /**
          * ReportMoment
-         * @description Something that happened in a race, at a moment on the clock.
+         * @description Something that happened in a race (or a long run in practice), at a moment on the clock.
          */
         ReportMoment: {
             /**
