@@ -36,7 +36,9 @@ example on a second screen.
 - **Corners**: the difference per corner, explained in sentences such as *"NOR loses 0.141 s to
   VER in T1–2: brakes 10 m earlier"*. Also **Corner phases** (braking, coasting and throttle per
   corner) and **Corners live**.
-- **Mini-sectors**, **Bests** (theoretical best lap), **Speed traps**, **Speed map** (top speed
+- **Mini-sectors** for the whole field, as on the official timing screens: a block per
+  mini-sector, purple, green or yellow, filling up as the lap is driven.
+- **Bests** (theoretical best lap), **Speed traps**, **Speed map** (top speed
   against cornering speed: downforce or low drag) and **Teammates**.
 - **Track map**, coloured by sector, speed, throttle or gear, with corner numbers, sectors and
   zones.
@@ -47,8 +49,8 @@ example on a second screen.
 - A **timing tower** like the official one: gaps at every timing point, purple and green as they
   were at that moment, and the cut-off and predicted lap times in qualifying.
 - **Every car on the map** (positions at 4 Hz), the **track line**, yellow sectors, **Live lap**
-  and **Live delta** (the lap in progress against the previous or the best one), and a digital
-  **Clock**.
+  and **Live delta** (the lap in progress against the previous or the best one, with the gaps
+  ahead and behind, laid out to fit any panel), and a digital **Clock**.
 - **Alerts**: fastest lap, a gap under 1 s, pace changes, deleted laps, penalties and overtakes.
   **Team radio** plays by itself as the clock passes each message.
 
