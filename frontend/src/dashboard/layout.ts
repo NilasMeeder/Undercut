@@ -465,6 +465,7 @@ function strategy(api: DockviewApi) {
   addWidget(api, 'tower', 'blue', { referencePanel: pit, direction: 'within' });
   addWidget(api, 'tyres', 'blue', { referencePanel: pit, direction: 'within' });
   addWidget(api, 'forecast', 'blue', { referencePanel: pit, direction: 'within' });
+  addWidget(api, 'championship', 'blue', { referencePanel: pit, direction: 'within' });
   pit.api.setActive();
   const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: stints, direction: 'below' });
   addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
@@ -559,6 +560,8 @@ function strategyWide(api: DockviewApi) {
     referencePanel: tower,
     direction: 'below',
   });
+  addWidget(api, 'championship', 'blue', { referencePanel: forecast, direction: 'within' });
+  forecast.api.setActive();
   const battles = addWidget(api, 'battles', 'blue', {
     referencePanel: forecast,
     direction: 'below',

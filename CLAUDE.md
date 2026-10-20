@@ -13,7 +13,7 @@ Zie `ROADMAP.md` voor fases en status. Werk de checkboxes daar bij als iets af i
 
 ## Huidige status
 
-Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Laps, Telemetry, Delta, Corners live,
+Fase 0 t/m 6 zijn af: een docking-dashboard (dockview) met dertig widgets (Championship, Laps, Telemetry, Delta, Corners live,
 Live lap, Live delta, Release, Track map, Bests, Speed traps, Speed map, Teammates, Battles, Weekend, Run timeline, Corners, Mini-sectors, Energy, Tyre sets, Report, Clock, Race control, Weather,
 Timing tower, Track line, Markers, Stints, Gaps, Positions, Race pace, Pit window, Track evolution, Stewards, Passes, Long runs, Starts, Team radio, Season: teammates), link-groepen, gedeelde cursor/zoom,
 instellingen (tandwiel) en uitleg (i) per paneel, ⌘K-palette met sneltoetsen, dashboard-tabs met
@@ -455,6 +455,18 @@ PitStopSeries, PitLaneTimeCollection, ChampionshipPrediction.
 getest met de simulator als archief (`test_live_roundtrip.test_f1s_archive_converts_like_a_recording`,
 en visueel: Monza 2025 Q via een nep-`_http.get`, na 11 s VER 1:18.792, NOR +0.077). Eerste echte
 download: kijk of de eerste regels van de streams kloppen met dit formaat.
+
+## Kampioenschap "as it stands" (fase 15)
+
+Widget Championship (`championship`, in de Strategy-preset van Analyse naast Forecast): de stand als
+de race of sprint nu zou eindigen. Backend (`app/championship.py`, `GET .../championship`): de stand
+vóór de sessie van Jolpica (na ronde − 1, gecachet in `.cache/jolpica/`, plus de sprint van dit
+weekend voor de race), de punten per plek (race 25–1, sprint 8–1, 2021 3–2–1) en of er een punt
+voor de snelste lap is (races 2019–2024). Teams onder de namen van de sessie (Jolpica's
+constructorId via de drivers). Frontend (`lib/championship.ts`): punten voor de volgorde van de
+tower op de klok (uitgevallen = 0), snelste lap uit de laps op de klok, gelijke stand: meer zeges.
+Volgorde op de baan, dus zonder tijdstraffen. Controle Monza 2025 R aan de finish: PIA 324, NOR 293,
+VER 230 (na ronde 15: 309, 275, 205).
 
 ## Live lap en Follow
 

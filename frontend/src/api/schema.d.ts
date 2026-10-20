@@ -832,6 +832,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{year}/{round}/{session}/championship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Championship
+         * @description Races and sprints: the standings before this session (Jolpica: after the previous round,
+         *     plus this weekend's sprint) and the points per place, for the championship as it stands.
+         */
+        get: operations["championship_api_sessions__year___round___session__championship_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{year}/{round}/{session}/f1-archive": {
         parameters: {
             query?: never;
@@ -1017,6 +1038,34 @@ export interface components {
             y: (number | null)[];
             /** Progress */
             progress: (number | null)[];
+        };
+        /**
+         * Championship
+         * @description The standings before this race or sprint, for the championship as it stands: add the points
+         *     of the order at the clock (`points[position - 1]`).
+         */
+        Championship: {
+            /** Before */
+            before: string;
+            /** Points */
+            points: number[];
+            /** Fastest Lap Point */
+            fastest_lap_point: boolean;
+            /** Drivers */
+            drivers: components["schemas"]["ChampionshipEntry"][];
+            /** Teams */
+            teams: components["schemas"]["ChampionshipEntry"][];
+        };
+        /** ChampionshipEntry */
+        ChampionshipEntry: {
+            /** Name */
+            name: string;
+            /** Team */
+            team: string;
+            /** Points */
+            points: number;
+            /** Wins */
+            wins: number;
         };
         /** Circuit */
         Circuit: {
@@ -4723,6 +4772,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecorderStatus"];
+                };
+            };
+        };
+    };
+    championship_api_sessions__year___round___session__championship_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+                round: number;
+                session: "FP1" | "FP2" | "FP3" | "SQ" | "SS" | "S" | "Q" | "R";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Championship"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

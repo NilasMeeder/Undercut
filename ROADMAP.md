@@ -682,7 +682,10 @@ voor het bord.
       livetiming.formula1.com (token alleen daarheen, geen redirects, nooit gelogd), samengevoegd
       tot een opname die de live-service omzet. Getest met de simulator als archief (Monza 2025 Q,
       klaar in 11 s); **nog niet met het echte archief** (niet ingelogd)
-- [ ] **Kampioenschap "as it stands"**: de stand als de race nu zou eindigen
+- [x] **Kampioenschap "as it stands"** (2026-10-20): widget Championship (coureurs en
+      constructeurs) met de stand vóór de sessie (Jolpica + sprint) en de punten van de volgorde op
+      de klok, ▲▼ tegen vóór de sessie; in de Strategy-preset van Analyse. Getest op Monza 2025 R
+      (finish: PIA 324, NOR 293, VER 230) en Austin 2025 R (vóór: na ronde 18 en de sprint)
 - [ ] **Pitstop-tijden**: de stilstand per stop uit de feed (PitStopSeries), alleen in opnames
 - [ ] **Team radio als tekst**: lokaal transcriberen (Whisper), doorzoekbaar, tekst bij de clip
 

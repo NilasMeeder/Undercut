@@ -1217,6 +1217,28 @@ class ScheduledSession(BaseModel):
     start_utc: datetime
 
 
+class ChampionshipEntry(BaseModel):
+    name: str
+    """Driver code, or team name."""
+    team: str
+    points: float
+    wins: int
+
+
+class Championship(BaseModel):
+    """The standings before this race or sprint, for the championship as it stands: add the points
+    of the order at the clock (`points[position - 1]`)."""
+
+    before: str
+    """What the standings include, e.g. 'round 15 and the sprint'."""
+    points: list[int]
+    """Points for P1, P2, ... in this session."""
+    fastest_lap_point: bool
+    """One more point for the fastest lap, if in the points (races 2019-2024)."""
+    drivers: list[ChampionshipEntry]
+    teams: list[ChampionshipEntry]
+
+
 class ArchiveDownload(BaseModel):
     """Downloading a session from F1's own archive with the F1 TV sign-in (sources/f1archive.py):
     for a session TracingInsights does not have and that was not recorded."""

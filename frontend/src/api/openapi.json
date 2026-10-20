@@ -3256,6 +3256,74 @@
         }
       }
     },
+    "/api/sessions/{year}/{round}/{session}/championship": {
+      "get": {
+        "summary": "Championship",
+        "description": "Races and sprints: the standings before this session (Jolpica: after the previous round,\nplus this weekend's sprint) and the points per place, for the championship as it stands.",
+        "operationId": "championship_api_sessions__year___round___session__championship_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          },
+          {
+            "name": "round",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Round"
+            }
+          },
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "FP1",
+                "FP2",
+                "FP3",
+                "SQ",
+                "SS",
+                "S",
+                "Q",
+                "R"
+              ],
+              "type": "string",
+              "title": "Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Championship"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions/{year}/{round}/{session}/f1-archive": {
       "get": {
         "summary": "Archive Status",
@@ -3989,6 +4057,77 @@
           "progress"
         ],
         "title": "CarTrack"
+      },
+      "Championship": {
+        "properties": {
+          "before": {
+            "type": "string",
+            "title": "Before"
+          },
+          "points": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "fastest_lap_point": {
+            "type": "boolean",
+            "title": "Fastest Lap Point"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/ChampionshipEntry"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/ChampionshipEntry"
+            },
+            "type": "array",
+            "title": "Teams"
+          }
+        },
+        "type": "object",
+        "required": [
+          "before",
+          "points",
+          "fastest_lap_point",
+          "drivers",
+          "teams"
+        ],
+        "title": "Championship",
+        "description": "The standings before this race or sprint, for the championship as it stands: add the points\nof the order at the clock (`points[position - 1]`)."
+      },
+      "ChampionshipEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "team": {
+            "type": "string",
+            "title": "Team"
+          },
+          "points": {
+            "type": "number",
+            "title": "Points"
+          },
+          "wins": {
+            "type": "integer",
+            "title": "Wins"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "team",
+          "points",
+          "wins"
+        ],
+        "title": "ChampionshipEntry"
       },
       "Circuit": {
         "properties": {

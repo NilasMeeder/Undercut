@@ -36,11 +36,13 @@ from app import (
     weekend,
     zones,
 )
+from app import championship as championships
 from app.live import record, recorder, recordings
 from app.live import service as live
 from app.local_only import LocalOnly
 from app.schemas import (
     ArchiveDownload,
+    Championship,
     Circuit,
     ComparedLap,
     Comparison,
@@ -797,6 +799,13 @@ def _archive_download(year: int, round: int, session: SessionCode) -> ArchiveDow
         offered=over and not recorded,
         signed_in=record.signed_in(),
     )
+
+
+@app.get("/api/sessions/{year}/{round}/{session}/championship")
+def championship(year: int, round: int, session: SessionCode) -> Championship:
+    """Races and sprints: the standings before this session (Jolpica: after the previous round,
+    plus this weekend's sprint) and the points per place, for the championship as it stands."""
+    return _guard(lambda: championships.get_championship(year, round, session))
 
 
 @app.get("/api/sessions/{year}/{round}/{session}/f1-archive")

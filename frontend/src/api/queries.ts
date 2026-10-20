@@ -7,6 +7,7 @@ import type { LapRef } from '@/store/groups';
 import {
   apiGet,
   apiPost,
+  type Championship,
   type Circuit,
   type Comparison,
   type Degradation,
@@ -72,6 +73,9 @@ export const useLaps = () => useSessionQuery<Lap[]>('/laps');
 export const useCircuit = () => useSessionQuery<Circuit>('/circuit');
 export const useRaceControl = () => useSessionQuery<RaceControlMessage[]>('/race-control');
 export const useWeather = () => useSessionQuery<Weather>('/weather');
+/** Races and sprints: the standings before this session and the points per place. */
+export const useChampionship = (enabled: boolean) =>
+  useSessionQuery<Championship>('/championship', enabled);
 
 export type CompareOptions = {
   /** Grid spacing in metres. */
