@@ -1,5 +1,5 @@
 import type { DockviewApi, SerializedDockview } from 'dockview-react';
-import type { DashboardTab, Workspace } from '@/store/dashboards';
+import { useDashboards, type DashboardTab, type Workspace } from '@/store/dashboards';
 import { useSelection } from '@/store/selection';
 import type { GroupId } from '@/store/groups';
 import { WIDGETS_BY_ID } from '@/widgets/registry';
@@ -382,26 +382,31 @@ function qualiBoard(api: DockviewApi) {
 }
 
 /**
- * Preset: the race board. The tower (fit) over Battles on the left; every car on the map over the
- * gaps (positions and the live lap as tabs) in the middle; on the right the race clock (local
- * time as a tab), Live delta, race control and the pit window (stints, the forecast and the safety car calculator as tabs); the track line
- * and the weather along the bottom. Sizes are shares of the screen, like the qualifying board.
+ * Preset: the race board, as Nilas laid it out (2026-10-20). The tower (fit, the safety car
+ * calculator as a tab) over Battles (Passes as a tab) on the left; every car on the map (corner
+ * phases as a tab) over the live lap (positions as a tab) in the middle; on the right the clock
+ * (local time in front, the race clock as a tab), Live delta, race control (stewards as a tab)
+ * and the pit window; the track line and the weather along the bottom. Sizes are shares of the
+ * screen, like the qualifying board.
  */
 function raceBoard(api: DockviewApi) {
   const width = window.innerWidth;
   // The panels' height: the screen minus the top bar and the clock bar.
   const height = window.innerHeight - 60;
   const tower = addWidget(api, 'tower', 'blue', undefined, { size: 'fit' });
+  addWidget(api, 'safetycar', 'blue', { referencePanel: tower, direction: 'within' });
+  tower.api.setActive();
   const map = addWidget(
     api,
     'trackmap',
     'blue',
     { referencePanel: tower, direction: 'right' },
-    { cars: 'all', passes: true }
+    { cars: 'all' }
   );
+  addWidget(api, 'phases', 'blue', { referencePanel: map, direction: 'within' });
+  map.api.setActive();
   const feed = addWidget(api, 'racecontrol', 'blue', { referencePanel: map, direction: 'right' });
   addWidget(api, 'stewards', 'blue', { referencePanel: feed, direction: 'within' });
-  addWidget(api, 'radio', 'blue', { referencePanel: feed, direction: 'within' });
   feed.api.setActive();
   const clock = addWidget(
     api,
@@ -411,38 +416,34 @@ function raceBoard(api: DockviewApi) {
     { mode: 'session' }
   );
   addWidget(api, 'clock', 'blue', { referencePanel: clock, direction: 'within' });
-  clock.api.setActive();
   const delta = addWidget(api, 'livedelta', 'blue', { referencePanel: clock, direction: 'below' });
   const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: feed, direction: 'below' });
-  addWidget(api, 'stints', 'blue', { referencePanel: pit, direction: 'within' });
-  addWidget(api, 'forecast', 'blue', { referencePanel: pit, direction: 'within' });
-  addWidget(api, 'safetycar', 'blue', { referencePanel: pit, direction: 'within' });
-  pit.api.setActive();
   const battles = addWidget(api, 'battles', 'blue', { referencePanel: tower, direction: 'below' });
   addWidget(api, 'passes', 'blue', { referencePanel: battles, direction: 'within' });
-  addWidget(api, 'starts', 'blue', { referencePanel: battles, direction: 'within' });
   battles.api.setActive();
-  const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: map, direction: 'below' });
-  addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
-  addWidget(api, 'livelap', 'blue', { referencePanel: gaps, direction: 'within' });
-  gaps.api.setActive();
+  const positions = addWidget(api, 'positions', 'blue', {
+    referencePanel: map,
+    direction: 'below',
+  });
+  addWidget(api, 'livelap', 'blue', { referencePanel: positions, direction: 'within' });
   const line = addWidget(api, 'trackline', 'blue', { direction: 'below' });
   const weather = addWidget(api, 'weather', 'blue', { referencePanel: line, direction: 'right' });
 
   const top = Math.round(height * 0.83);
   line.group.api.setSize({ height: height - top });
   weather.group.api.setSize({ width: Math.round(width * 0.24) });
-  tower.group.api.setSize({ width: Math.round(width * 0.38) });
-  feed.group.api.setSize({ width: Math.round(width * 0.25) });
+  tower.group.api.setSize({ width: Math.round(width * 0.37) });
+  feed.group.api.setSize({ width: Math.round(width * 0.22) });
   battles.group.api.setSize({ height: Math.round(top * 0.28) });
-  gaps.group.api.setSize({ height: Math.round(top * 0.42) });
+  positions.group.api.setSize({ height: Math.round(top * 0.66) });
   clock.group.api.setSize({ height: Math.max(64, Math.round(top * 0.12)) });
-  delta.group.api.setSize({ height: Math.max(72, Math.round(top * 0.2)) });
+  delta.group.api.setSize({ height: Math.max(72, Math.round(top * 0.17)) });
   pit.group.api.setSize({ height: Math.round(top * 0.34) });
 }
 
 /** Preset: the race lap by lap with the clock; stints, gaps, pace and the pit window. */
 function strategy(api: DockviewApi) {
+  if (useDashboards.getState().workspace === 'pitwall') return strategyBoard(api);
   if (isWide()) return strategyWide(api);
   const stints = addWidget(api, 'stints', 'blue');
   // Right column first, so it runs the full height: map over the pit window (and the tower).
@@ -468,6 +469,64 @@ function strategy(api: DockviewApi) {
   map.group.api.setSize({ width: 470, height: 330 });
   stints.group.api.setSize({ height: 380 });
   pace.group.api.setSize({ width: 500 });
+}
+
+/**
+ * The strategy preset in Pitwall, as Nilas laid it out (2026-10-20). Stints next to the safety
+ * car calculator (the forecast as a tab) over Battles (gaps and positions as tabs) next to the
+ * race pace (battles and starts as tabs); on the right Live delta beside the session clock, the
+ * map with every car, and the pit window (the tower and the tyre sets as tabs). Sizes are shares
+ * of the screen, like the race board.
+ */
+function strategyBoard(api: DockviewApi) {
+  const width = window.innerWidth;
+  // The panels' height: the screen minus the top bar and the clock bar.
+  const height = window.innerHeight - 60;
+  const stints = addWidget(api, 'stints', 'blue');
+  // Right column first, so it runs the full height.
+  const map = addWidget(
+    api,
+    'trackmap',
+    'blue',
+    { referencePanel: stints, direction: 'right' },
+    { cars: 'all' }
+  );
+  const clock = addWidget(
+    api,
+    'clock',
+    'blue',
+    { referencePanel: map, direction: 'above' },
+    { mode: 'session' }
+  );
+  const delta = addWidget(api, 'livedelta', 'blue', { referencePanel: clock, direction: 'left' });
+  const pit = addWidget(api, 'pitwindow', 'blue', { referencePanel: map, direction: 'below' });
+  addWidget(api, 'tower', 'blue', { referencePanel: pit, direction: 'within' });
+  addWidget(api, 'tyres', 'blue', { referencePanel: pit, direction: 'within' });
+  pit.api.setActive();
+  // The rows on the left before their right halves, so each row splits on its own.
+  const gaps = addWidget(api, 'gaps', 'blue', { referencePanel: stints, direction: 'below' });
+  addWidget(api, 'positions', 'blue', { referencePanel: gaps, direction: 'within' });
+  const battles = addWidget(api, 'battles', 'blue', { referencePanel: gaps, direction: 'within' });
+  battles.api.setActive();
+  const safetyCar = addWidget(api, 'safetycar', 'blue', {
+    referencePanel: stints,
+    direction: 'right',
+  });
+  addWidget(api, 'forecast', 'blue', { referencePanel: safetyCar, direction: 'within' });
+  safetyCar.api.setActive();
+  const pace = addWidget(api, 'pace', 'blue', { referencePanel: gaps, direction: 'right' });
+  addWidget(api, 'battles', 'blue', { referencePanel: pace, direction: 'within' });
+  addWidget(api, 'starts', 'blue', { referencePanel: pace, direction: 'within' });
+  pace.api.setActive();
+
+  map.group.api.setSize({ width: Math.round(width * 0.3), height: Math.round(height * 0.32) });
+  clock.group.api.setSize({ height: Math.max(64, Math.round(height * 0.115)) });
+  delta.group.api.setSize({ width: Math.round(width * 0.125) });
+  stints.group.api.setSize({
+    width: Math.round(width * 0.405),
+    height: Math.round(height * 0.535),
+  });
+  gaps.group.api.setSize({ width: Math.round(width * 0.364) });
 }
 
 /** The strategy preset on a wide screen: four columns, everything side by side but the tyre
@@ -566,7 +625,7 @@ export const PRESETS = [
     id: 'race-board',
     title: 'Race board',
     description:
-      'Tower with battles and passes, every car on the map over the gaps, race clock, live delta, race control and stewards, pit window, track line, weather',
+      'Tower with the safety car and battles, every car on the map over the live lap, clock, live delta, race control and stewards, pit window, track line, weather',
     workspaces: ['pitwall'],
     apply: raceBoard,
   },
@@ -581,7 +640,8 @@ export const PRESETS = [
   {
     id: 'strategy',
     title: 'Strategy',
-    description: 'Stints, gaps, positions, race pace, pit window and pit ghosts on the map',
+    description:
+      'Stints, safety car, battles, gaps, race pace, pit window and pit ghosts on the map; in Pitwall with live delta and the clock',
     workspaces: ['analysis', 'pitwall'],
     apply: strategy,
   },

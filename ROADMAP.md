@@ -648,6 +648,11 @@ Af op 2026-10-19 (alle vier).
       en in de Track line is een automatische markering alleen zijn band (notitie bij hover); de
       tekst stond over de auto's (Austin T12). In de analyse ongewijzigd. Getest in headless Chrome
       (race board, Austin 2025 R L29)
+- [x] **Race board en Strategy volgens Nilas' screenshots** (2026-10-20, `~/Projecten/f1dash/
+      screenshots`): race board met Safety car naast de tower, Corner phases naast de kaart, Live
+      lap groot in het midden, de lokale tijd vooraan, Pit window zonder tabs, geen Starts en geen
+      passes op de kaart; Strategy in Pitwall (`strategyBoard`) met Live delta en de klok rechtsboven
+      en Safety car naast Stints; Analyse houdt de oude Strategy. Getest op 1512×982 en 2560×1400
 
 ## Later / backlog
 
